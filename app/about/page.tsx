@@ -6,21 +6,21 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full">
-        <h1 className="text-4xl font-bold mb-8">About Times Book Stall</h1>
-        
+        <h1 className="text-4xl font-bold mb-8">About Focus India Online</h1>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
           <div>
             <h2 className="text-2xl font-bold mb-4">Our Story</h2>
             <p className="text-muted-foreground mb-4">
-              Times Book Stall is a leading online destination for competitive exam preparation books and study materials. Founded with a mission to make quality educational resources accessible to every aspirant, we've been serving students since 2010.
+              Focus India Online is a leading online destination for competitive exam preparation books and study materials. Founded with a mission to make quality educational resources accessible to every aspirant, we've been serving students since 2010.
             </p>
             <p className="text-muted-foreground mb-4">
               We believe in empowering students with authentic, high-quality books and materials that help them achieve their career goals.
             </p>
           </div>
-          
+
           <div>
             <h2 className="text-2xl font-bold mb-4">Our Mission</h2>
             <p className="text-muted-foreground mb-4">

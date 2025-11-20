@@ -95,7 +95,7 @@ export default function LoginPage() {
           <Card className="p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
             <div className="text-center mb-10">
               <h1 className="text-3xl font-bold mb-3 text-foreground">Welcome Back</h1>
-              <p className="text-muted-foreground">Login to your Times Book Stall account</p>
+              <p className="text-muted-foreground">Login to your Focus India Online account</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-7">

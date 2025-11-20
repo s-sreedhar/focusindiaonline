@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
-    siteName: 'Times Book Stall',
+    siteName: 'Focus India Online',
     siteUrl: 'https://timesbookstall.com',
     email: 'support@timesbookstall.com',
     phone: '+919959594444',
