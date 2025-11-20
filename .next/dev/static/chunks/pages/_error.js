@@ -1,0 +1,13 @@
+__turbopack_load_page_chunks__("/_error", [
+  "static/chunks/4669d_next_dist_compiled_6843a755._.js",
+  "static/chunks/4669d_next_dist_shared_lib_ff4ee7d6._.js",
+  "static/chunks/4669d_next_dist_client_6aab5920._.js",
+  "static/chunks/4669d_next_dist_441c0fab._.js",
+  "static/chunks/4669d_next_error_382eef9d.js",
+  "static/chunks/[next]_entry_page-loader_ts_385e7ff5._.js",
+  "static/chunks/085fd_react-dom_ba74fa95._.js",
+  "static/chunks/bb178__pnpm_a8d904aa._.js",
+  "static/chunks/[root-of-the-server]__0a738e17._.js",
+  "static/chunks/Desktop_focus india_pages__error_2da965e7._.js",
+  "static/chunks/turbopack-Desktop_focus india_pages__error_81bd318b._.js"
+])

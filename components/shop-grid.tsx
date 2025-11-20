@@ -10,6 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Book } from '@/lib/types';
 
 interface ShopGridProps {
@@ -104,21 +107,41 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
   );
 
   return (
-    <div className="flex gap-6">
-      {/* Sidebar */}
-      <FilterSidebar onFiltersChange={setFilters} activeCategory={activeCategory} />
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* Sidebar - Desktop */}
+      <div className="hidden md:block w-64 flex-shrink-0">
+        <FilterSidebar onFiltersChange={setFilters} activeCategory={activeCategory} />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1">
         {/* Top Controls */}
-        <div className="flex justify-between items-center mb-6">
-          <p className="text-sm text-muted-foreground">
-            Showing {filteredAndSortedBooks.length} products
-          </p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <p className="text-sm text-muted-foreground whitespace-nowrap">
+              {filteredAndSortedBooks.length} products
+            </p>
 
-          <div className="flex items-center gap-4">
+            {/* Mobile Filter Trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="md:hidden">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
+                <div className="py-6">
+                  <h2 className="text-lg font-bold mb-4">Filters</h2>
+                  <FilterSidebar onFiltersChange={setFilters} activeCategory={activeCategory} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-[140px] md:w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>

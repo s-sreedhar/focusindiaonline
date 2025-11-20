@@ -97,7 +97,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center pt-32 pb-12 px-4 relative overflow-hidden">
+      <main className="flex-1 flex items-center justify-center pt-24 pb-8 md:pt-32 md:pb-12 px-4 relative overflow-hidden">
         {/* Background Blobs */}
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse" />
         <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
@@ -107,13 +107,13 @@ export default function RegisterPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold mb-3 text-foreground">Create Account</h1>
+          <Card className="p-6 md:p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
+            <div className="text-center mb-6 md:mb-10">
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3 text-foreground">Create Account</h1>
               <p className="text-muted-foreground">Join Focus India Online today</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-7">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-7">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}

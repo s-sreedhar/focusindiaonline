@@ -145,3 +145,147 @@ Unexpected token `}`. Expected yield, an identifier, [ or {
 [00:30:49.048] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
 [00:30:49.048] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
 [00:30:49.048] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647012195}
+[00:42:44.908] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:42:45.168] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:42:45.168] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:42:45.168] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647728315}
+[00:42:48.746] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3000/login","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647731886}
+[00:44:40.740] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/cart color: rgb(120, 120, 120) color: inherit {"dp":"/cart","o":"http://localhost:3000/cart","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647843881}
+[00:44:44.212] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/wishlist color: rgb(120, 120, 120) color: inherit {"dp":"/wishlist","o":"http://localhost:3000/wishlist","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647847355}
+[00:44:48.657] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763647851800}
+[00:51:19.757] Server  LOG      ✓ Compiled in 202ms
+[00:58:03.587] Server  LOG      ✓ Compiled in 248ms
+[00:58:03.909] Browser ERROR   ./Desktop/focus india/components/shop-grid.tsx:107:8
+Parsing ecmascript source code failed
+  105 |
+  106 |   return (
+> 107 | import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+      |        ^
+  108 |   import { Filter } from 'lucide-react';
+  109 |   import { Button } from '@/components/ui/button';
+  110 |
+
+Unexpected token `{`. Expected `.` or `(`
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+[00:58:03.909] Browser ERROR   ./Desktop/focus india/components/shop-grid.tsx:107:8
+Parsing ecmascript source code failed
+  105 |
+  106 |   return (
+> 107 | import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+      |        ^
+  108 |   import { Filter } from 'lucide-react';
+  109 |   import { Button } from '@/components/ui/button';
+  110 |
+
+Unexpected token `{`. Expected `.` or `(`
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+[00:58:05.002] Browser ERROR   ./Desktop/focus india/components/shop-grid.tsx:107:8
+Parsing ecmascript source code failed
+  105 |
+  106 |   return (
+> 107 | import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+      |        ^
+  108 |   import { Filter } from 'lucide-react';
+  109 |   import { Button } from '@/components/ui/button';
+  110 |
+
+Unexpected token `{`. Expected `.` or `(`
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+[00:58:05.002] Browser ERROR   ./Desktop/focus india/components/shop-grid.tsx:107:8
+Parsing ecmascript source code failed
+  105 |
+  106 |   return (
+> 107 | import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+      |        ^
+  108 |   import { Filter } from 'lucide-react';
+  109 |   import { Button } from '@/components/ui/button';
+  110 |
+
+Unexpected token `{`. Expected `.` or `(`
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+[00:58:05.906] Browser ERROR   ./Desktop/focus india/components/shop-grid.tsx:107:8
+Parsing ecmascript source code failed
+  105 |
+  106 |   return (
+> 107 | import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+      |        ^
+  108 |   import { Filter } from 'lucide-react';
+  109 |   import { Button } from '@/components/ui/button';
+  110 |
+
+Unexpected token `{`. Expected `.` or `(`
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component Browser]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/focus india/components/shop-grid.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Client Component SSR]
+    ./Desktop/focus india/app/shop/page.tsx [Server Component]
+[00:59:07.403] Server  LOG      ✓ Compiled in 137ms
+[01:00:07.571] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:00:07.840] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:00:07.840] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[01:00:07.840] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763648770984}
+[01:00:17.956] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/login color: rgb(120, 120, 120) color: inherit {"dp":"/login","o":"http://localhost:3000/login","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763648781094}
+[01:00:25.873] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/register color: rgb(120, 120, 120) color: inherit {"dp":"/register","o":"http://localhost:3000/register","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763648789017}
+[01:00:35.325] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763648798459}
+[01:00:38.501] Server  ERROR   C:\Users\S Sreedhar Goud\Desktop\focus india\.next\dev\server\chunks\ssr\4669d_next_dist_21b39d20._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+[01:00:38.502] Server  ERROR   C:\Users\S Sreedhar Goud\Desktop\focus india\.next\dev\server\chunks\ssr\[root-of-the-server]__bdd7d9d4._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+[01:00:38.502] Server  WARN    Error: Route "/shop/[category]" used `params.category`. `params` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[01:00:39.088] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/shop/UPSC color: rgb(120, 120, 120) color: inherit {"dp":"/shop/[category]","o":"http://localhost:3000/shop/UPSC","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763648802155}
+[01:00:54.118] Browser ERROR   `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+[01:00:54.118] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[01:00:54.118] Browser ERROR   `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
+
+If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
+
+For more information, see https://radix-ui.com/primitives/docs/components/dialog
+[01:00:54.118] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.

@@ -82,7 +82,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center pt-32 pb-12 px-4 relative overflow-hidden">
+      <main className="flex-1 flex items-center justify-center pt-24 pb-8 md:pt-32 md:pb-12 px-4 relative overflow-hidden">
         {/* Background Blobs */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
@@ -92,13 +92,13 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
-            <div className="text-center mb-10">
-              <h1 className="text-3xl font-bold mb-3 text-foreground">Welcome Back</h1>
+          <Card className="p-6 md:p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
+            <div className="text-center mb-6 md:mb-10">
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3 text-foreground">Welcome Back</h1>
               <p className="text-muted-foreground">Login to your Focus India Online account</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-7">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-7">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -183,7 +183,7 @@ export default function LoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="relative my-10">
+            <div className="relative my-6 md:my-10">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200" />
               </div>
@@ -193,7 +193,7 @@ export default function LoginPage() {
             </div>
 
             {/* Social Login */}
-            <div className="grid grid-cols-2 gap-6 mb-10">
+            <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
               <Button variant="outline" className="w-full h-11 rounded-xl hover:bg-gray-50">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
