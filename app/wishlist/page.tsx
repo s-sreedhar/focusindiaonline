@@ -17,7 +17,7 @@ export default function WishlistPage() {
       <div className="min-h-screen flex flex-col bg-gray-50/50">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full py-16 flex items-center justify-center">
+        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-24 pb-16 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -43,9 +43,9 @@ export default function WishlistPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-24">
         <div className="container mx-auto px-4 max-w-[1600px] py-12">
-          <h1 className="text-3xl font-bold mb-8">My Wishlist ({items.length})</h1>
+          <h1 className="text-3xl font-bold mb-8 pb-2 leading-tight">My Wishlist ({items.length})</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {items.map((item, i) => (

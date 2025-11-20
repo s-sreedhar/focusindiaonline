@@ -80,12 +80,12 @@ export default function CategoryPage({
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
-      <main className="flex-1">
+
+      <main className="flex-1 pt-24">
         {/* Hero Section */}
         <section className="bg-secondary py-8 border-b">
           <div className="max-w-7xl mx-auto px-4">
-            <h1 className="text-3xl font-bold mb-2">{categoryName} Books</h1>
+            <h1 className="text-3xl font-bold mb-2 pb-2 leading-tight">{categoryName} Books</h1>
             <p className="text-muted-foreground">Browse all books for {categoryName} preparation</p>
           </div>
         </section>

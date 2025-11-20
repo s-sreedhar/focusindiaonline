@@ -224,7 +224,8 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                 email,
                 username: email.split('@')[0],
                 displayName: email.split('@')[0],
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                role: 'user'
             };
             set({
                 user: mockUser,
@@ -242,7 +243,8 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                 email,
                 username,
                 displayName: username,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                role: 'user'
             };
             set({
                 user: mockUser,
@@ -265,6 +267,12 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                     } : null
                 }));
             console.log("[v0] Profile updated");
+        },
+        setUser: (user)=>{
+            set({
+                user,
+                isAuthenticated: !!user
+            });
         }
     }), {
     name: 'auth-storage'
@@ -2015,7 +2023,7 @@ function CartPage() {
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-                    className: "flex-1 container mx-auto px-4 max-w-[1600px] w-full py-16 flex items-center justify-center",
+                    className: "flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-24 pb-16 flex items-center justify-center",
                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$framer$2d$motion$40$12$2e$23$2e$24_reac_f10c133739128b9444d932a552777ca7$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["motion"].div, {
                         initial: {
                             opacity: 0,
@@ -2106,7 +2114,7 @@ function CartPage() {
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-                className: "flex-1",
+                className: "flex-1 pt-24",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "container mx-auto px-4 max-w-[1600px] py-12",
                     children: [
@@ -2114,7 +2122,7 @@ function CartPage() {
                             className: "flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop$2f$focus__india$2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                    className: "text-3xl font-bold break-words",
+                                    className: "text-3xl font-bold break-words pb-2 leading-tight",
                                     children: "Shopping Cart"
                                 }, void 0, false, {
                                     fileName: "[project]/Desktop/focus india/app/cart/page.tsx",

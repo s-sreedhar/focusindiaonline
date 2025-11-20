@@ -245,7 +245,8 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                 email,
                 username: email.split('@')[0],
                 displayName: email.split('@')[0],
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                role: 'user'
             };
             set({
                 user: mockUser,
@@ -263,7 +264,8 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                 email,
                 username,
                 displayName: username,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                role: 'user'
             };
             set({
                 user: mockUser,
@@ -286,6 +288,12 @@ const useAuthStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Desktop
                     } : null
                 }));
             console.log("[v0] Profile updated");
+        },
+        setUser: (user)=>{
+            set({
+                user,
+                isAuthenticated: !!user
+            });
         }
     }), {
     name: 'auth-storage'

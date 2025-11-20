@@ -25,6 +25,50 @@ export interface Book {
   pageCount?: number;
   edition?: string;
   isbn?: string;
+  createdAt?: any; // Timestamp
+  updatedAt?: any; // Timestamp
+}
+
+export interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  role: 'user' | 'admin';
+  createdAt: any;
+  phoneNumber?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: {
+    bookId: string;
+    title: string;
+    quantity: number;
+    price: number;
+    image: string;
+  }[];
+  totalAmount: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  shippingAddress: {
+    fullName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    phoneNumber: string;
+  };
+  createdAt: any;
+  paymentId?: string;
+  paymentMethod: 'cod' | 'online';
 }
 
 export interface FilterOptions {

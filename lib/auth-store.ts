@@ -7,6 +7,7 @@ export interface User {
   username: string;
   displayName: string;
   phone?: string;
+  role?: string;
   createdAt: string;
 }
 
@@ -17,6 +18,7 @@ interface AuthStore {
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  setUser: (user: User | null) => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -26,35 +28,37 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       login: async (email: string, password: string) => {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Simple validation
         if (!email || !password) {
           throw new Error('Email and password are required');
         }
-        
+
         const mockUser: User = {
           id: '1',
           email,
           username: email.split('@')[0],
           displayName: email.split('@')[0],
           createdAt: new Date().toISOString(),
+          role: 'user',
         };
         set({ user: mockUser, isAuthenticated: true });
         console.log("[v0] User logged in:", email);
       },
       register: async (email: string, username: string, password: string) => {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         if (!email || !username || !password) {
           throw new Error('All fields are required');
         }
-        
+
         const mockUser: User = {
           id: '1',
           email,
           username,
           displayName: username,
           createdAt: new Date().toISOString(),
+          role: 'user',
         };
         set({ user: mockUser, isAuthenticated: true });
         console.log("[v0] User registered:", email);
@@ -68,6 +72,9 @@ export const useAuthStore = create<AuthStore>()(
           user: state.user ? { ...state.user, ...data } : null,
         }));
         console.log("[v0] Profile updated");
+      },
+      setUser: (user: User | null) => {
+        set({ user, isAuthenticated: !!user });
       },
     }),
     {

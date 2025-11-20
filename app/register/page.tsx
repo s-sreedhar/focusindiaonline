@@ -16,7 +16,7 @@ import { auth } from '@/lib/firebase';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuthStore();
+  const { setUser } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -62,8 +62,27 @@ export default function RegisterPage() {
         displayName: formData.username
       });
 
+      // Create User Document in Firestore
+      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: formData.username,
+        role: 'user',
+        createdAt: serverTimestamp(),
+      });
+
       // Update local store
-      register(formData.email, formData.username, formData.password);
+      setUser({
+        id: user.uid,
+        email: user.email!,
+        username: formData.username,
+        displayName: formData.username,
+        role: 'user',
+        createdAt: new Date().toISOString(),
+      });
 
       router.push('/account');
     } catch (err: any) {
@@ -78,7 +97,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      <main className="flex-1 flex items-center justify-center pt-32 pb-12 px-4 relative overflow-hidden">
         {/* Background Blobs */}
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse" />
         <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
@@ -88,13 +107,13 @@ export default function RegisterPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="p-8 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2 text-foreground">Create Account</h1>
+          <Card className="p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold mb-3 text-foreground">Create Account</h1>
               <p className="text-muted-foreground">Join Times Book Stall today</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-7">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -106,7 +125,7 @@ export default function RegisterPage() {
               )}
 
               {/* Username */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Username</label>
                 <div className="relative group">
                   <User className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -123,7 +142,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Email */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Email Address</label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -140,7 +159,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Password */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Password</label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -168,7 +187,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Confirm Password */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Confirm Password</label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />

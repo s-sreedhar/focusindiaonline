@@ -16,7 +16,7 @@ import { auth } from '@/lib/firebase';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuthStore();
+  const { setUser } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -44,12 +44,29 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
+      // Fetch user details from Firestore
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let userData = {
+        role: 'user'
+      };
+
+      if (userDoc.exists()) {
+        userData = userDoc.data() as any;
+      }
+
       // Update local store
-      login({
+      setUser({
         id: user.uid,
         email: user.email!,
+        username: user.email!.split('@')[0], // Fallback username
         displayName: user.displayName || 'User',
-        role: 'user' // Default role
+        role: userData.role || 'user',
+        createdAt: new Date().toISOString(), // Add missing required field
       });
 
       router.push('/account');
@@ -65,7 +82,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      <main className="flex-1 flex items-center justify-center pt-32 pb-12 px-4 relative overflow-hidden">
         {/* Background Blobs */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl -z-10 animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent/20 rounded-full blur-3xl -z-10 animate-pulse delay-1000" />
@@ -75,13 +92,13 @@ export default function LoginPage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="p-8 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2 text-foreground">Welcome Back</h1>
+          <Card className="p-10 backdrop-blur-xl bg-white/80 border-white/20 shadow-2xl rounded-3xl">
+            <div className="text-center mb-10">
+              <h1 className="text-3xl font-bold mb-3 text-foreground">Welcome Back</h1>
               <p className="text-muted-foreground">Login to your Times Book Stall account</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-7">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -93,7 +110,7 @@ export default function LoginPage() {
               )}
 
               {/* Email */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Email Address</label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -110,7 +127,7 @@ export default function LoginPage() {
               </div>
 
               {/* Password */}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-sm font-medium ml-1">Password</label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -166,7 +183,7 @@ export default function LoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="relative my-8">
+            <div className="relative my-10">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200" />
               </div>
@@ -176,7 +193,7 @@ export default function LoginPage() {
             </div>
 
             {/* Social Login */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-6 mb-10">
               <Button variant="outline" className="w-full h-11 rounded-xl hover:bg-gray-50">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

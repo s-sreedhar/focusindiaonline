@@ -1,11 +1,1 @@
-{
-  "version": 4,
-  "routes": {},
-  "dynamicRoutes": {},
-  "notFoundRoutes": [],
-  "preview": {
-    "previewModeId": "38aff4fb3e4cbbcfa0084b1d7754d059",
-    "previewModeSigningKey": "c9b40b8752f438c1c687eb5cb69bba241d5c4a83d282698f6b07b541d0044c38",
-    "previewModeEncryptionKey": "869e4c00c0b31d7937cdf5673f9993195a827a5e5fb0ceb5500730fb0994fa3e"
-  }
-}
+{"version":4,"routes":{"/shop/APPSC":{},"/shop/TGPSC":{},"/shop/UPSC":{},"/shop/SSC":{},"/shop/RRB":{},"/shop/DSC":{},"/shop/BANKING":{},"/shop/MAGAZINES":{}},"dynamicRoutes":{"/shop/[category]":{"dataRoute":null,"dataRouteRegex":null,"fallback":null,"fallbackRevalidate":false,"fallbackSourceRoute":"/shop/[category]","routeRegex":"^\\/shop\\/([^/]+?)(?:\\/)?$","allowHeader":[]}},"notFoundRoutes":[],"preview":{"previewModeId":"984d09aa772bc568554160a53e331c38","previewModeSigningKey":"4deb58367fa53333c818af757a75515f70998c670ce2b9b48e78fe85be86e78a","previewModeEncryptionKey":"3738d4cea8fa2bab403309d93a913469ff98a0a0a692b2240e67cb83d5d81d6a"}}
