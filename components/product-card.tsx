@@ -1,0 +1,145 @@
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Heart, ShoppingCart, Star } from 'lucide-react';
+import { useCartStore } from '@/lib/cart-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+
+interface ProductCardProps {
+  id: string;
+  title: string;
+  author: string;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  rating?: number;
+  discount?: number;
+  slug: string;
+}
+
+export function ProductCard({
+  id,
+  title,
+  author,
+  image,
+  price,
+  originalPrice,
+  rating = 4.5,
+  discount,
+  slug
+}: ProductCardProps) {
+  const { addItem: addToCart } = useCartStore();
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
+  const [isInWish, setIsInWish] = useState(isInWishlist(id));
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addToCart({
+      bookId: id,
+      title,
+      author,
+      price,
+      originalPrice,
+      image,
+      quantity: 1,
+      slug,
+    });
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isInWish) {
+      removeFromWishlist(id);
+      setIsInWish(false);
+    } else {
+      addToWishlist({
+        bookId: id,
+        title,
+        author,
+        price,
+        image,
+        slug,
+        addedAt: new Date(),
+      });
+      setIsInWish(true);
+    }
+  };
+
+  return (
+    <Link href={`/product/${slug}`}>
+      <motion.div
+        whileHover={{ y: -5 }}
+        transition={{ duration: 0.2 }}
+        className="h-full"
+      >
+        <Card className="overflow-hidden h-full flex flex-col group border-transparent shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
+          {/* Image Container */}
+          <div className="relative bg-gray-50 overflow-hidden aspect-[3/4] flex items-center justify-center p-4">
+            <Image
+              src={image || "/placeholder.svg"}
+              alt={title}
+              fill
+              className="object-contain group-hover:scale-110 transition-transform duration-500"
+            />
+            {discount && (
+              <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md">
+                -{discount}% OFF
+              </div>
+            )}
+
+            {/* Quick Actions Overlay */}
+            <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="rounded-full w-8 h-8 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:text-red-500"
+                onClick={handleToggleWishlist}
+              >
+                <Heart className={`w-4 h-4 ${isInWish ? 'fill-red-500 text-red-500' : ''}`} />
+              </Button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 flex-1 flex flex-col">
+            <div className="mb-1 flex items-center gap-1">
+              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-medium text-muted-foreground">{rating}</span>
+            </div>
+
+            <h3 className="font-bold text-sm line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">{title}</h3>
+            <p className="text-xs text-muted-foreground mb-3 line-clamp-1">{author}</p>
+
+            {/* Price & Add Button */}
+            <div className="mt-auto flex items-center justify-between gap-2">
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-bold text-lg text-foreground">₹{price}</span>
+                  {originalPrice && (
+                    <span className="text-xs line-through text-muted-foreground">
+                      ₹{originalPrice}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                className="rounded-full px-4 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                onClick={handleAddToCart}
+              >
+                <ShoppingCart className="w-4 h-4 mr-1" />
+                Add
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+    </Link>
+  );
+}
