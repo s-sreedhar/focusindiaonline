@@ -130,3 +130,14 @@ Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
 [00:24:40.366] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763646643506}
 [00:24:42.511] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/shop color: rgb(120, 120, 120) color: inherit {"dp":"/shop","o":"http://localhost:3000/shop","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763646645637}
 [00:24:43.755] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.5.0","sv":"0.1.3","ts":1763646646895}
+[00:28:51.077] Browser ERROR   ./Desktop/focus india/app/layout.tsx:19:1
+Parsing ecmascript source code failed
+  17 |   apple: '/favicon.png',
+  18 | },
+> 19 | }
+     | ^
+  20 |
+  21 | export default function RootLayout({
+  22 |   children,
+
+Unexpected token `}`. Expected yield, an identifier, [ or {
