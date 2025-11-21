@@ -1,21 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
+import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2, Phone, Lock } from 'lucide-react';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from 'firebase/firestore';
 
-type Step = 'address' | 'payment' | 'review' | 'confirmation';
+type Step = 'address' | 'payment' | 'review' | 'verification' | 'confirmation';
 
 export default function CheckoutPage() {
-  const { items, getTotalPrice } = useCartStore();
+  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { user, isAuthenticated, setUser } = useAuthStore();
   const [currentStep, setCurrentStep] = useState<Step>('address');
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -27,6 +32,24 @@ export default function CheckoutPage() {
     zipCode: '',
     paymentMethod: 'card'
   });
+
+  // Phone Auth State
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [authError, setAuthError] = useState('');
+
+  // Pre-fill data if user is logged in
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+        firstName: user.displayName?.split(' ')[0] || prev.firstName,
+        lastName: user.displayName?.split(' ')[1] || prev.lastName,
+      }));
+    }
+  }, [user]);
 
   const subtotal = getTotalPrice();
   const shippingCharges = subtotal > 500 ? 0 : 50;
@@ -42,11 +65,124 @@ export default function CheckoutPage() {
     setCurrentStep(step);
   };
 
-  const handlePlaceOrder = () => {
-    setCurrentStep('confirmation');
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+    }
   };
 
-  if (items.length === 0) {
+  const handlePlaceOrder = async () => {
+    if (isAuthenticated) {
+      await createOrder(user!.id);
+    } else {
+      // Start Phone Verification
+      setCurrentStep('verification');
+      setTimeout(() => setupRecaptcha(), 100); // Delay to ensure container exists
+      await sendOtp();
+    }
+  };
+
+  const sendOtp = async () => {
+    setLoading(true);
+    setAuthError('');
+    try {
+      const formattedPhone = formData.phone.startsWith('+91') ? formData.phone : `+91${formData.phone}`;
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(confirmation);
+    } catch (err: any) {
+      console.error('Error sending OTP:', err);
+      setAuthError(err.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      setAuthError('Please enter a valid 6-digit OTP');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (confirmationResult) {
+        const result = await confirmationResult.confirm(otp);
+        const firebaseUser = result.user;
+
+        // Check if user exists in Firestore, if not create
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            uid: firebaseUser.uid,
+            email: formData.email,
+            displayName: `${formData.firstName} ${formData.lastName}`,
+            phone: firebaseUser.phoneNumber,
+            role: 'user',
+            createdAt: serverTimestamp(),
+          });
+        }
+
+        // Update local store
+        setUser({
+          id: firebaseUser.uid,
+          email: formData.email,
+          username: firebaseUser.phoneNumber || '',
+          displayName: `${formData.firstName} ${formData.lastName}`,
+          phone: firebaseUser.phoneNumber || '',
+          createdAt: new Date().toISOString(),
+          role: 'user'
+        });
+
+        // Create Order
+        await createOrder(firebaseUser.uid);
+      }
+    } catch (err: any) {
+      console.error('Error verifying OTP:', err);
+      setAuthError('Invalid OTP. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const createOrder = async (userId: string) => {
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'orders'), {
+        userId,
+        items,
+        shippingAddress: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
+        paymentMethod: formData.paymentMethod,
+        subtotal,
+        shippingCharges,
+        discount,
+        totalAmount: total,
+        status: 'processing',
+        createdAt: serverTimestamp(),
+      });
+
+      clearCart();
+      setCurrentStep('confirmation');
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (items.length === 0 && currentStep !== 'confirmation') {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -76,7 +212,7 @@ export default function CheckoutPage() {
                 Thank you for your order. Your books will be delivered soon.
               </p>
               <div className="bg-secondary p-6 rounded-lg">
-                <p className="font-semibold mb-2">Order Number: #ORD-2025-001234</p>
+                <p className="font-semibold mb-2">Order Number: #ORD-{Math.floor(Math.random() * 100000)}</p>
                 <p className="text-muted-foreground">A confirmation email has been sent to {formData.email}</p>
               </div>
               <div className="space-y-2">
@@ -98,7 +234,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <h1 className="text-3xl font-bold mb-8">Checkout</h1>
@@ -111,23 +247,71 @@ export default function CheckoutPage() {
                 {(['address', 'payment', 'review'] as const).map((step, index) => (
                   <div key={step} className="flex items-center">
                     <button
-                      onClick={() => handleStepChange(step)}
-                      className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${
-                        currentStep === step
+                      onClick={() => currentStep !== 'verification' && handleStepChange(step)}
+                      disabled={currentStep === 'verification'}
+                      className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${currentStep === step
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-foreground'
-                      }`}
+                        }`}
                     >
                       {index + 1}
                     </button>
                     {index < 2 && (
-                      <div className={`w-16 h-1 mx-2 ${
-                        currentStep !== 'address' ? 'bg-primary' : 'bg-secondary'
-                      }`} />
+                      <div className={`w-16 h-1 mx-2 ${currentStep !== 'address' ? 'bg-primary' : 'bg-secondary'
+                        }`} />
                     )}
                   </div>
                 ))}
               </div>
+
+              {/* Verification Step */}
+              {currentStep === 'verification' && (
+                <Card className="p-6 space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold mb-2">Verify Phone Number</h2>
+                    <p className="text-muted-foreground">
+                      We sent an OTP to {formData.phone}. Please enter it below to complete your order.
+                    </p>
+                  </div>
+
+                  {authError && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm text-center">
+                      {authError}
+                    </div>
+                  )}
+
+                  <div className="max-w-xs mx-auto space-y-4">
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Enter 6-digit OTP"
+                        className="pl-10 text-center tracking-widest text-lg"
+                        value={otp}
+                        maxLength={6}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      />
+                    </div>
+                    <div id="recaptcha-container"></div>
+                    <Button
+                      className="w-full"
+                      onClick={verifyOtp}
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Verify & Place Order
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => setCurrentStep('review')}
+                      disabled={loading}
+                    >
+                      Back
+                    </Button>
+                  </div>
+                </Card>
+              )}
 
               {/* Shipping Address */}
               {currentStep === 'address' && (
@@ -226,13 +410,13 @@ export default function CheckoutPage() {
               {currentStep === 'review' && (
                 <Card className="p-6 space-y-6">
                   <h2 className="text-xl font-bold">Order Review</h2>
-                  
+
                   {/* Address Summary */}
                   <div className="border-b pb-6">
                     <h3 className="font-semibold mb-2">Shipping Address</h3>
                     <p className="text-muted-foreground text-sm">
-                      {formData.firstName} {formData.lastName}<br/>
-                      {formData.address}<br/>
+                      {formData.firstName} {formData.lastName}<br />
+                      {formData.address}<br />
                       {formData.city}, {formData.state} {formData.zipCode}
                     </p>
                   </div>
@@ -262,7 +446,8 @@ export default function CheckoutPage() {
                     <Button variant="outline" onClick={() => handleStepChange('payment')}>
                       Back
                     </Button>
-                    <Button onClick={handlePlaceOrder} size="lg">
+                    <Button onClick={handlePlaceOrder} size="lg" disabled={loading}>
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Place Order
                     </Button>
                   </div>
@@ -323,4 +508,10 @@ export default function CheckoutPage() {
       <Footer />
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
 }

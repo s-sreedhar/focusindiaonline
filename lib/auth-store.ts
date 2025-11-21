@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export interface User {
   id: string;
@@ -14,11 +16,10 @@ export interface User {
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
-  logout: () => void;
-  updateProfile: (data: Partial<User>) => Promise<void>;
+  loading: boolean;
+  logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  initialize: () => () => void; // Returns unsubscribe function
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -26,59 +27,36 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      login: async (email: string, password: string) => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Simple validation
-        if (!email || !password) {
-          throw new Error('Email and password are required');
-        }
-
-        const mockUser: User = {
-          id: '1',
-          email,
-          username: email.split('@')[0],
-          displayName: email.split('@')[0],
-          createdAt: new Date().toISOString(),
-          role: 'user',
-        };
-        set({ user: mockUser, isAuthenticated: true });
-        console.log("[v0] User logged in:", email);
-      },
-      register: async (email: string, username: string, password: string) => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        if (!email || !username || !password) {
-          throw new Error('All fields are required');
-        }
-
-        const mockUser: User = {
-          id: '1',
-          email,
-          username,
-          displayName: username,
-          createdAt: new Date().toISOString(),
-          role: 'user',
-        };
-        set({ user: mockUser, isAuthenticated: true });
-        console.log("[v0] User registered:", email);
-      },
-      logout: () => {
+      loading: true,
+      logout: async () => {
+        await signOut(auth);
         set({ user: null, isAuthenticated: false });
-        console.log("[v0] User logged out");
-      },
-      updateProfile: async (data: Partial<User>) => {
-        set((state) => ({
-          user: state.user ? { ...state.user, ...data } : null,
-        }));
-        console.log("[v0] Profile updated");
       },
       setUser: (user: User | null) => {
         set({ user, isAuthenticated: !!user });
       },
+      initialize: () => {
+        return onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser) {
+            const user: User = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              username: firebaseUser.phoneNumber || '',
+              displayName: firebaseUser.displayName || 'User',
+              phone: firebaseUser.phoneNumber || '',
+              createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+              role: 'user', // In a real app, fetch this from Firestore
+            };
+            set({ user, isAuthenticated: true, loading: false });
+          } else {
+            set({ user: null, isAuthenticated: false, loading: false });
+          }
+        });
+      },
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );

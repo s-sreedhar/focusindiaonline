@@ -15,8 +15,8 @@ export function AdminSidebar() {
       icon: BarChart3,
     },
     {
-      label: 'Products',
-      href: '/admin/products',
+      label: 'Books',
+      href: '/admin/books',
       icon: BookOpen,
     },
     {
@@ -52,8 +52,8 @@ export function AdminSidebar() {
             <Link key={item.href} href={item.href}>
               <div
                 className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'hover:bg-sidebar-accent text-sidebar-foreground'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                  : 'hover:bg-sidebar-accent text-sidebar-foreground'
                   }`}
               >
                 <Icon className="w-5 h-5" />

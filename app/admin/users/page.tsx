@@ -1,110 +1,96 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Ban, Eye } from 'lucide-react';
-import { useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { Loader2, User } from 'lucide-react';
 
-const mockUsers = [
-  {
-    id: '1',
-    name: 'Rajesh Kumar',
-    email: 'rajesh@example.com',
-    joinDate: '2024-12-01',
-    orders: 5,
-    spent: 4250,
-    status: 'active',
-  },
-  {
-    id: '2',
-    name: 'Priya Singh',
-    email: 'priya@example.com',
-    joinDate: '2024-11-15',
-    orders: 3,
-    spent: 2150,
-    status: 'active',
-  },
-  {
-    id: '3',
-    name: 'Amit Patel',
-    email: 'amit@example.com',
-    joinDate: '2024-10-20',
-    orders: 8,
-    spent: 6800,
-    status: 'blocked',
-  },
-];
+interface UserData {
+  id: string;
+  displayName: string;
+  email: string;
+  phone?: string;
+  role: string;
+  createdAt: any;
+}
 
 export default function UsersPage() {
-  const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const usersData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as UserData[];
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 flex justify-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
+  }
 
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Users</h1>
-        <p className="text-muted-foreground">Manage customer accounts</p>
+        <h1 className="text-3xl font-bold mb-2">Users</h1>
+        <p className="text-muted-foreground">Manage registered users</p>
       </div>
 
-      {/* Search */}
-      <Card className="p-6 mb-6">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-            <Input
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Users Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-secondary border-b">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-secondary text-secondary-foreground">
               <tr>
-                <th className="text-left px-6 py-3 font-semibold">Name</th>
-                <th className="text-left px-6 py-3 font-semibold">Email</th>
-                <th className="text-left px-6 py-3 font-semibold">Join Date</th>
-                <th className="text-left px-6 py-3 font-semibold">Orders</th>
-                <th className="text-left px-6 py-3 font-semibold">Total Spent</th>
-                <th className="text-left px-6 py-3 font-semibold">Status</th>
-                <th className="text-left px-6 py-3 font-semibold">Actions</th>
+                <th className="px-6 py-3 font-semibold">User</th>
+                <th className="px-6 py-3 font-semibold">Email</th>
+                <th className="px-6 py-3 font-semibold">Phone</th>
+                <th className="px-6 py-3 font-semibold">Role</th>
+                <th className="px-6 py-3 font-semibold">Joined</th>
               </tr>
             </thead>
-            <tbody>
-              {mockUsers.map((user) => (
-                <tr key={user.id} className="border-b hover:bg-secondary/50">
-                  <td className="px-6 py-4 font-semibold">{user.name}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{user.joinDate}</td>
-                  <td className="px-6 py-4 text-center font-semibold">{user.orders}</td>
-                  <td className="px-6 py-4 font-semibold">₹{user.spent}</td>
+            <tbody className="divide-y">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-secondary/50 transition-colors">
+                  <td className="px-6 py-4 font-medium flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      <User className="w-4 h-4" />
+                    </div>
+                    {user.displayName || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4">{user.email}</td>
+                  <td className="px-6 py-4">{user.phone || '-'}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      user.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.status === 'active' ? 'Active' : 'Blocked'}
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                      {user.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive">
-                        <Ban className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  <td className="px-6 py-4 text-muted-foreground">
+                    {user.createdAt?.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                    No users found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

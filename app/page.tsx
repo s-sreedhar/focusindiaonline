@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Carousel } from '@/components/carousel';
 
 // Mock data - replace with real data fetching
 const featuredProducts = [
@@ -162,9 +163,9 @@ export default function Home() {
                   <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
                     <Link href="/shop">Start Learning Now</Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="rounded-full px-8 text-lg h-12 border-2 hover:bg-accent/5">
+                  {/* <Button asChild size="lg" variant="outline" className="rounded-full px-8 text-lg h-12 border-2 hover:bg-accent/5">
                     <Link href="/shop/UPSC">Explore Categories</Link>
-                  </Button>
+                  </Button> */}
                 </div>
 
                 <div className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-muted-foreground">
@@ -208,44 +209,25 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Categories */}
+        {/* Trending Books Carousel */}
         <section className="py-12 bg-white">
           <div className="container mx-auto px-4 max-w-[1600px]">
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex justify-between items-center mb-8">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Browse Categories</h2>
-                <p className="text-muted-foreground">Find books for your specific exam needs</p>
+                <h2 className="text-3xl font-bold mb-2">Trending Books</h2>
+                <p className="text-muted-foreground">Books that everyone is talking about</p>
               </div>
-              <Button variant="ghost" className="hidden sm:flex group" asChild>
-                <Link href="/shop">
-                  View All <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {categories.map((cat, i) => (
-                <motion.div
-                  key={cat.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Link href={`/shop/${cat.name}`}>
-                    <Card className={`p-6 h-full bg-gradient-to-br ${cat.color} text-white border-none shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative group`}>
-                      <div className="relative z-10">
-                        <h3 className="font-bold text-2xl mb-2">{cat.name}</h3>
-                        <p className="text-white/90 font-medium">{cat.count}+ Books</p>
-                      </div>
-                      <div className="absolute right-0 bottom-0 opacity-10 group-hover:opacity-20 transition-opacity transform translate-x-4 translate-y-4">
-                        <BookOpen className="w-24 h-24" />
-                      </div>
-                    </Card>
-                  </Link>
-                </motion.div>
+            <Carousel>
+              {[0, 1].map((slideIndex) => (
+                <div key={slideIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                  {bestSellers.map((product) => (
+                    <ProductCard key={`${slideIndex}-${product.id}`} {...product} />
+                  ))}
+                </div>
               ))}
-            </div>
+            </Carousel>
           </div>
         </section>
 

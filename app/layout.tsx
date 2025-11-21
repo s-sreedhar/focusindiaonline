@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { AuthProvider } from '@/components/auth/auth-provider'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -27,7 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
