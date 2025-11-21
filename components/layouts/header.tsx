@@ -159,6 +159,11 @@ export function Header() {
                     <DropdownMenuItem asChild className="cursor-pointer rounded-md">
                       <Link href="/account/orders">My Orders</Link>
                     </DropdownMenuItem>
+                    {user.role === 'superadmin' && (
+                      <DropdownMenuItem asChild className="cursor-pointer rounded-md">
+                        <Link href="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-md text-red-500 focus:text-red-500 focus:bg-red-50">
                       <LogOut className="w-4 h-4 mr-2" />

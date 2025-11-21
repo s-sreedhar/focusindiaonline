@@ -70,20 +70,47 @@ export function PhoneLogin() {
         try {
             if (confirmationResult) {
                 const result = await confirmationResult.confirm(otp);
-                const user = result.user;
+                const firebaseUser = result.user;
+
+                // Check if user exists in Firestore
+                const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db } = await import('@/lib/firebase');
+
+                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                let role = 'customer';
+
+                if (!userDoc.exists()) {
+                    // Create new user
+                    await setDoc(userDocRef, {
+                        uid: firebaseUser.uid,
+                        email: firebaseUser.email || '',
+                        phone: firebaseUser.phoneNumber,
+                        displayName: 'User',
+                        role: 'customer',
+                        createdAt: serverTimestamp(),
+                    });
+                } else {
+                    role = userDoc.data().role || 'customer';
+                }
 
                 // Update store
                 setUser({
-                    id: user.uid,
-                    email: user.email || '',
-                    username: user.phoneNumber || '',
-                    displayName: user.displayName || 'User',
-                    phone: user.phoneNumber || '',
-                    createdAt: user.metadata.creationTime || new Date().toISOString(),
-                    role: 'user' // Default role, should be fetched from DB in real app
+                    id: firebaseUser.uid,
+                    email: firebaseUser.email || '',
+                    username: firebaseUser.phoneNumber || '',
+                    displayName: firebaseUser.displayName || 'User',
+                    phone: firebaseUser.phoneNumber || '',
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    role: role
                 });
 
-                router.push('/');
+                if (role === 'superadmin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/');
+                }
             }
         } catch (err: any) {
             console.error('Error verifying OTP:', err);
