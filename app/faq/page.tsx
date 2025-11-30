@@ -6,6 +6,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'FAQ',
+  description: 'Frequently asked questions about Focus India Online - delivery, returns, payment methods, and more. Get answers to common queries about our competitive exam books.',
+  openGraph: {
+    title: 'FAQ - Focus India Online',
+    description: 'Frequently asked questions about Focus India Online and our services.',
+    url: 'https://focusindiaonline.com/faq',
+  },
+};
 
 export default function FAQPage() {
   const faqs = [
@@ -38,10 +49,10 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1 max-w-3xl mx-auto px-4 py-16 w-full">
         <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
-        
+
         <Accordion type="single" collapsible className="w-full">
           {faqs.map((faq, i) => (
             <AccordionItem key={i} value={`item-${i}`}>

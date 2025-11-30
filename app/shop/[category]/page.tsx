@@ -3,6 +3,7 @@ import { Footer } from '@/components/layouts/footer';
 import { ShopGrid } from '@/components/shop-grid';
 import { PRIMARY_CATEGORIES } from '@/lib/constants';
 import type { Book } from '@/lib/types';
+import type { Metadata } from 'next';
 
 const mockBooks: Book[] = [
   {
@@ -67,12 +68,31 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function CategoryPage({
+export async function generateMetadata({
   params,
 }: {
-  params: { category: string };
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  const { category } = await params;
+
+  return {
+    title: `${category} Books`,
+    description: `Browse our collection of ${category} competitive exam preparation books. Find the best study materials for ${category} exams at Focus India Online.`,
+    openGraph: {
+      title: `${category} Books - Focus India Online`,
+      description: `Browse our collection of ${category} competitive exam preparation books.`,
+      url: `https://focusindiaonline.com/shop/${category}`,
+    },
+  };
+}
+
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ category: string }>;
 }) {
-  const categoryName = params.category;
+  const { category: categoryName } = await params;
+
   const categoryBooks = mockBooks.filter(
     (book) => book.primaryCategory === categoryName
   );

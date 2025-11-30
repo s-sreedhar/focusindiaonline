@@ -4,15 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Mail, Phone, MapPin } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contact Us',
+  description: 'Get in touch with Focus India Online. Call us at +919959594444 or email info@timesbookstall.com for any queries about competitive exam books and study materials.',
+  openGraph: {
+    title: 'Contact Focus India Online',
+    description: 'Get in touch with Focus India Online for competitive exam books and study materials.',
+    url: 'https://focusindiaonline.com/contact',
+  },
+};
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full">
         <h1 className="text-4xl font-bold mb-8">Contact Us</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <Card className="p-6">
             <Phone className="w-8 h-8 text-primary mb-4" />

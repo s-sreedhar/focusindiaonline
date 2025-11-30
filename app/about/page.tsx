@@ -1,6 +1,17 @@
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 import { Card } from '@/components/ui/card';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Us',
+  description: 'Learn about Focus India Online - your trusted partner for competitive exam preparation books since 2010. We provide authentic study materials for UPSC, SSC, RRB, Banking, APPSC, TGPSC and more.',
+  openGraph: {
+    title: 'About Focus India Online',
+    description: 'Learn about Focus India Online - your trusted partner for competitive exam preparation books.',
+    url: 'https://focusindiaonline.com/about',
+  },
+};
 
 export default function AboutPage() {
   return (

@@ -6,6 +6,9 @@ import { ShopGrid } from '@/components/shop-grid';
 import type { Book } from '@/lib/types';
 import { motion } from 'framer-motion';
 
+// Note: Metadata must be exported from a Server Component
+// Since this is a client component, metadata is handled in layout or parent
+
 // Mock data - replace with real data fetching
 const mockBooks: Book[] = [
   {

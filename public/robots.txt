@@ -1,0 +1,14 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin/
+Disallow: /account/
+
+# Disallow cart and checkout (no SEO value)
+Disallow: /cart
+Disallow: /checkout
+
+# Sitemap location
+Sitemap: https://focusindiaonline.com/sitemap.xml

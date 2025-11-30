@@ -13,6 +13,10 @@ import type { Book } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import Link from 'next/link';
+import Head from 'next/head';
+
+// Note: Since this is a client component, we'll add metadata via Head component
+// For better SEO, consider converting to Server Component with generateMetadata
 
 // Mock product data - replace with real data fetching
 const mockProduct: Book = {
@@ -180,8 +184,54 @@ export default function ProductPage({
     }
   };
 
+  // Product structured data for SEO
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    image: `https://focusindiaonline.com${product.image}`,
+    description: product.description,
+    sku: product.id,
+    isbn: product.isbn,
+    brand: {
+      '@type': 'Brand',
+      name: product.publisher,
+    },
+    author: {
+      '@type': 'Person',
+      name: product.author,
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://focusindiaonline.com/product/${product.slug}`,
+      priceCurrency: 'INR',
+      price: product.price,
+      priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+      availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+    aggregateRating: product.rating ? {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating,
+      reviewCount: product.reviewCount,
+    } : undefined,
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <Head>
+        <title>{product.title} - Focus India Online</title>
+        <meta name="description" content={`${product.description} - By ${product.author}. Price: ₹${product.price}. ${product.inStock ? 'In Stock' : 'Out of Stock'}.`} />
+        <meta property="og:title" content={`${product.title} - Focus India Online`} />
+        <meta property="og:description" content={product.description} />
+        <meta property="og:image" content={`https://focusindiaonline.com${product.image}`} />
+        <meta property="og:url" content={`https://focusindiaonline.com/product/${product.slug}`} />
+        <meta property="og:type" content="product" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        />
+      </Head>
       <Header />
 
       <main className="flex-1">
@@ -220,11 +270,10 @@ export default function ProductPage({
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(product.rating || 0)
-                            ? 'fill-accent text-accent'
-                            : 'text-muted'
-                        }`}
+                        className={`w-4 h-4 ${i < Math.floor(product.rating || 0)
+                          ? 'fill-accent text-accent'
+                          : 'text-muted'
+                          }`}
                       />
                     ))}
                   </div>
@@ -277,9 +326,9 @@ export default function ProductPage({
 
               {/* Actions */}
               <div className="flex gap-3 pt-6">
-                <Button 
-                  className="flex-1 gap-2" 
-                  size="lg" 
+                <Button
+                  className="flex-1 gap-2"
+                  size="lg"
                   disabled={!product.inStock}
                   onClick={handleAddToCart}
                   variant={cartAdded ? "secondary" : "default"}
@@ -287,9 +336,9 @@ export default function ProductPage({
                   <ShoppingCart className="w-5 h-5" />
                   {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
+                <Button
+                  variant="outline"
+                  size="lg"
                   className="w-14"
                   onClick={handleToggleWishlist}
                 >

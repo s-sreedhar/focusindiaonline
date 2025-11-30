@@ -1,4 +1,4 @@
-export const uploadToCloudinary = async (file: File) => {
+export const uploadToCloudinary = async (file: File, folder: string = 'focusindia') => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
@@ -9,6 +9,7 @@ export const uploadToCloudinary = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
+    formData.append('folder', folder);
 
     const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,

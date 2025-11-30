@@ -35,40 +35,48 @@ export interface User {
   displayName?: string;
   photoURL?: string;
   role: 'user' | 'admin';
-  createdAt: any;
+  createdAt: any; // Timestamp
   phoneNumber?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-  };
+  address?: Address;
+}
+
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+export interface Customer extends User {
+  orders?: string[]; // Array of Order IDs
+  wishlist?: string[]; // Array of Book IDs
+  cart?: string[]; // Array of Book IDs (if persisting cart)
+}
+
+export interface OrderItem {
+  bookId: string;
+  title: string;
+  quantity: number;
+  price: number;
+  image: string;
 }
 
 export interface Order {
   id: string;
   userId: string;
-  items: {
-    bookId: string;
-    title: string;
-    quantity: number;
-    price: number;
-    image: string;
-  }[];
+  items: OrderItem[];
   totalAmount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  shippingAddress: {
+  shippingAddress: Address & {
     fullName: string;
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
     phoneNumber: string;
   };
-  createdAt: any;
+  createdAt: any; // Timestamp
+  updatedAt?: any; // Timestamp
   paymentId?: string;
   paymentMethod: 'cod' | 'online';
+  paymentStatus?: 'pending' | 'completed' | 'failed' | 'refunded';
 }
 
 export interface FilterOptions {
