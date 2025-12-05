@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
+import { useAuthStore } from '@/lib/auth-store';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -51,8 +52,10 @@ export function ProductCard({
     });
   };
 
-  const handleToggleWishlist = (e: React.MouseEvent) => {
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
+
+    // Optimistic update
     if (isInWish) {
       removeFromWishlist(id);
       setIsInWish(false);
@@ -67,6 +70,35 @@ export function ProductCard({
         addedAt: new Date(),
       });
       setIsInWish(true);
+    }
+
+    // Sync with Firestore if user is logged in
+    const { user } = useAuthStore.getState();
+    if (user) {
+      try {
+        const { db } = await import('@/lib/firebase');
+        const { doc, updateDoc, arrayUnion, arrayRemove } = await import('firebase/firestore');
+        const userId = user.id || (user as any).uid;
+        const userRef = doc(db, 'users', userId);
+
+        if (isInWish) {
+          // Removing
+          await updateDoc(userRef, {
+            wishlist: arrayRemove(id)
+          });
+        } else {
+          // Adding
+          await updateDoc(userRef, {
+            wishlist: arrayUnion(id)
+          });
+        }
+      } catch (error) {
+        console.error('Error syncing wishlist:', error);
+        // Revert on error? For now, we'll just log it.
+        // Ideally, we should show a toast.
+        const { handleFirebaseError } = await import('@/lib/error-utils');
+        handleFirebaseError(error);
+      }
     }
   };
 

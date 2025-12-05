@@ -1,44 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { Edit2, Trash2, Plus, Search } from 'lucide-react';
-
-const mockProducts = [
-  {
-    id: '1',
-    title: '1000+ Practice Bits Biology',
-    author: 'Dr. Sridhar Goka',
-    price: 140,
-    stock: 45,
-    category: 'APPSC',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    title: 'Jan Polity & Constitution',
-    author: '21st Century IAS',
-    price: 190,
-    stock: 0,
-    category: 'UPSC',
-    status: 'Inactive',
-  },
-  {
-    id: '3',
-    title: 'Telangana Movement & Culture',
-    author: 'AK Publications',
-    price: 120,
-    stock: 67,
-    category: 'TGPSC',
-    status: 'Active',
-  },
-];
+import { Edit2, Trash2, Plus, Search, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { Book } from '@/lib/types';
 
 export default function ProductsPage() {
+  const [products, setProducts] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const q = query(collection(db, 'books'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const productsData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Book[];
+      setProducts(productsData);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'books', id));
+      setProducts(products.filter(p => p.id !== id));
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert('Failed to delete product');
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.title.toLowerCase().includes(search.toLowerCase()) ||
+    product.author.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return <div className="p-8 flex justify-center"><Loader2 className="animate-spin w-8 h-8" /></div>;
+  }
 
   return (
     <div className="p-8">
@@ -74,55 +90,67 @@ export default function ProductsPage() {
       {/* Products Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm text-left">
             <thead className="bg-secondary border-b">
               <tr>
-                <th className="text-left px-6 py-3 font-semibold">Title</th>
-                <th className="text-left px-6 py-3 font-semibold">Author</th>
-                <th className="text-left px-6 py-3 font-semibold">Category</th>
-                <th className="text-left px-6 py-3 font-semibold">Price</th>
-                <th className="text-left px-6 py-3 font-semibold">Stock</th>
-                <th className="text-left px-6 py-3 font-semibold">Status</th>
-                <th className="text-left px-6 py-3 font-semibold">Actions</th>
+                <th className="px-6 py-3 font-semibold">Title</th>
+                <th className="px-6 py-3 font-semibold">Author</th>
+                <th className="px-6 py-3 font-semibold">Category</th>
+                <th className="px-6 py-3 font-semibold">Price</th>
+                <th className="px-6 py-3 font-semibold">Stock</th>
+                <th className="px-6 py-3 font-semibold">Status</th>
+                <th className="px-6 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {mockProducts.map((product) => (
-                <tr key={product.id} className="border-b hover:bg-secondary/50">
+            <tbody className="divide-y">
+              {filteredProducts.map((product) => (
+                <tr key={product.id} className="hover:bg-secondary/50 transition-colors">
                   <td className="px-6 py-4 font-semibold">{product.title}</td>
                   <td className="px-6 py-4 text-muted-foreground">{product.author}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{product.category}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{product.primaryCategory}</td>
                   <td className="px-6 py-4 font-semibold">₹{product.price}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      product.stock > 20 ? 'bg-green-100 text-green-800' :
-                      product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {product.stock}
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${product.stockQuantity > 20 ? 'bg-green-100 text-green-800' :
+                        product.stockQuantity > 0 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                      }`}>
+                      {product.stockQuantity}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      product.status === 'Active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {product.status}
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${product.inStock
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                      }`}>
+                      {product.inStock ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      <Button size="icon" variant="ghost" className="h-8 w-8">
-                        <Edit2 className="w-4 h-4" />
+                      <Button size="icon" variant="ghost" className="h-8 w-8" asChild>
+                        <Link href={`/admin/products/${product.id}`}>
+                          <Edit2 className="w-4 h-4" />
+                        </Link>
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => handleDelete(product.id)}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filteredProducts.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
+                    No products found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

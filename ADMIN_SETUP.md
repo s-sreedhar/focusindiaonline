@@ -34,7 +34,7 @@ The admin panel (`/admin`) is protected and requires users to have the `superadm
    - Look for the `role` field
    - If the `role` field doesn't exist, add it:
      - Click "Add field"
-     - Field name: `role`7
+     - Field name: `role`
      - Field type: `string`
      - Field value: `superadmin`
    - If the `role` field exists, edit it:

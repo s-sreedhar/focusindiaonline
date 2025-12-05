@@ -38,9 +38,9 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border min-h-screen fixed left-0 top-0">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold">Admin</h1>
-        <p className="text-sm text-sidebar-foreground/60">Focus India Online</p>
+      <div className="p-6 border-b border-sidebar-border/50">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</h1>
+        <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
       </div>
 
       <nav className="space-y-2 px-4">
@@ -51,12 +51,12 @@ export function AdminSidebar() {
           return (
             <Link key={item.href} href={item.href}>
               <div
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                  : 'hover:bg-sidebar-accent text-sidebar-foreground'
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-primary'
                   }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary'}`} />
                 <span className="font-medium">{item.label}</span>
               </div>
             </Link>

@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { Phone, Lock, Loader2 } from 'lucide-react';
+import { handleFirebaseError } from '@/lib/error-utils';
 
 export function PhoneLogin() {
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -17,19 +19,69 @@ export function PhoneLogin() {
     const [loading, setLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [canResend, setCanResend] = useState(false);
     const router = useRouter();
     const { setUser } = useAuthStore();
 
     useEffect(() => {
-        if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                size: 'invisible',
-                callback: () => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                },
-            });
-        }
+        const initRecaptcha = () => {
+            // Check if container exists and clear it if it has content
+            const container = document.getElementById('recaptcha-container');
+            if (container) {
+                container.innerHTML = '';
+            }
+
+            if (!window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                        size: 'invisible',
+                        callback: () => {
+                            // reCAPTCHA solved, allow signInWithPhoneNumber.
+                        },
+                        'expired-callback': () => {
+                            setError('reCAPTCHA expired. Please try again.');
+                            if (window.recaptchaVerifier) {
+                                window.recaptchaVerifier.clear();
+                                window.recaptchaVerifier = undefined;
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error('Error initializing reCAPTCHA:', err);
+                }
+            }
+        };
+
+        initRecaptcha();
+
+        return () => {
+            if (window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) {
+                    console.error(e);
+                }
+                window.recaptchaVerifier = undefined;
+            }
+            const container = document.getElementById('recaptcha-container');
+            if (container) {
+                container.innerHTML = '';
+            }
+        };
     }, []);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (step === 'otp' && timeLeft > 0 && !canResend) {
+            timer = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            setCanResend(true);
+        }
+        return () => clearInterval(timer);
+    }, [step, timeLeft, canResend]);
 
     const handleSendOtp = async () => {
         if (!phoneNumber || phoneNumber.length < 10) {
@@ -41,18 +93,43 @@ export function PhoneLogin() {
         setError('');
 
         try {
-            const formattedPhone = phoneNumber.startsWith('+91') ? phoneNumber : `+91${phoneNumber}`;
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
             setConfirmationResult(confirmation);
             setStep('otp');
+            setTimeLeft(15);
+            setCanResend(false);
         } catch (err: any) {
             console.error('Error sending OTP:', err);
-            setError(err.message || 'Failed to send OTP. Please try again.');
+            const message = handleFirebaseError(err);
+            setError(message);
             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = undefined;
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (!canResend) return;
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+            setConfirmationResult(confirmation);
+            setTimeLeft(15);
+            setCanResend(false);
+        } catch (err: any) {
+            console.error('Error resending OTP:', err);
+            const message = handleFirebaseError(err);
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -73,48 +150,51 @@ export function PhoneLogin() {
                 const firebaseUser = result.user;
 
                 // Check if user exists in Firestore
-                const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
-                const { db } = await import('@/lib/firebase');
-
                 const userDocRef = doc(db, 'users', firebaseUser.uid);
-                const userDoc = await getDoc(userDocRef);
 
-                let role = 'customer';
+                try {
+                    const userDoc = await getDoc(userDocRef);
+                    let role = 'customer';
 
-                if (!userDoc.exists()) {
-                    // Create new user
-                    await setDoc(userDocRef, {
-                        uid: firebaseUser.uid,
+                    if (!userDoc.exists()) {
+                        // Create new user
+                        await setDoc(userDocRef, {
+                            uid: firebaseUser.uid,
+                            email: firebaseUser.email || '',
+                            phone: firebaseUser.phoneNumber,
+                            displayName: 'User',
+                            role: 'customer',
+                            createdAt: serverTimestamp(),
+                        });
+                    } else {
+                        role = userDoc.data().role || 'customer';
+                    }
+
+                    // Update store
+                    setUser({
+                        id: firebaseUser.uid,
                         email: firebaseUser.email || '',
-                        phone: firebaseUser.phoneNumber,
-                        displayName: 'User',
-                        role: 'customer',
-                        createdAt: serverTimestamp(),
+                        username: firebaseUser.phoneNumber || '',
+                        displayName: firebaseUser.displayName || 'User',
+                        phone: firebaseUser.phoneNumber || '',
+                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                        role: role
                     });
-                } else {
-                    role = userDoc.data().role || 'customer';
-                }
 
-                // Update store
-                setUser({
-                    id: firebaseUser.uid,
-                    email: firebaseUser.email || '',
-                    username: firebaseUser.phoneNumber || '',
-                    displayName: firebaseUser.displayName || 'User',
-                    phone: firebaseUser.phoneNumber || '',
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    role: role
-                });
-
-                if (role === 'superadmin') {
-                    router.push('/admin');
-                } else {
-                    router.push('/');
+                    if (role === 'superadmin') {
+                        router.push('/admin');
+                    } else {
+                        router.push('/');
+                    }
+                } catch (firestoreErr: any) {
+                    const message = handleFirebaseError(firestoreErr);
+                    setError(message);
                 }
             }
         } catch (err: any) {
             console.error('Error verifying OTP:', err);
-            setError('Invalid OTP. Please try again.');
+            const message = handleFirebaseError(err);
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -179,6 +259,24 @@ export function PhoneLogin() {
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Verify OTP
                         </Button>
+
+                        <div className="text-center">
+                            {canResend ? (
+                                <Button
+                                    variant="link"
+                                    className="p-0 h-auto font-normal text-primary"
+                                    onClick={handleResendOtp}
+                                    disabled={loading}
+                                >
+                                    Resend OTP
+                                </Button>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Resend OTP in {timeLeft}s
+                                </p>
+                            )}
+                        </div>
+
                         <Button
                             variant="ghost"
                             className="w-full"

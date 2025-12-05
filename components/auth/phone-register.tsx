@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
 import { Phone, Lock, User, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { handleFirebaseError } from '@/lib/error-utils';
 
 export function PhoneRegister() {
     const [name, setName] = useState('');
@@ -19,36 +21,72 @@ export function PhoneRegister() {
     const [loading, setLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [canResend, setCanResend] = useState(false);
     const router = useRouter();
     const { setUser } = useAuthStore();
 
     useEffect(() => {
         // Initialize reCAPTCHA verifier
-        if (!window.recaptchaVerifier) {
-            try {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    size: 'invisible',
-                    callback: () => {
-                        console.log('[PhoneRegister] reCAPTCHA solved');
-                    },
-                    'expired-callback': () => {
-                        console.log('[PhoneRegister] reCAPTCHA expired');
-                        setError('reCAPTCHA expired. Please try again.');
-                    }
-                });
-            } catch (err) {
-                console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
+        const initRecaptcha = () => {
+            // Check if container exists and clear it if it has content
+            const container = document.getElementById('recaptcha-container');
+            if (container) {
+                container.innerHTML = '';
             }
-        }
+
+            if (!window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                        size: 'invisible',
+                        callback: () => {
+                            console.log('[PhoneRegister] reCAPTCHA solved');
+                        },
+                        'expired-callback': () => {
+                            console.log('[PhoneRegister] reCAPTCHA expired');
+                            setError('reCAPTCHA expired. Please try again.');
+                            if (window.recaptchaVerifier) {
+                                window.recaptchaVerifier.clear();
+                                window.recaptchaVerifier = undefined;
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
+                }
+            }
+        };
+
+        initRecaptcha();
 
         return () => {
             // Cleanup on unmount
             if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.clear();
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) {
+                    console.error('Error clearing recaptcha:', e);
+                }
                 window.recaptchaVerifier = undefined;
+            }
+            const container = document.getElementById('recaptcha-container');
+            if (container) {
+                container.innerHTML = '';
             }
         };
     }, []);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (step === 'otp' && timeLeft > 0 && !canResend) {
+            timer = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            setCanResend(true);
+        }
+        return () => clearInterval(timer);
+    }, [step, timeLeft, canResend]);
 
     const handleSendOtp = async () => {
         // Validation
@@ -66,7 +104,7 @@ export function PhoneRegister() {
         setError('');
 
         try {
-            const formattedPhone = `+91${phoneNumber}`;
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
             console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
 
             const appVerifier = window.recaptchaVerifier;
@@ -75,19 +113,12 @@ export function PhoneRegister() {
             console.log('[PhoneRegister] OTP sent successfully');
             setConfirmationResult(confirmation);
             setStep('otp');
+            setTimeLeft(15);
+            setCanResend(false);
         } catch (err: any) {
             console.error('[PhoneRegister] Error sending OTP:', err);
-
-            // Handle specific Firebase errors
-            if (err.code === 'auth/invalid-phone-number') {
-                setError('Invalid phone number format');
-            } else if (err.code === 'auth/too-many-requests') {
-                setError('Too many attempts. Please try again later.');
-            } else if (err.code === 'auth/quota-exceeded') {
-                setError('SMS quota exceeded. Please contact support.');
-            } else {
-                setError(err.message || 'Failed to send OTP. Please try again.');
-            }
+            const message = handleFirebaseError(err);
+            setError(message);
 
             // Reset reCAPTCHA on error
             if (window.recaptchaVerifier) {
@@ -122,70 +153,88 @@ export function PhoneRegister() {
             console.log('[PhoneRegister] OTP verified, creating user document...');
 
             // Create user document in Firestore
-            const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db } = await import('@/lib/firebase');
-
             const userDocRef = doc(db, 'users', firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
 
-            if (userDoc.exists()) {
-                // User already exists (shouldn't happen in registration, but handle it)
-                console.log('[PhoneRegister] User already exists');
-                const userData = userDoc.data();
+            try {
+                const userDoc = await getDoc(userDocRef);
 
-                setUser({
-                    id: firebaseUser.uid,
-                    email: userData.email || '',
-                    username: userData.phone || firebaseUser.phoneNumber || '',
-                    displayName: userData.displayName || name,
-                    phone: userData.phone || firebaseUser.phoneNumber || '',
-                    createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                    role: userData.role || 'customer',
-                });
-            } else {
-                // Create new user document
-                const newUserData = {
-                    uid: firebaseUser.uid,
-                    displayName: name.trim(),
-                    phone: firebaseUser.phoneNumber,
-                    email: '', // No email for phone registration
-                    role: 'customer',
-                    createdAt: serverTimestamp(),
-                };
+                if (userDoc.exists()) {
+                    // User already exists (shouldn't happen in registration, but handle it)
+                    console.log('[PhoneRegister] User already exists');
+                    const userData = userDoc.data();
 
-                await setDoc(userDocRef, newUserData);
-                console.log('[PhoneRegister] User document created successfully');
+                    setUser({
+                        id: firebaseUser.uid,
+                        email: userData.email || '',
+                        username: userData.phone || firebaseUser.phoneNumber || '',
+                        displayName: userData.displayName || name,
+                        phone: userData.phone || firebaseUser.phoneNumber || '',
+                        createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                        role: userData.role || 'customer',
+                    });
+                } else {
+                    // Create new user document
+                    const newUserData = {
+                        uid: firebaseUser.uid,
+                        displayName: name.trim(),
+                        phone: firebaseUser.phoneNumber,
+                        email: '', // No email for phone registration
+                        role: 'customer',
+                        createdAt: serverTimestamp(),
+                    };
 
-                setUser({
-                    id: firebaseUser.uid,
-                    email: '',
-                    username: firebaseUser.phoneNumber || '',
-                    displayName: name.trim(),
-                    phone: firebaseUser.phoneNumber || '',
-                    createdAt: new Date().toISOString(),
-                    role: 'customer',
-                });
+                    await setDoc(userDocRef, newUserData);
+                    console.log('[PhoneRegister] User document created successfully');
+
+                    setUser({
+                        id: firebaseUser.uid,
+                        email: '',
+                        username: firebaseUser.phoneNumber || '',
+                        displayName: name.trim(),
+                        phone: firebaseUser.phoneNumber || '',
+                        createdAt: new Date().toISOString(),
+                        role: 'customer',
+                    });
+                }
+
+                console.log('[PhoneRegister] Registration complete, redirecting...');
+                router.push('/');
+            } catch (firestoreErr: any) {
+                const message = handleFirebaseError(firestoreErr);
+                setError(message);
             }
-
-            console.log('[PhoneRegister] Registration complete, redirecting...');
-            router.push('/');
         } catch (err: any) {
             console.error('[PhoneRegister] Error verifying OTP:', err);
-
-            if (err.code === 'auth/invalid-verification-code') {
-                setError('Invalid OTP. Please check and try again.');
-            } else if (err.code === 'auth/code-expired') {
-                setError('OTP expired. Please request a new one.');
-                setStep('details');
-            } else {
-                setError(err.message || 'Failed to verify OTP. Please try again.');
-            }
+            const message = handleFirebaseError(err);
+            setError(message);
         } finally {
             setLoading(false);
         }
     };
 
     const handleResendOtp = async () => {
+        if (!canResend) return;
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+            setConfirmationResult(confirmation);
+            setTimeLeft(15);
+            setCanResend(false);
+        } catch (err: any) {
+            console.error('Error resending OTP:', err);
+            const message = handleFirebaseError(err);
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChangePhoneNumber = async () => {
         setOtp('');
         setStep('details');
         setConfirmationResult(null);
@@ -282,10 +331,28 @@ export function PhoneRegister() {
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Verify OTP
                         </Button>
+
+                        <div className="text-center">
+                            {canResend ? (
+                                <Button
+                                    variant="link"
+                                    className="p-0 h-auto font-normal text-primary"
+                                    onClick={handleResendOtp}
+                                    disabled={loading}
+                                >
+                                    Resend OTP
+                                </Button>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Resend OTP in {timeLeft}s
+                                </p>
+                            )}
+                        </div>
+
                         <Button
                             variant="ghost"
                             className="w-full"
-                            onClick={handleResendOtp}
+                            onClick={handleChangePhoneNumber}
                             disabled={loading}
                         >
                             Change Phone Number

@@ -3,6 +3,8 @@ import { Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/auth-provider'
+import { Toaster } from '@/components/ui/sonner'
+import { WishlistSync } from '@/components/wishlist-sync'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -94,6 +96,8 @@ export default function RootLayout({
       <body className={`${outfit.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
+          <Toaster />
+          <WishlistSync />
         </AuthProvider>
         <Analytics />
       </body>

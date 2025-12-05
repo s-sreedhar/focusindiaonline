@@ -11,6 +11,13 @@ export interface User {
   phone?: string;
   role?: string;
   createdAt: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
 }
 
 interface AuthStore {
@@ -69,6 +76,7 @@ export const useAuthStore = create<AuthStore>()(
                   phone: userData.phone || firebaseUser.phoneNumber || '',
                   createdAt: userData.createdAt?.toDate?.()?.toISOString() || firebaseUser.metadata.creationTime || new Date().toISOString(),
                   role: userData.role || 'customer',
+                  address: userData.address,
                 };
 
                 set({ user, isAuthenticated: true, loading: false });

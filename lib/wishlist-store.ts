@@ -15,6 +15,7 @@ interface WishlistStore {
   items: WishlistItem[];
   addItem: (item: Omit<WishlistItem, 'addedAt'> & { addedAt: Date }) => void;
   removeItem: (bookId: string) => void;
+  setItems: (items: WishlistItem[]) => void;
   isInWishlist: (bookId: string) => boolean;
   getItemCount: () => number;
 }
@@ -27,11 +28,11 @@ export const useWishlistStore = create<WishlistStore>()(
         set((state) => {
           const exists = state.items.find(i => i.bookId === item.bookId);
           if (exists) return state;
-          return { 
-            items: [...state.items, { 
-              ...item, 
-              addedAt: item.addedAt.toISOString() 
-            }] 
+          return {
+            items: [...state.items, {
+              ...item,
+              addedAt: item.addedAt.toISOString()
+            }]
           };
         });
       },
@@ -39,6 +40,9 @@ export const useWishlistStore = create<WishlistStore>()(
         set((state) => ({
           items: state.items.filter(i => i.bookId !== bookId),
         }));
+      },
+      setItems: (items) => {
+        set({ items });
       },
       isInWishlist: (bookId) => {
         return get().items.some(i => i.bookId === bookId);

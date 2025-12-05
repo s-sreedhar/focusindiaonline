@@ -31,10 +31,10 @@ export interface Book {
 
 export interface User {
   uid: string;
-  email: string;
+  email?: string;
   displayName?: string;
   photoURL?: string;
-  role: 'user' | 'admin';
+  role: 'superadmin' | 'customer';
   createdAt: any; // Timestamp
   phoneNumber?: string;
   address?: Address;
@@ -71,6 +71,7 @@ export interface Order {
   shippingAddress: Address & {
     fullName: string;
     phoneNumber: string;
+    email?: string;
   };
   createdAt: any; // Timestamp
   updatedAt?: any; // Timestamp
