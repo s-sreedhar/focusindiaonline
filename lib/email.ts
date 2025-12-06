@@ -3,8 +3,8 @@ import * as Brevo from '@getbrevo/brevo';
 const apiInstance = new Brevo.TransactionalEmailsApi();
 
 // Configure API key authorization: api-key
-const apiKey = apiInstance.authentications['apiKey'];
-apiKey.apiKey = process.env.BREVO_API_KEY || '';
+// Configure API key authorization: api-key
+apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 interface OrderItem {
   title: string;
