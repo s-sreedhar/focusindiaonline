@@ -9,11 +9,22 @@ import { Edit2, Trash2, Plus, Search, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { Book } from '@/lib/types';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { toast } from 'sonner';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchProducts();
@@ -30,6 +41,7 @@ export default function ProductsPage() {
       setProducts(productsData);
     } catch (error) {
       console.error("Error fetching products:", error);
+      toast.error("Failed to fetch products");
     } finally {
       setLoading(false);
     }
@@ -41,15 +53,22 @@ export default function ProductsPage() {
     try {
       await deleteDoc(doc(db, 'books', id));
       setProducts(products.filter(p => p.id !== id));
+      toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert('Failed to delete product');
+      toast.error('Failed to delete product');
     }
   };
 
   const filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(search.toLowerCase()) ||
     product.author.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   if (loading) {
@@ -79,11 +98,13 @@ export default function ProductsPage() {
             <Input
               placeholder="Search products..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10"
             />
           </div>
-          <Button variant="outline">Filter</Button>
         </div>
       </Card>
 
@@ -103,7 +124,7 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredProducts.map((product) => (
+              {paginatedProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-secondary/50 transition-colors">
                   <td className="px-6 py-4 font-semibold">{product.title}</td>
                   <td className="px-6 py-4 text-muted-foreground">{product.author}</td>
@@ -111,16 +132,16 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 font-semibold">₹{product.price}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${product.stockQuantity > 20 ? 'bg-green-100 text-green-800' :
-                        product.stockQuantity > 0 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                      product.stockQuantity > 0 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
                       }`}>
                       {product.stockQuantity}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${product.inStock
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                       }`}>
                       {product.inStock ? 'Active' : 'Inactive'}
                     </span>
@@ -144,7 +165,7 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ))}
-              {filteredProducts.length === 0 && (
+              {paginatedProducts.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                     No products found.
@@ -154,6 +175,38 @@ export default function ProductsPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="p-4 border-t">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={currentPage === i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </Card>
     </div>
   );

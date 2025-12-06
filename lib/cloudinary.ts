@@ -21,7 +21,8 @@ export const uploadToCloudinary = async (file: File, folder: string = 'focusindi
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Image upload failed');
+        console.error('Cloudinary Upload Error:', error);
+        throw new Error(error.error?.message || error.message || 'Image upload failed');
     }
 
     const data = await response.json();

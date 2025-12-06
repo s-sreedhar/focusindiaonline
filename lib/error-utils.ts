@@ -9,6 +9,7 @@ export const handleFirebaseError = (error: any) => {
         switch (error.code) {
             case 'unavailable':
             case 'client-offline':
+            case 'auth/network-request-failed':
                 message = "You are offline. Please check your internet connection.";
                 break;
             case 'auth/too-many-requests':
@@ -32,14 +33,20 @@ export const handleFirebaseError = (error: any) => {
             case 'auth/invalid-app-credential':
                 message = "App configuration error. Please refresh and try again.";
                 break;
+            case 'auth/internal-error':
+                message = "An internal error occurred. Please try again.";
+                break;
+            case 'auth/user-disabled':
+                message = "This account has been disabled. Please contact support.";
+                break;
             default:
-                if (error.message && error.message.includes('offline')) {
+                if (error.message && (error.message.includes('offline') || error.message.includes('network'))) {
                     message = "You are offline. Please check your internet connection.";
                 } else {
                     message = error.message || message;
                 }
         }
-    } else if (error.message && error.message.includes('offline')) {
+    } else if (error.message && (error.message.includes('offline') || error.message.includes('network'))) {
         message = "You are offline. Please check your internet connection.";
     }
 

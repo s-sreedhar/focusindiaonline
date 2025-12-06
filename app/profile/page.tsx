@@ -25,7 +25,6 @@ export default function ProfilePage() {
     const [profileData, setProfileData] = useState({
         displayName: '',
         phone: '',
-        email: '',
         address: {
             street: '',
             city: '',
@@ -43,7 +42,6 @@ export default function ProfilePage() {
             setProfileData({
                 displayName: user.displayName || '',
                 phone: user.phone || '',
-                email: user.email || '',
                 address: user.address || {
                     street: '',
                     city: '',
@@ -101,7 +99,7 @@ export default function ProfilePage() {
                                     <User className="w-10 h-10 text-primary" />
                                 </div>
                                 <h2 className="font-bold text-lg text-center">{user.displayName || 'User'}</h2>
-                                <p className="text-sm text-muted-foreground text-center">{user.email || user.phone}</p>
+                                <p className="text-sm text-muted-foreground text-center">{user.phone}</p>
                             </div>
 
                             <nav className="space-y-2">
@@ -168,14 +166,6 @@ export default function ProfilePage() {
                                             value={profileData.phone}
                                             onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                                             disabled={!isEditing} // Phone might be immutable if used for login
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input
-                                            id="email"
-                                            value={profileData.email}
-                                            disabled={true} // Email usually immutable or requires verification
                                         />
                                     </div>
                                 </div>

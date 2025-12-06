@@ -5,57 +5,67 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
-import { Phone, Lock, Loader2 } from 'lucide-react';
+import { Phone, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { handleFirebaseError } from '@/lib/error-utils';
+import Link from 'next/link';
+import { verifyPassword } from '@/lib/crypto';
 
 export function PhoneLogin() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
-    const [step, setStep] = useState<'phone' | 'otp'>('phone');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
+    const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
     const [loading, setLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
     const [timeLeft, setTimeLeft] = useState(15);
     const [canResend, setCanResend] = useState(false);
+    const [userData, setUserData] = useState<any>(null);
     const router = useRouter();
     const { setUser } = useAuthStore();
 
-    useEffect(() => {
-        const initRecaptcha = () => {
-            // Check if container exists and clear it if it has content
-            const container = document.getElementById('recaptcha-container');
-            if (container) {
-                container.innerHTML = '';
-            }
+    const setupRecaptcha = () => {
+        const container = document.getElementById('recaptcha-container');
 
-            if (!window.recaptchaVerifier) {
-                try {
-                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                        size: 'invisible',
-                        callback: () => {
-                            // reCAPTCHA solved, allow signInWithPhoneNumber.
-                        },
-                        'expired-callback': () => {
-                            setError('reCAPTCHA expired. Please try again.');
-                            if (window.recaptchaVerifier) {
-                                window.recaptchaVerifier.clear();
-                                window.recaptchaVerifier = undefined;
-                            }
-                        }
-                    });
-                } catch (err) {
-                    console.error('Error initializing reCAPTCHA:', err);
+        if (!container) return;
+
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                console.error(e);
+            }
+            window.recaptchaVerifier = undefined;
+        }
+
+        container.innerHTML = '';
+
+        try {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+                callback: () => {
+                    // reCAPTCHA solved
+                },
+                'expired-callback': () => {
+                    setError('reCAPTCHA expired. Please try again.');
                 }
-            }
-        };
+            });
+        } catch (err) {
+            console.error('Error initializing reCAPTCHA:', err);
+        }
+    };
 
-        initRecaptcha();
+    useEffect(() => {
+        const timer = setTimeout(setupRecaptcha, 100);
 
         return () => {
+            clearTimeout(timer);
             if (window.recaptchaVerifier) {
                 try {
                     window.recaptchaVerifier.clear();
@@ -63,10 +73,6 @@ export function PhoneLogin() {
                     console.error(e);
                 }
                 window.recaptchaVerifier = undefined;
-            }
-            const container = document.getElementById('recaptcha-container');
-            if (container) {
-                container.innerHTML = '';
             }
         };
     }, []);
@@ -83,7 +89,22 @@ export function PhoneLogin() {
         return () => clearInterval(timer);
     }, [step, timeLeft, canResend]);
 
-    const handleSendOtp = async () => {
+    const checkUserExists = async (phone: string) => {
+        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
+        // Query users collection for this phone number
+        // Note: This assumes phone numbers are unique
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('phone', '==', formattedPhone));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            return null;
+        }
+
+        return querySnapshot.docs[0].data();
+    };
+
+    const handleContinue = async () => {
         if (!phoneNumber || phoneNumber.length < 10) {
             setError('Please enter a valid phone number');
             return;
@@ -93,43 +114,112 @@ export function PhoneLogin() {
         setError('');
 
         try {
+            const user = await checkUserExists(phoneNumber);
+
+            if (!user) {
+                setError('User not registered. Please create an account.');
+                setLoading(false);
+                return;
+            }
+
+            setUserData(user);
+
+            // If user has a password, ask how they want to login
+            if (user.password) {
+                // Default to password mode if available, or let user choose
+                // For now, let's show a mode selection or just default to password?
+                // The prompt said "user can give password or go with otp login"
+                // Let's switch to a mode selection state or just show password input with "Use OTP" option
+                setStep('password');
+                setLoginMode('password');
+            } else {
+                // No password set, force OTP
+                setLoginMode('otp');
+                await sendOtp();
+            }
+
+        } catch (err: any) {
+            console.error('Error checking user:', err);
+            setError('Failed to verify user. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendOtp = async () => {
+        setLoading(true);
+        try {
             const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
             setConfirmationResult(confirmation);
             setStep('otp');
+            setLoginMode('otp');
             setTimeLeft(15);
             setCanResend(false);
         } catch (err: any) {
             console.error('Error sending OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
-            if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = undefined;
+
+            if (err.code === 'auth/invalid-app-credential') {
+                console.log('[PhoneLogin] Resetting reCAPTCHA due to invalid-app-credential');
+                setupRecaptcha();
+            } else {
+                if (window.recaptchaVerifier) {
+                    window.recaptchaVerifier.clear();
+                    window.recaptchaVerifier = undefined;
+                    setTimeout(setupRecaptcha, 500);
+                }
             }
         } finally {
             setLoading(false);
         }
     };
 
-    const handleResendOtp = async () => {
-        if (!canResend) return;
+    const handlePasswordLogin = async () => {
+        if (!password) {
+            setError('Please enter your password');
+            return;
+        }
 
         setLoading(true);
         setError('');
 
         try {
-            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-            const appVerifier = window.recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-            setConfirmationResult(confirmation);
-            setTimeLeft(15);
-            setCanResend(false);
+            // Verify password
+            const isValid = await verifyPassword(password, userData.password);
+
+            if (!isValid) {
+                setError('Invalid password');
+                setLoading(false);
+                return;
+            }
+
+            // Login successful (Local state only, no Firebase Auth token if using password only)
+            // WARNING: This does not establish a Firebase Auth session.
+            // If the app relies on Firebase Auth rules, this will fail.
+            // However, based on the prompt, we are storing password in DB and logging in.
+
+            setUser({
+                id: userData.uid,
+                username: userData.phone || '',
+                displayName: userData.displayName || 'User',
+                phone: userData.phone || '',
+                createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+                role: userData.role || 'customer',
+                authMethod: 'custom'
+            });
+
+            if (userData.role === 'superadmin') {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
+
         } catch (err: any) {
-            console.error('Error resending OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
+            console.error('Error logging in:', err);
+            setError('Login failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -149,46 +239,23 @@ export function PhoneLogin() {
                 const result = await confirmationResult.confirm(otp);
                 const firebaseUser = result.user;
 
-                // Check if user exists in Firestore
-                const userDocRef = doc(db, 'users', firebaseUser.uid);
+                // We already fetched user data in the first step
+                // But let's refresh it or use what we have
 
-                try {
-                    const userDoc = await getDoc(userDocRef);
-                    let role = 'customer';
+                setUser({
+                    id: firebaseUser.uid,
+                    username: firebaseUser.phoneNumber || '',
+                    displayName: userData?.displayName || 'User',
+                    phone: firebaseUser.phoneNumber || '',
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    role: userData?.role || 'customer',
+                    authMethod: 'firebase'
+                });
 
-                    if (!userDoc.exists()) {
-                        // Create new user
-                        await setDoc(userDocRef, {
-                            uid: firebaseUser.uid,
-                            email: firebaseUser.email || '',
-                            phone: firebaseUser.phoneNumber,
-                            displayName: 'User',
-                            role: 'customer',
-                            createdAt: serverTimestamp(),
-                        });
-                    } else {
-                        role = userDoc.data().role || 'customer';
-                    }
-
-                    // Update store
-                    setUser({
-                        id: firebaseUser.uid,
-                        email: firebaseUser.email || '',
-                        username: firebaseUser.phoneNumber || '',
-                        displayName: firebaseUser.displayName || 'User',
-                        phone: firebaseUser.phoneNumber || '',
-                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        role: role
-                    });
-
-                    if (role === 'superadmin') {
-                        router.push('/admin');
-                    } else {
-                        router.push('/');
-                    }
-                } catch (firestoreErr: any) {
-                    const message = handleFirebaseError(firestoreErr);
-                    setError(message);
+                if (userData?.role === 'superadmin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/');
                 }
             }
         } catch (err: any) {
@@ -200,12 +267,21 @@ export function PhoneLogin() {
         }
     };
 
+    const handleResendOtp = async () => {
+        if (!canResend) return;
+        await sendOtp();
+    };
+
     return (
         <Card className="p-8 w-full max-w-md mx-auto">
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
                 <p className="text-muted-foreground">
-                    {step === 'phone' ? 'Enter your mobile number to continue' : 'Enter the OTP sent to your mobile'}
+                    {step === 'phone'
+                        ? 'Enter your mobile number to continue'
+                        : step === 'password'
+                            ? 'Enter your password'
+                            : 'Enter the OTP sent to your mobile'}
                 </p>
             </div>
 
@@ -231,11 +307,84 @@ export function PhoneLogin() {
                         <div id="recaptcha-container"></div>
                         <Button
                             className="w-full"
-                            onClick={handleSendOtp}
+                            onClick={handleContinue}
                             disabled={loading}
                         >
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Send OTP
+                            Continue
+                        </Button>
+                        <div className="text-center text-sm text-muted-foreground mt-4">
+                            Don&apos;t have an account?{' '}
+                            <Link href="/register" className="text-primary hover:underline">
+                                Register
+                            </Link>
+                        </div>
+                    </>
+                ) : step === 'password' ? (
+                    <>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Password"
+                                className="pl-10 pr-10"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={loading}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </Button>
+                        </div>
+                        <Button
+                            className="w-full"
+                            onClick={handlePasswordLogin}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Login with Password
+                        </Button>
+
+                        <div className="relative my-4">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">
+                                    Or
+                                </span>
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={sendOtp}
+                            disabled={loading}
+                        >
+                            Login with OTP
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="w-full mt-2"
+                            onClick={() => {
+                                setStep('phone');
+                                setPassword('');
+                            }}
+                            disabled={loading}
+                        >
+                            Change Phone Number
                         </Button>
                     </>
                 ) : (

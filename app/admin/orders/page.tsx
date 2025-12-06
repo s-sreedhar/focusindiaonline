@@ -5,13 +5,40 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Package } from 'lucide-react';
-
+import { Loader2, Package, Eye, Filter } from 'lucide-react';
 import { Order } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -28,6 +55,7 @@ export default function OrdersPage() {
       setOrders(ordersData);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -41,9 +69,30 @@ export default function OrdersPage() {
       setOrders(orders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } as Order : order
       ));
+      toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
       console.error("Error updating status:", error);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
+    }
+  };
+
+  const filteredOrders = orders.filter(order =>
+    statusFilter === 'all' || order.status === statusFilter
+  );
+
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-100';
+      case 'shipped': return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
+      case 'processing': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+      case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-100';
+      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
 
@@ -53,10 +102,34 @@ export default function OrdersPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Orders</h1>
-        <p className="text-muted-foreground">Track and manage customer orders</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Orders</h1>
+          <p className="text-muted-foreground">Track and manage customer orders</p>
+        </div>
       </div>
+
+      <Card className="p-6 mb-6">
+        <div className="flex items-center gap-4">
+          <Filter className="w-5 h-5 text-muted-foreground" />
+          <Select value={statusFilter} onValueChange={(val) => {
+            setStatusFilter(val);
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Orders</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </Card>
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -73,53 +146,104 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {orders.map((order) => (
+              {paginatedOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-secondary/50 transition-colors">
                   <td className="px-6 py-4 font-medium">#{order.id.slice(0, 8)}</td>
                   <td className="px-6 py-4">
                     <div className="font-medium">{order.shippingAddress?.fullName}</div>
-                    <div className="text-xs text-muted-foreground">{order.shippingAddress?.email}</div>
                     <div className="text-xs text-muted-foreground">{order.shippingAddress?.phoneNumber}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                      {order.items?.map((item, idx) => (
+                      {order.items?.slice(0, 2).map((item, idx) => (
                         <span key={idx} className="text-xs">
                           {item.quantity}x {item.title.slice(0, 20)}...
                         </span>
                       ))}
+                      {order.items?.length > 2 && (
+                        <span className="text-xs text-muted-foreground">+{order.items.length - 2} more</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold">₹{order.totalAmount}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                      }`}>
+                    <Badge variant="outline" className={getStatusColor(order.status)}>
                       {order.status || 'Pending'}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
                     {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
-                    <select
-                      className="text-sm border rounded px-2 py-1 bg-background"
-                      value={order.status}
-                      onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
+                    <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Order Details #{order.id}</DialogTitle>
+                          </DialogHeader>
+                          <div className="grid grid-cols-2 gap-6 py-4">
+                            <div>
+                              <h3 className="font-semibold mb-2">Shipping Address</h3>
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                <p>{order.shippingAddress?.fullName}</p>
+                                <p>{order.shippingAddress?.addressLine1}</p>
+                                <p>{order.shippingAddress?.addressLine2}</p>
+                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.pincode}</p>
+                                <p>Phone: {order.shippingAddress?.phoneNumber}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold mb-2">Order Info</h3>
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                <p>Date: {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</p>
+                                <p>Status: <span className="capitalize font-medium text-foreground">{order.status}</span></p>
+                                <p>Total: <span className="font-bold text-foreground">₹{order.totalAmount}</span></p>
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold mb-2">Items</h3>
+                            <div className="border rounded-md divide-y">
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} className="p-3 flex justify-between items-center text-sm">
+                                  <div>
+                                    <p className="font-medium">{item.title}</p>
+                                    <p className="text-muted-foreground">Qty: {item.quantity}</p>
+                                  </div>
+                                  <p>₹{item.price * item.quantity}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex justify-end pt-4 gap-2">
+                            <Select
+                              value={order.status}
+                              onValueChange={(val) => handleStatusUpdate(order.id, val)}
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Update Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">Delivered</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </td>
                 </tr>
               ))}
-              {orders.length === 0 && (
+              {paginatedOrders.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                     No orders found.
@@ -129,6 +253,38 @@ export default function OrdersPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="p-4 border-t">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={currentPage === i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </Card>
     </div>
   );

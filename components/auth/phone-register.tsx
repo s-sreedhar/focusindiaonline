@@ -9,15 +9,19 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
-import { Phone, Lock, User, Loader2 } from 'lucide-react';
+import { Phone, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { handleFirebaseError } from '@/lib/error-utils';
+import { hashPassword } from '@/lib/crypto';
 
 export function PhoneRegister() {
     const [name, setName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
-    const [step, setStep] = useState<'details' | 'otp'>('details');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [step, setStep] = useState<'details' | 'otp' | 'password'>('details');
     const [loading, setLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
@@ -26,41 +30,45 @@ export function PhoneRegister() {
     const router = useRouter();
     const { setUser } = useAuthStore();
 
-    useEffect(() => {
-        // Initialize reCAPTCHA verifier
-        const initRecaptcha = () => {
-            // Check if container exists and clear it if it has content
-            const container = document.getElementById('recaptcha-container');
-            if (container) {
-                container.innerHTML = '';
-            }
+    const setupRecaptcha = () => {
+        const container = document.getElementById('recaptcha-container');
 
-            if (!window.recaptchaVerifier) {
-                try {
-                    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                        size: 'invisible',
-                        callback: () => {
-                            console.log('[PhoneRegister] reCAPTCHA solved');
-                        },
-                        'expired-callback': () => {
-                            console.log('[PhoneRegister] reCAPTCHA expired');
-                            setError('reCAPTCHA expired. Please try again.');
-                            if (window.recaptchaVerifier) {
-                                window.recaptchaVerifier.clear();
-                                window.recaptchaVerifier = undefined;
-                            }
-                        }
-                    });
-                } catch (err) {
-                    console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
+        if (!container) return;
+
+        // If we already have a verifier, clear it first to be safe
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                console.error(e);
+            }
+            window.recaptchaVerifier = undefined;
+        }
+
+        container.innerHTML = '';
+
+        try {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+                callback: () => {
+                    console.log('[PhoneRegister] reCAPTCHA solved');
+                },
+                'expired-callback': () => {
+                    console.log('[PhoneRegister] reCAPTCHA expired');
+                    setError('reCAPTCHA expired. Please try again.');
                 }
-            }
-        };
+            });
+        } catch (err) {
+            console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
+        }
+    };
 
-        initRecaptcha();
+    useEffect(() => {
+        // Small delay to ensure DOM is ready
+        const timer = setTimeout(setupRecaptcha, 100);
 
         return () => {
-            // Cleanup on unmount
+            clearTimeout(timer);
             if (window.recaptchaVerifier) {
                 try {
                     window.recaptchaVerifier.clear();
@@ -68,10 +76,6 @@ export function PhoneRegister() {
                     console.error('Error clearing recaptcha:', e);
                 }
                 window.recaptchaVerifier = undefined;
-            }
-            const container = document.getElementById('recaptcha-container');
-            if (container) {
-                container.innerHTML = '';
             }
         };
     }, []);
@@ -120,10 +124,18 @@ export function PhoneRegister() {
             const message = handleFirebaseError(err);
             setError(message);
 
-            // Reset reCAPTCHA on error
-            if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = undefined;
+            // If it's an invalid-app-credential error, try to reset reCAPTCHA
+            if (err.code === 'auth/invalid-app-credential') {
+                console.log('[PhoneRegister] Resetting reCAPTCHA due to invalid-app-credential');
+                setupRecaptcha();
+            } else {
+                // Reset reCAPTCHA on other errors too, just in case
+                if (window.recaptchaVerifier) {
+                    window.recaptchaVerifier.clear();
+                    window.recaptchaVerifier = undefined;
+                    // Re-init after a short delay
+                    setTimeout(setupRecaptcha, 500);
+                }
             }
         } finally {
             setLoading(false);
@@ -148,63 +160,89 @@ export function PhoneRegister() {
 
             console.log('[PhoneRegister] Verifying OTP...');
             const result = await confirmationResult.confirm(otp);
-            const firebaseUser = result.user;
+            // OTP Verified successfully
+            console.log('[PhoneRegister] OTP verified');
 
-            console.log('[PhoneRegister] OTP verified, creating user document...');
-
-            // Create user document in Firestore
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-
-            try {
-                const userDoc = await getDoc(userDocRef);
-
-                if (userDoc.exists()) {
-                    // User already exists (shouldn't happen in registration, but handle it)
-                    console.log('[PhoneRegister] User already exists');
-                    const userData = userDoc.data();
-
-                    setUser({
-                        id: firebaseUser.uid,
-                        email: userData.email || '',
-                        username: userData.phone || firebaseUser.phoneNumber || '',
-                        displayName: userData.displayName || name,
-                        phone: userData.phone || firebaseUser.phoneNumber || '',
-                        createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                        role: userData.role || 'customer',
-                    });
-                } else {
-                    // Create new user document
-                    const newUserData = {
-                        uid: firebaseUser.uid,
-                        displayName: name.trim(),
-                        phone: firebaseUser.phoneNumber,
-                        email: '', // No email for phone registration
-                        role: 'customer',
-                        createdAt: serverTimestamp(),
-                    };
-
-                    await setDoc(userDocRef, newUserData);
-                    console.log('[PhoneRegister] User document created successfully');
-
-                    setUser({
-                        id: firebaseUser.uid,
-                        email: '',
-                        username: firebaseUser.phoneNumber || '',
-                        displayName: name.trim(),
-                        phone: firebaseUser.phoneNumber || '',
-                        createdAt: new Date().toISOString(),
-                        role: 'customer',
-                    });
-                }
-
-                console.log('[PhoneRegister] Registration complete, redirecting...');
-                router.push('/');
-            } catch (firestoreErr: any) {
-                const message = handleFirebaseError(firestoreErr);
-                setError(message);
-            }
+            // Move to password step
+            setStep('password');
         } catch (err: any) {
             console.error('[PhoneRegister] Error verifying OTP:', err);
+            const message = handleFirebaseError(err);
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateAccount = async () => {
+        if (!password || password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const user = auth.currentUser;
+            if (!user) {
+                setError('Authentication session expired. Please try again.');
+                setStep('details');
+                return;
+            }
+
+
+
+            // Hash password
+            console.log('[PhoneRegister] Starting password hashing...');
+            const hashedPassword = await hashPassword(password);
+            console.log('[PhoneRegister] Password hashing complete.');
+
+            // Create user document in Firestore
+            const userDocRef = doc(db, 'users', user.uid);
+
+            console.log('[PhoneRegister] Checking if user exists...');
+            // Check if user already exists (edge case)
+            const userDoc = await getDoc(userDocRef);
+            console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
+
+            if (userDoc.exists()) {
+                console.log('[PhoneRegister] User already exists, updating...');
+            }
+
+            const newUserData = {
+                uid: user.uid,
+                displayName: name.trim(),
+                phone: user.phoneNumber,
+                role: 'customer',
+                password: hashedPassword, // Store hashed password
+                createdAt: serverTimestamp(),
+            };
+
+            console.log('[PhoneRegister] Writing user document to Firestore...');
+            await setDoc(userDocRef, newUserData, { merge: true });
+            console.log('[PhoneRegister] User document created successfully');
+
+            setUser({
+                id: user.uid,
+                username: user.phoneNumber || '',
+                displayName: name.trim(),
+                phone: user.phoneNumber || '',
+                createdAt: new Date().toISOString(),
+                role: 'customer',
+                authMethod: 'firebase'
+            });
+
+            console.log('[PhoneRegister] Registration complete, redirecting...');
+            router.push('/');
+
+        } catch (err: any) {
+            console.error('[PhoneRegister] Error creating account:', err);
             const message = handleFirebaseError(err);
             setError(message);
         } finally {
@@ -246,6 +284,8 @@ export function PhoneRegister() {
         }
     };
 
+
+
     return (
         <Card className="p-8 w-full max-w-md mx-auto">
             <div className="text-center mb-8">
@@ -253,7 +293,9 @@ export function PhoneRegister() {
                 <p className="text-muted-foreground">
                     {step === 'details'
                         ? 'Enter your details to get started'
-                        : 'Enter the OTP sent to your mobile'}
+                        : step === 'otp'
+                            ? 'Enter the OTP sent to your mobile'
+                            : 'Set a password for your account'}
                 </p>
             </div>
 
@@ -305,7 +347,7 @@ export function PhoneRegister() {
                             </Link>
                         </div>
                     </>
-                ) : (
+                ) : step === 'otp' ? (
                     <>
                         <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm mb-4">
                             OTP sent to +91{phoneNumber}
@@ -356,6 +398,52 @@ export function PhoneRegister() {
                             disabled={loading}
                         >
                             Change Phone Number
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Create Password"
+                                className="pl-10 pr-10"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={loading}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </Button>
+                        </div>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Confirm Password"
+                                className="pl-10"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
+                        <Button
+                            className="w-full"
+                            onClick={handleCreateAccount}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Create Account
                         </Button>
                     </>
                 )}

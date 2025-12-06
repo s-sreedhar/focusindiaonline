@@ -6,104 +6,25 @@ import { ProductCard } from '@/components/product-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck } from 'lucide-react';
+import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Carousel } from '@/components/carousel';
+import { useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 
-// Mock data - replace with real data fetching
-const featuredProducts = [
-  {
-    id: '1',
-    title: '1000+ Practice Bits Biology',
-    author: 'Dr. Sridhar Goka',
-    image: '/biology-book.jpg',
-    price: 140,
-    originalPrice: 199,
-    discount: 30,
-    rating: 4.5,
-    slug: 'biology-bits'
-  },
-  {
-    id: '2',
-    title: 'Jan Polity & Constitution',
-    author: '21st Century IAS',
-    image: '/polity-book.jpg',
-    price: 190,
-    originalPrice: 220,
-    discount: 14,
-    rating: 4.8,
-    slug: 'polity-constitution'
-  },
-  {
-    id: '3',
-    title: 'Telangana Movement & Culture',
-    author: 'AK Publications',
-    image: '/telangana-culture.jpg',
-    price: 120,
-    originalPrice: 159,
-    discount: 24,
-    rating: 4.3,
-    slug: 'telangana-movement'
-  },
-  {
-    id: '4',
-    title: 'EMRS Economics',
-    author: 'ADDA 247 Publications',
-    image: '/economics-book.jpg',
-    price: 360,
-    originalPrice: 545,
-    discount: 34,
-    rating: 4.6,
-    slug: 'emrs-economics'
-  }
-];
-
-const bestSellers = [
-  {
-    id: '5',
-    title: 'Road to Telangana',
-    author: 'Aditya Media',
-    image: '/road-telangana.jpg',
-    price: 250,
-    originalPrice: 279,
-    discount: 10,
-    rating: 4.7,
-    slug: 'road-telangana'
-  },
-  {
-    id: '6',
-    title: 'MCQs in Laboratory Technology',
-    author: 'AITBS Books',
-    image: '/lab-technology.jpg',
-    price: 555,
-    originalPrice: 699,
-    discount: 20,
-    rating: 4.4,
-    slug: 'lab-mcqs'
-  },
-  {
-    id: '7',
-    title: 'Bank PO Clerk Exam',
-    author: 'ADDA 247',
-    image: '/bank-po-exam.jpg',
-    price: 490,
-    originalPrice: 699,
-    discount: 30,
-    rating: 4.9,
-    slug: 'bank-po-clerk'
-  },
-  {
-    id: '8',
-    title: 'Reasoning Comprehensively',
-    author: 'ADDA 247',
-    image: '/reasoning-book.jpg',
-    price: 700,
-    originalPrice: 899,
-    discount: 22,
-    rating: 4.5,
-    slug: 'reasoning-comprehensive'
-  }
-];
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  image: string;
+  price: number;
+  originalPrice: number;
+  rating: number;
+  slug: string;
+  createdAt: any;
+  category: string;
+}
 
 const testimonials = [
   {
@@ -123,14 +44,36 @@ const testimonials = [
   }
 ];
 
-const categories = [
-  { name: 'UPSC', count: 345, color: 'from-blue-500 to-cyan-400' },
-  { name: 'SSC', count: 287, color: 'from-purple-500 to-pink-400' },
-  { name: 'RRB', count: 192, color: 'from-orange-500 to-amber-400' },
-  { name: 'BANKING', count: 156, color: 'from-emerald-500 to-teal-400' }
-];
-
 export default function Home() {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        // Fetch latest books
+        const q = query(collection(db, 'books'), orderBy('createdAt', 'desc'), limit(20));
+        const querySnapshot = await getDocs(q);
+        const booksData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Book[];
+        setBooks(booksData);
+      } catch (error) {
+        console.error("Error fetching books:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  const newArrivals = books.slice(0, 8);
+  // For best sellers, we could sort by rating or just take another slice/random
+  // For now, let's just reverse the list to show some variety
+  const bestSellers = [...books].reverse().slice(0, 8);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
@@ -209,83 +152,112 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trending Books Carousel */}
-        <section className="py-12 bg-white">
-          <div className="container mx-auto px-4 max-w-[1600px]">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Trending Books</h2>
-                <p className="text-muted-foreground">Books that everyone is talking about</p>
-              </div>
-            </div>
+        {loading ? (
+          <div className="py-20 flex justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {/* Trending Books Carousel */}
+            {bestSellers.length > 0 && (
+              <section className="py-12 bg-white">
+                <div className="container mx-auto px-4 max-w-[1600px]">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h2 className="text-3xl font-bold mb-2">Trending Books</h2>
+                      <p className="text-muted-foreground">Books that everyone is talking about</p>
+                    </div>
+                  </div>
 
-            <Carousel>
-              {[0, 1].map((slideIndex) => (
-                <div key={slideIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
-                  {bestSellers.map((product) => (
-                    <ProductCard key={`${slideIndex}-${product.id}`} {...product} />
-                  ))}
+                  <Carousel>
+                    {Array.from({ length: Math.ceil(bestSellers.length / 4) }).map((_, slideIndex) => (
+                      <div key={slideIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                        {bestSellers.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
+                          <ProductCard
+                            key={`${slideIndex}-${book.id}`}
+                            {...book}
+                            discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </Carousel>
                 </div>
-              ))}
-            </Carousel>
-          </div>
-        </section>
+              </section>
+            )}
 
-        {/* New Arrivals */}
-        <section className="py-12 bg-gray-50/50">
-          <div className="container mx-auto px-4 max-w-[1600px]">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">New Arrivals</h2>
-                <p className="text-muted-foreground">Freshly added study materials</p>
-              </div>
-              <Button variant="outline" asChild className="rounded-full">
-                <Link href="/shop?sort=newest">View All</Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <ProductCard {...product} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+            {/* New Arrivals */}
+            <section className="py-12 bg-gray-50/50">
+              <div className="container mx-auto px-4 max-w-[1600px]">
+                <div className="flex justify-between items-center mb-8">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">New Arrivals</h2>
+                    <p className="text-muted-foreground">Freshly added study materials</p>
+                  </div>
+                  <Button variant="outline" asChild className="rounded-full">
+                    <Link href="/shop?sort=newest">View All</Link>
+                  </Button>
+                </div>
 
-        {/* Best Sellers */}
-        <section className="py-12 bg-white">
-          <div className="container mx-auto px-4 max-w-[1600px]">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold mb-2">Best Sellers</h2>
-                <p className="text-muted-foreground">Most popular among students</p>
+                {newArrivals.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {newArrivals.map((book, i) => (
+                      <motion.div
+                        key={book.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <ProductCard
+                          {...book}
+                          discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No books available at the moment.
+                  </div>
+                )}
               </div>
-              <Button variant="outline" asChild className="rounded-full">
-                <Link href="/shop?sort=bestselling">View All</Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {bestSellers.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <ProductCard {...product} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+            </section>
+
+            {/* Best Sellers */}
+            {bestSellers.length > 0 && (
+              <section className="py-12 bg-white">
+                <div className="container mx-auto px-4 max-w-[1600px]">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h2 className="text-3xl font-bold mb-2">Best Sellers</h2>
+                      <p className="text-muted-foreground">Most popular among students</p>
+                    </div>
+                    <Button variant="outline" asChild className="rounded-full">
+                      <Link href="/shop?sort=bestselling">View All</Link>
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {bestSellers.map((book, i) => (
+                      <motion.div
+                        key={book.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <ProductCard
+                          {...book}
+                          discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
+        )}
 
         {/* Why Choose Us */}
         <section className="py-16 bg-primary text-primary-foreground relative overflow-hidden">

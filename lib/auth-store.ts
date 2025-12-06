@@ -5,10 +5,9 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export interface User {
   id: string;
-  email: string;
   username: string;
   displayName: string;
-  phone?: string;
+  phone: string;
   role?: string;
   createdAt: string;
   address?: {
@@ -18,6 +17,7 @@ export interface User {
     zipCode: string;
     country: string;
   };
+  authMethod?: 'firebase' | 'custom';
 }
 
 interface AuthStore {
@@ -31,7 +31,7 @@ interface AuthStore {
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       loading: true,
@@ -70,13 +70,13 @@ export const useAuthStore = create<AuthStore>()(
 
                 const user: User = {
                   id: firebaseUser.uid,
-                  email: userData.email || firebaseUser.email || '',
                   username: userData.phone || firebaseUser.phoneNumber || userData.username || '',
                   displayName: userData.displayName || firebaseUser.displayName || 'User',
                   phone: userData.phone || firebaseUser.phoneNumber || '',
                   createdAt: userData.createdAt?.toDate?.()?.toISOString() || firebaseUser.metadata.creationTime || new Date().toISOString(),
                   role: userData.role || 'customer',
                   address: userData.address,
+                  authMethod: 'firebase'
                 };
 
                 set({ user, isAuthenticated: true, loading: false });
@@ -87,12 +87,12 @@ export const useAuthStore = create<AuthStore>()(
 
                 const user: User = {
                   id: firebaseUser.uid,
-                  email: firebaseUser.email || '',
                   username: firebaseUser.phoneNumber || '',
                   displayName: firebaseUser.displayName || 'User',
                   phone: firebaseUser.phoneNumber || '',
                   createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                   role: 'customer',
+                  authMethod: 'firebase'
                 };
 
                 set({ user, isAuthenticated: true, loading: false });
@@ -103,19 +103,26 @@ export const useAuthStore = create<AuthStore>()(
               // Fallback on error
               const user: User = {
                 id: firebaseUser.uid,
-                email: firebaseUser.email || '',
                 username: firebaseUser.phoneNumber || '',
                 displayName: firebaseUser.displayName || 'User',
                 phone: firebaseUser.phoneNumber || '',
                 createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                 role: 'customer',
+                authMethod: 'firebase'
               };
 
               set({ user, isAuthenticated: true, loading: false });
             }
           } else {
-            console.log('[AuthStore] No user, setting state to unauthenticated');
-            set({ user: null, isAuthenticated: false, loading: false });
+            // Check if we are using custom auth (password login)
+            const currentUser = get().user;
+            if (currentUser?.authMethod === 'custom') {
+              console.log('[AuthStore] Custom auth session active, ignoring Firebase logout');
+              set({ loading: false });
+            } else {
+              console.log('[AuthStore] No user, setting state to unauthenticated');
+              set({ user: null, isAuthenticated: false, loading: false });
+            }
           }
         });
       },

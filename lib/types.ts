@@ -27,16 +27,17 @@ export interface Book {
   isbn?: string;
   createdAt?: any; // Timestamp
   updatedAt?: any; // Timestamp
+  category?: string;
 }
 
 export interface User {
   uid: string;
-  email?: string;
-  displayName?: string;
+  displayName: string;
   photoURL?: string;
   role: 'superadmin' | 'customer';
   createdAt: any; // Timestamp
-  phoneNumber?: string;
+  phoneNumber: string;
+  password?: string; // Hashed password
   address?: Address;
 }
 
