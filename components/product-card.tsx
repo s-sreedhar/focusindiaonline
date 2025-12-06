@@ -144,36 +144,36 @@ export function ProductCard({
           </div>
 
           {/* Content */}
-          <div className="p-3 flex-1 flex flex-col">
+          <div className="p-2 sm:p-3 flex-1 flex flex-col">
             <div className="mb-1 flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 <span className="text-xs font-medium text-muted-foreground">{rating}</span>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap justify-end">
                 {language && (
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 hidden sm:inline-block">
                     {language.split(' ')[0]}
                   </span>
                 )}
                 {subject && (
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full border border-gray-200">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full border border-gray-200 truncate max-w-[80px]">
                     {subject}
                   </span>
                 )}
               </div>
             </div>
 
-            <h3 className="font-bold text-sm line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">{title}</h3>
-            <p className="text-xs text-muted-foreground mb-3 line-clamp-1">{author}</p>
+            <h3 className="font-bold text-sm leading-tight line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors min-h-[2.5em]">{title}</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-3 line-clamp-1">{author}</p>
 
             {/* Price & Add Button */}
-            <div className="mt-auto flex items-center justify-between gap-2">
+            <div className="mt-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex flex-col">
-                <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-lg text-foreground">₹{price}</span>
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="font-bold text-base sm:text-lg text-foreground">₹{price}</span>
                   {originalPrice && (
-                    <span className="text-xs line-through text-muted-foreground">
+                    <span className="text-[10px] sm:text-xs line-through text-muted-foreground">
                       ₹{originalPrice}
                     </span>
                   )}
@@ -182,10 +182,10 @@ export function ProductCard({
 
               <Button
                 size="sm"
-                className="rounded-full px-4 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300"
+                className="w-full sm:w-auto h-8 px-3 rounded-full bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm"
                 onClick={handleAddToCart}
               >
-                <ShoppingCart className="w-4 h-4 mr-1" />
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 Add
               </Button>
             </div>

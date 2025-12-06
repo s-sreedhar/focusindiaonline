@@ -207,9 +207,9 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
         {/* Products Grid */}
         {currentBooks.length > 0 ? (
           <>
-            <div className={`grid gap-6 ${gridColumns === 2 ? 'grid-cols-1 md:grid-cols-2' :
-              gridColumns === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
-                'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
+            <div className={`grid gap-3 sm:gap-6 ${gridColumns === 2 ? 'grid-cols-2 md:grid-cols-2' :
+              gridColumns === 3 ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-3' :
+                'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
               }`}>
               {currentBooks.map((book) => (
                 <ProductCard key={book.id} {...book} />
