@@ -9,12 +9,13 @@ import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
-import { ChevronDown, Loader2, Phone, Lock } from 'lucide-react';
+import { ChevronDown, Loader2, Phone, Lock, ShieldCheck } from 'lucide-react';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
+import { generateOrderId } from '@/lib/utils/order-id';
 
-type Step = 'address' | 'payment' | 'review' | 'verification' | 'confirmation';
+type Step = 'address' | 'payment' | 'review' | 'verification';
 
 export default function CheckoutPage() {
   const { items, getTotalPrice, clearCart } = useCartStore();
@@ -30,7 +31,6 @@ export default function CheckoutPage() {
     city: '',
     state: '',
     zipCode: '',
-    paymentMethod: 'card'
   });
 
   // Phone Auth State
@@ -75,7 +75,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (isAuthenticated) {
-      await createOrder(user!.id);
+      await initiatePayment(user!.id);
     } else {
       // Start Phone Verification
       setCurrentStep('verification');
@@ -137,8 +137,8 @@ export default function CheckoutPage() {
           role: 'user'
         });
 
-        // Create Order
-        await createOrder(firebaseUser.uid);
+        // Initiate Payment
+        await initiatePayment(firebaseUser.uid);
       }
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
@@ -147,46 +147,116 @@ export default function CheckoutPage() {
     }
   };
 
-  const createOrder = async (userId: string) => {
+  const initiatePayment = async (userId: string) => {
     setLoading(true);
     try {
-      await addDoc(collection(db, 'orders'), {
-        userId,
-        items,
-        shippingAddress: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+      let orderId = '';
+
+      await runTransaction(db, async (transaction) => {
+        // 1. Check stock for all items
+        for (const item of items) {
+          const bookRef = doc(db, 'books', item.bookId);
+          const bookDoc = await transaction.get(bookRef);
+
+          if (!bookDoc.exists()) {
+            throw new Error(`Book "${item.title}" not found`);
+          }
+
+          const bookData = bookDoc.data();
+          const currentStock = bookData.stockQuantity ?? bookData.stock ?? 0;
+
+          if (currentStock < item.quantity) {
+            throw new Error(`Insufficient stock for "${item.title}". Available: ${currentStock}`);
+          }
+
+          // Note: We do NOT decrement stock here yet. 
+          // Stock should be decremented only after successful payment or reserved temporarily.
+          // For now, we'll decrement it here assuming high intent, but ideally should be on webhook success.
+          // To be safe and simple: Decrement here. If payment fails, we might need to restore (complex).
+          // Or better: Decrement on webhook. But then we risk overselling.
+          // Let's stick to decrementing here for now as per previous logic, but be aware of the risk.
+
+          transaction.update(bookRef, {
+            stockQuantity: currentStock - item.quantity
+          });
+        }
+
+        // 2. Create Order
+        const newOrderRef = doc(collection(db, 'orders'));
+        orderId = generateOrderId();
+        transaction.set(newOrderRef, {
+          orderId,
+          userId,
+          items,
+          shippingAddress: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+          },
+          paymentMethod: 'PHONEPE',
+          subtotal,
+          shippingCharges,
+          discount,
+          totalAmount: total,
+          status: 'pending_payment', // Initial status
+          paymentStatus: 'pending',
+          createdAt: serverTimestamp(),
+        });
+
+        // Update User Profile
+        const userRef = doc(db, 'users', userId);
+        transaction.set(userRef, {
           email: formData.email,
           phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-        },
-        paymentMethod: formData.paymentMethod,
-        subtotal,
-        shippingCharges,
-        discount,
-        totalAmount: total,
-        status: 'processing',
-        createdAt: serverTimestamp(),
+          displayName: `${formData.firstName} ${formData.lastName}`,
+          address: {
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+            country: 'India'
+          },
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       });
 
-      clearCart();
-      setCurrentStep('confirmation');
-    } catch (error) {
-      console.error("Error creating order:", error);
-      alert('Failed to place order. Please try again.');
-    } finally {
+      // 3. Call Payment API
+      const response = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          orderId: orderId,
+          mobileNumber: formData.phone
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        // Redirect to PhonePe
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Payment initiation failed');
+      }
+
+    } catch (error: any) {
+      console.error("Error initiating payment:", error);
+      alert(error.message || 'Failed to initiate payment. Please try again.');
       setLoading(false);
     }
   };
 
-  if (items.length === 0 && currentStep !== 'confirmation') {
+  if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 max-w-7xl mx-auto px-4 w-full py-16">
+        <main className="flex-1 max-w-7xl mx-auto px-4 w-full py-16 pt-24">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
             <Button asChild>
@@ -199,43 +269,11 @@ export default function CheckoutPage() {
     );
   }
 
-  if (currentStep === 'confirmation') {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">
-          <div className="max-w-3xl mx-auto px-4 py-16">
-            <div className="text-center space-y-6">
-              <div className="text-6xl">✓</div>
-              <h1 className="text-4xl font-bold">Order Confirmed!</h1>
-              <p className="text-muted-foreground text-lg">
-                Thank you for your order. Your books will be delivered soon.
-              </p>
-              <div className="bg-secondary p-6 rounded-lg">
-                <p className="font-semibold mb-2">Order Number: #ORD-{Math.floor(Math.random() * 100000)}</p>
-                <p className="text-muted-foreground">A confirmation email has been sent to {formData.email}</p>
-              </div>
-              <div className="space-y-2">
-                <Button size="lg" asChild>
-                  <Link href="/account/orders">View Order Details</Link>
-                </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <Link href="/shop">Continue Shopping</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-24">
         <div className="max-w-7xl mx-auto px-4 py-12">
           <h1 className="text-3xl font-bold mb-8">Checkout</h1>
 
@@ -250,8 +288,8 @@ export default function CheckoutPage() {
                       onClick={() => currentStep !== 'verification' && handleStepChange(step)}
                       disabled={currentStep === 'verification'}
                       className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${currentStep === step
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary text-foreground'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-foreground'
                         }`}
                     >
                       {index + 1}
@@ -299,7 +337,7 @@ export default function CheckoutPage() {
                       disabled={loading}
                     >
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Verify & Place Order
+                      Verify & Pay
                     </Button>
                     <Button
                       variant="ghost"
@@ -380,22 +418,19 @@ export default function CheckoutPage() {
               {currentStep === 'payment' && (
                 <Card className="p-6 space-y-4">
                   <h2 className="text-xl font-bold mb-4">Payment Method</h2>
-                  <div className="space-y-3">
-                    {['card', 'upi', 'netbanking', 'wallet'].map((method) => (
-                      <label key={method} className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-secondary">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={method}
-                          checked={formData.paymentMethod === method}
-                          onChange={handleInputChange}
-                          className="mr-3"
-                        />
-                        <span className="font-semibold capitalize">{method === 'netbanking' ? 'Net Banking' : method.toUpperCase()}</span>
-                      </label>
-                    ))}
+                  <div className="space-y-4">
+                    <div className="border rounded-lg p-4 flex items-center justify-between bg-secondary/20">
+                      <div className="flex items-center gap-3">
+                        <ShieldCheck className="w-6 h-6 text-primary" />
+                        <div>
+                          <p className="font-semibold">PhonePe Secure Payment</p>
+                          <p className="text-sm text-muted-foreground">UPI, Cards, NetBanking, Wallets</p>
+                        </div>
+                      </div>
+                      <div className="h-4 w-4 rounded-full border-2 border-primary bg-primary" />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 mt-4">
                     <Button variant="outline" onClick={() => handleStepChange('address')}>
                       Back
                     </Button>
@@ -421,14 +456,6 @@ export default function CheckoutPage() {
                     </p>
                   </div>
 
-                  {/* Payment Summary */}
-                  <div className="border-b pb-6">
-                    <h3 className="font-semibold mb-2">Payment Method</h3>
-                    <p className="text-muted-foreground text-sm capitalize">
-                      {formData.paymentMethod === 'netbanking' ? 'Net Banking' : formData.paymentMethod.toUpperCase()}
-                    </p>
-                  </div>
-
                   {/* Items Summary */}
                   <div className="border-b pb-6">
                     <h3 className="font-semibold mb-3">Items</h3>
@@ -442,13 +469,18 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm text-yellow-800">
+                    <p className="font-semibold mb-1">Cancellation Policy</p>
+                    <p>Orders can only be cancelled within 24 hours of placement. After that, cancellation is not possible.</p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <Button variant="outline" onClick={() => handleStepChange('payment')}>
                       Back
                     </Button>
-                    <Button onClick={handlePlaceOrder} size="lg" disabled={loading}>
+                    <Button onClick={handlePlaceOrder} size="lg" disabled={loading} className="bg-[#5f259f] hover:bg-[#4a1d7c]">
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Place Order
+                      Pay ₹{total.toLocaleString()} with PhonePe
                     </Button>
                   </div>
                 </Card>

@@ -7,7 +7,7 @@ import { ImageGallery } from '@/components/image-gallery';
 import { ReviewsSection } from '@/components/reviews-section';
 import { RelatedProducts } from '@/components/related-products';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Truck, RotateCcw, Shield, Loader2 } from 'lucide-react';
+import { Heart, ShoppingCart, BookOpen, TrendingUp, ShieldCheck, Loader2 } from 'lucide-react';
 import { Star } from 'lucide-react';
 import type { Book } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
@@ -16,7 +16,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
 import Head from 'next/head';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 export default function ProductPage({
@@ -36,28 +36,35 @@ export default function ProductPage({
   const [cartAdded, setCartAdded] = useState(false);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const q = query(collection(db, 'books'), where('slug', '==', slug));
-        const querySnapshot = await getDocs(q);
+    const q = query(collection(db, 'books'), where('slug', '==', slug));
 
-        if (!querySnapshot.empty) {
-          const docData = querySnapshot.docs[0];
-          const bookData = { id: docData.id, ...docData.data() } as Book;
-          setProduct(bookData);
-          setIsInWish(isInWishlist(bookData.id));
-        } else {
-          setProduct(null);
-        }
-      } catch (error) {
-        console.error("Error fetching product:", error);
-      } finally {
-        setLoading(false);
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      if (!querySnapshot.empty) {
+        const docData = querySnapshot.docs[0];
+        const data = docData.data();
+        const bookData = {
+          id: docData.id,
+          ...data,
+          stockQuantity: data.stockQuantity ?? data.stock ?? 0
+        } as Book;
+        setProduct(bookData);
+      } else {
+        setProduct(null);
       }
-    };
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching product:", error);
+      setLoading(false);
+    });
 
-    fetchProduct();
-  }, [slug, isInWishlist]);
+    return () => unsubscribe();
+  }, [slug]);
+
+  useEffect(() => {
+    if (product) {
+      setIsInWish(isInWishlist(product.id));
+    }
+  }, [product, isInWishlist]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -275,7 +282,8 @@ export default function ProductPage({
                 {product.stockQuantity > 0 ? (
                   <p className="text-green-600 font-semibold flex items-center gap-2">
                     <span className="w-2 h-2 bg-green-600 rounded-full" />
-                    In Stock ({product.stockQuantity} available)
+                    In Stock
+                    {/* ({product.stockQuantity} available) */}
                   </p>
                 ) : (
                   <p className="text-red-600 font-semibold">Out of Stock</p>
@@ -315,19 +323,19 @@ export default function ProductPage({
               {/* Features */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t">
                 <div className="text-center">
-                  <Truck className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-xs font-semibold">Free Delivery</p>
-                  <p className="text-xs text-muted-foreground">On orders above ₹500</p>
+                  <BookOpen className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-xs font-semibold">All Competitive Exam Books</p>
+                  <p className="text-xs text-muted-foreground">Only Original Books</p>
                 </div>
                 <div className="text-center">
-                  <RotateCcw className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-xs font-semibold">Easy Returns</p>
-                  <p className="text-xs text-muted-foreground">7 days policy</p>
+                  <TrendingUp className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-xs font-semibold">Best in the market</p>
+                  <p className="text-xs text-muted-foreground">Best Price</p>
                 </div>
                 <div className="text-center">
-                  <Shield className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-xs font-semibold">Authentic</p>
-                  <p className="text-xs text-muted-foreground">100% original</p>
+                  <ShieldCheck className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-xs font-semibold">Years of Experience</p>
+                  <p className="text-xs text-muted-foreground">Most Trusted</p>
                 </div>
               </div>
             </div>

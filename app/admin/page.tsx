@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { BarChart3, ShoppingBag, Users, TrendingUp, AlertCircle } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getCountFromServer, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { AnalyticsDashboard } from '@/components/admin/analytics-dashboard';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -93,6 +94,10 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground">Welcome back! Here's your business overview.</p>
       </div>
 
+      <div className="mb-8">
+        <AnalyticsDashboard />
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat, i) => {
@@ -133,9 +138,9 @@ export default function AdminDashboard() {
                       <td className="py-3 font-semibold">₹{order.totalAmount}</td>
                       <td className="py-3">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                            order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                              order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-800'
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                            order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
                           }`}>
                           {order.status || 'Pending'}
                         </span>

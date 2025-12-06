@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { SUBJECTS } from '@/lib/constants';
 
 export default function NewBookPage() {
     const router = useRouter();
@@ -59,7 +60,7 @@ export default function NewBookPage() {
                 category: formData.category,
                 subject: formData.subject,
                 language: formData.language,
-                stock: Number(formData.stock),
+                stockQuantity: Number(formData.stock),
                 image: imageUrl,
                 rating: 0,
                 reviews: 0,
@@ -135,6 +136,25 @@ export default function NewBookPage() {
                                 <option value="OTHER">Other</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
+                        <select
+                            id="subject"
+                            name="subject"
+                            value={formData.subject}
+                            onChange={handleInputChange}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="">Select Subject</option>
+                            {SUBJECTS.map((subject) => (
+                                <option key={subject} value={subject}>
+                                    {subject}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

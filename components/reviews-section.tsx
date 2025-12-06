@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/auth-store';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, orderBy, getDocs, serverTimestamp, where } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, getDocs, serverTimestamp, where, doc, updateDoc, increment } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface Review {
@@ -57,6 +57,21 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
         })) as Review[];
 
         setReviews(reviewsData);
+
+        // Self-healing: Update book stats if they don't match actual reviews
+        const realCount = reviewsData.length;
+        const realTotalRating = reviewsData.reduce((acc, review) => acc + review.rating, 0);
+        const realAverage = realCount > 0 ? realTotalRating / realCount : 0;
+
+        // Check if stats need update (allow small float difference for rating)
+        if (realCount !== totalReviews || Math.abs(realAverage - averageRating) > 0.1) {
+          console.log("Syncing book stats...", { realCount, totalReviews, realAverage, averageRating });
+          const bookRef = doc(db, 'books', bookId);
+          await updateDoc(bookRef, {
+            reviewCount: realCount,
+            rating: realAverage
+          });
+        }
       } catch (error) {
         console.error("Error fetching reviews:", error);
       } finally {
@@ -78,16 +93,29 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
 
     setSubmitting(true);
     try {
+      // Check if user already reviewed
+      const existingReviewQuery = query(
+        collection(db, 'books', bookId, 'reviews'),
+        where('userId', '==', user.id)
+      );
+      const existingDocs = await getDocs(existingReviewQuery);
+
+      if (!existingDocs.empty) {
+        toast.error('You have already reviewed this book');
+        setSubmitting(false);
+        return;
+      }
+
       const reviewData = {
         author: user.displayName || 'Anonymous',
         userId: user.id,
         rating,
         title,
         content,
-        verified: true, // Assuming if they can write, they might have bought it? Or we should check orders. For now true.
+        verified: true,
         helpful: 0,
         createdAt: serverTimestamp(),
-        date: new Date().toLocaleDateString() // Fallback for immediate display
+        date: new Date().toLocaleDateString()
       };
 
       const docRef = await addDoc(collection(db, 'books', bookId, 'reviews'), reviewData);
@@ -104,8 +132,19 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
       setRating(5);
       toast.success('Review submitted successfully!');
 
-      // Note: We should also update the book's average rating and review count in Firestore.
-      // This is best done via a Cloud Function trigger, but for now we'll skip the aggregation logic on client.
+      // Update book stats
+      const newTotalReviews = totalReviews + 1;
+      // Calculate new average. Note: This is an approximation if we don't have the exact previous sum.
+      // Better approach: Store totalRatingSum in book doc.
+      // For now, we'll do: ((currentAvg * currentCount) + newRating) / newCount
+      const currentTotalRating = averageRating * totalReviews;
+      const newAverageRating = (currentTotalRating + rating) / newTotalReviews;
+
+      const bookRef = doc(db, 'books', bookId);
+      await updateDoc(bookRef, {
+        rating: newAverageRating,
+        reviewCount: increment(1)
+      });
 
     } catch (error) {
       console.error("Error submitting review:", error);

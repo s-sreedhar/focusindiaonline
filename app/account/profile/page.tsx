@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -54,9 +56,16 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
-      <main className="flex-1">
+
+      <main className="flex-1 pt-24">
         <div className="max-w-2xl mx-auto px-4 py-12">
+          <Button variant="ghost" asChild className="mb-6 pl-0 hover:bg-transparent hover:text-primary">
+            <Link href="/account" className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Account
+            </Link>
+          </Button>
+
           <h1 className="text-3xl font-bold mb-8">Edit Profile</h1>
 
           <Card className="p-8 space-y-6">
@@ -105,7 +114,7 @@ export default function ProfilePage() {
               {/* Password Section */}
               <div className="border-t pt-6">
                 <h2 className="font-bold mb-4">Change Password</h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Current Password</label>

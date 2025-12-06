@@ -7,14 +7,72 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
-import { ShoppingBag, MapPin, User, LogOut, Heart, BarChart3 } from 'lucide-react';
+import { ShoppingBag, MapPin, User, LogOut, Heart, BarChart3, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { useWishlistStore } from '@/lib/wishlist-store';
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { getItemCount } = useWishlistStore();
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalSpent: 0,
+    wishlistCount: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading && (!isAuthenticated || !user)) {
+      router.push('/login');
+    }
+  }, [loading, isAuthenticated, user, router]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Fetch orders
+        const q = query(collection(db, 'orders'), where('userId', '==', user.id));
+        const querySnapshot = await getDocs(q);
+
+        let totalSpent = 0;
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          totalSpent += data.totalAmount || 0;
+        });
+
+        setStats({
+          totalOrders: querySnapshot.size,
+          totalSpent,
+          wishlistCount: getItemCount()
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchStats();
+    } else {
+      setLoading(false);
+    }
+  }, [user, isAuthenticated, getItemCount]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
-    router.push('/login');
     return null;
   }
 
@@ -74,15 +132,24 @@ export default function AccountPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">Email</p>
-                  <p className="font-semibold">{user.email}</p>
+                  <p className="font-semibold">{user.email || 'No email linked'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm mb-1">Username</p>
-                  <p className="font-semibold">{user.username}</p>
+                  <p className="text-muted-foreground text-sm mb-1">Phone</p>
+                  <p className="font-semibold">{user.phone || 'No phone linked'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm mb-1">Member Since</p>
-                  <p className="font-semibold">{new Date(user.createdAt).toLocaleDateString()}</p>
+                  <p className="text-muted-foreground text-sm mb-1">Address</p>
+                  <p className="font-semibold text-sm">
+                    {user.address ? (
+                      <>
+                        {user.address.street}, {user.address.city}<br />
+                        {user.address.state} - {user.address.zipCode}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground italic">No address saved</span>
+                    )}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -110,15 +177,21 @@ export default function AccountPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Total Orders</p>
-                <p className="text-3xl font-bold text-primary">3</p>
+                <p className="text-3xl font-bold text-primary">
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : stats.totalOrders}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Total Spent</p>
-                <p className="text-3xl font-bold text-primary">₹2,450</p>
+                <p className="text-3xl font-bold text-primary">
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : `₹${stats.totalSpent}`}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Wishlist Items</p>
-                <p className="text-3xl font-bold text-primary">5</p>
+                <p className="text-3xl font-bold text-primary">
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : stats.wishlistCount}
+                </p>
               </div>
             </div>
           </Card>

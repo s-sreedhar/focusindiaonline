@@ -110,7 +110,7 @@ export default function BooksPage() {
                 </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {filteredBooks.map((book) => (
                     <Card key={book.id} className="overflow-hidden group">
                         <div className="relative aspect-[3/4]">
@@ -121,8 +121,15 @@ export default function BooksPage() {
                                 className="object-cover transition-transform group-hover:scale-105"
                             />
                         </div>
-                        <div className="p-4">
-                            <h3 className="font-bold truncate" title={book.title}>{book.title}</h3>
+                        <div className="p-3">
+                            <div className="flex justify-between items-start mb-1">
+                                <h3 className="font-bold truncate flex-1" title={book.title}>{book.title}</h3>
+                                {book.category && (
+                                    <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full ml-2 shrink-0">
+                                        {book.category}
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
                             <div className="flex justify-between items-center">
                                 <span className="font-bold text-primary">₹{book.price}</span>

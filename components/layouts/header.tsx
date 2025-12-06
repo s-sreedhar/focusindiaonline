@@ -26,6 +26,11 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
@@ -122,7 +127,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative" asChild>
                 <Link href="/wishlist">
                   <Heart className="w-5 h-5" />
-                  {wishlistCount > 0 && (
+                  {mounted && wishlistCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {wishlistCount}
                     </span>
@@ -133,7 +138,7 @@ export function Header() {
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative" asChild>
                 <Link href="/cart">
                   <ShoppingCart className="w-5 h-5" />
-                  {cartCount > 0 && (
+                  {mounted && cartCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {cartCount}
                     </span>

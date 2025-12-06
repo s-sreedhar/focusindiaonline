@@ -55,7 +55,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
       // Subject filter
       if (filters.selectedSubjects.length > 0) {
         const hasSubject = filters.selectedSubjects.some(subject =>
-          book.subjects.includes(subject)
+          book.subjects?.includes(subject)
         );
         if (!hasSubject) return false;
       }
@@ -174,7 +174,10 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
         {/* Products Grid */}
         {currentBooks.length > 0 ? (
           <>
-            <div className={viewType === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+            <div className={viewType === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+              : 'grid grid-cols-1 md:grid-cols-2 gap-6'
+            }>
               {currentBooks.map((book) => (
                 <ProductCard key={book.id} {...book} />
               ))}

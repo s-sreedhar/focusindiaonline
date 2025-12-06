@@ -53,7 +53,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         category: data.category || '',
                         subject: data.subject || '',
                         language: data.language || 'English Medium',
-                        stock: data.stock?.toString() || '0'
+                        stock: data.stockQuantity?.toString() || '0'
                     });
                     setCurrentImageUrl(data.image || '');
                 } else {
@@ -101,7 +101,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                 category: formData.category,
                 subject: formData.subject,
                 language: formData.language,
-                stock: Number(formData.stock),
+                stockQuantity: Number(formData.stock),
                 image: imageUrl,
                 updatedAt: serverTimestamp(),
                 slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')

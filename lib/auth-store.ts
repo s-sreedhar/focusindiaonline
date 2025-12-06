@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export interface User {
   id: string;
   username: string;
   displayName: string;
+  email?: string;
   phone: string;
   role?: string;
   createdAt: string;
@@ -27,6 +29,7 @@ interface AuthStore {
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   initialize: () => () => void; // Returns unsubscribe function
+  updateProfile: (data: Partial<User>) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -45,6 +48,27 @@ export const useAuthStore = create<AuthStore>()(
         console.log('[AuthStore] Setting user:', user ? { id: user.id, role: user.role } : null);
         set({ user, isAuthenticated: !!user });
       },
+      updateProfile: async (data: Partial<User>) => {
+        const currentUser = get().user;
+        if (!currentUser) throw new Error('No user logged in');
+
+        try {
+          // Update Firestore
+          const { updateDoc } = await import('firebase/firestore');
+          const userDocRef = doc(db, 'users', currentUser.id);
+          await updateDoc(userDocRef, data);
+
+          // Update local state
+          set((state) => ({
+            user: state.user ? { ...state.user, ...data } : null
+          }));
+
+          console.log('[AuthStore] Profile updated successfully');
+        } catch (error) {
+          console.error('[AuthStore] Error updating profile:', error);
+          throw error;
+        }
+      },
       initialize: () => {
         console.log('[AuthStore] Initializing auth listener...');
 
@@ -54,9 +78,6 @@ export const useAuthStore = create<AuthStore>()(
           if (firebaseUser) {
             try {
               // Fetch user details from Firestore
-              const { doc, getDoc } = await import('firebase/firestore');
-              const { db } = await import('./firebase');
-
               const userDocRef = doc(db, 'users', firebaseUser.uid);
               const userDoc = await getDoc(userDocRef);
 
@@ -72,6 +93,7 @@ export const useAuthStore = create<AuthStore>()(
                   id: firebaseUser.uid,
                   username: userData.phone || firebaseUser.phoneNumber || userData.username || '',
                   displayName: userData.displayName || firebaseUser.displayName || 'User',
+                  email: userData.email || firebaseUser.email || '',
                   phone: userData.phone || firebaseUser.phoneNumber || '',
                   createdAt: userData.createdAt?.toDate?.()?.toISOString() || firebaseUser.metadata.creationTime || new Date().toISOString(),
                   role: userData.role || 'customer',
@@ -89,6 +111,7 @@ export const useAuthStore = create<AuthStore>()(
                   id: firebaseUser.uid,
                   username: firebaseUser.phoneNumber || '',
                   displayName: firebaseUser.displayName || 'User',
+                  email: firebaseUser.email || '',
                   phone: firebaseUser.phoneNumber || '',
                   createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                   role: 'customer',
@@ -105,6 +128,7 @@ export const useAuthStore = create<AuthStore>()(
                 id: firebaseUser.uid,
                 username: firebaseUser.phoneNumber || '',
                 displayName: firebaseUser.displayName || 'User',
+                email: firebaseUser.email || '',
                 phone: firebaseUser.phoneNumber || '',
                 createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                 role: 'customer',

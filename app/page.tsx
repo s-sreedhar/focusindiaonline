@@ -171,7 +171,7 @@ export default function Home() {
 
                   <Carousel>
                     {Array.from({ length: Math.ceil(bestSellers.length / 4) }).map((_, slideIndex) => (
-                      <div key={slideIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                      <div key={slideIndex} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
                         {bestSellers.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
                           <ProductCard
                             key={`${slideIndex}-${book.id}`}
@@ -200,7 +200,7 @@ export default function Home() {
                 </div>
 
                 {newArrivals.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {newArrivals.map((book, i) => (
                       <motion.div
                         key={book.id}
@@ -237,7 +237,7 @@ export default function Home() {
                       <Link href="/shop?sort=bestselling">View All</Link>
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {bestSellers.map((book, i) => (
                       <motion.div
                         key={book.id}

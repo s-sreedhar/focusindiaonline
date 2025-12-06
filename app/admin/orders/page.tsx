@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
 import { Loader2, Package, Eye, Filter } from 'lucide-react';
 import { Order } from '@/lib/types';
+import { sendEmail } from '@/lib/brevo';
 import {
   Select,
   SelectContent,
@@ -69,6 +70,21 @@ export default function OrdersPage() {
       setOrders(orders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } as Order : order
       ));
+
+      // Send email notification
+      const order = orders.find(o => o.id === orderId);
+      if (order && order.shippingAddress?.email) {
+        await sendEmail(
+          order.shippingAddress.email,
+          `Order Status Update - ${newStatus.toUpperCase()}`,
+          `
+            <h1>Order Update</h1>
+            <p>Hi ${order.shippingAddress.fullName},</p>
+            <p>Your order #${order.id.slice(0, 8)} status has been updated to: <strong>${newStatus}</strong>.</p>
+          `
+        );
+      }
+
       toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
       console.error("Error updating status:", error);
@@ -91,7 +107,9 @@ export default function OrdersPage() {
       case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'shipped': return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
       case 'processing': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+      case 'placed': return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
       case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-100';
+      case 'returned': return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
@@ -121,11 +139,12 @@ export default function OrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Orders</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="placed">Placed</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
               <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="returned">Returned</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -191,9 +210,8 @@ export default function OrdersPage() {
                               <h3 className="font-semibold mb-2">Shipping Address</h3>
                               <div className="text-sm text-muted-foreground space-y-1">
                                 <p>{order.shippingAddress?.fullName}</p>
-                                <p>{order.shippingAddress?.addressLine1}</p>
-                                <p>{order.shippingAddress?.addressLine2}</p>
-                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.pincode}</p>
+                                <p>{order.shippingAddress?.street}</p>
+                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}</p>
                                 <p>Phone: {order.shippingAddress?.phoneNumber}</p>
                               </div>
                             </div>
@@ -229,11 +247,12 @@ export default function OrdersPage() {
                                 <SelectValue placeholder="Update Status" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="placed">Placed</SelectItem>
                                 <SelectItem value="processing">Processing</SelectItem>
                                 <SelectItem value="shipped">Shipped</SelectItem>
                                 <SelectItem value="delivered">Delivered</SelectItem>
                                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="returned">Returned</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>

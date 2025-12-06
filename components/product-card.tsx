@@ -21,6 +21,7 @@ interface ProductCardProps {
   rating?: number;
   discount?: number;
   slug: string;
+  category?: string;
 }
 
 export function ProductCard({
@@ -32,7 +33,8 @@ export function ProductCard({
   originalPrice,
   rating = 4.5,
   discount,
-  slug
+  slug,
+  category
 }: ProductCardProps) {
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -111,7 +113,7 @@ export function ProductCard({
       >
         <Card className="overflow-hidden h-full flex flex-col group border-transparent shadow-sm hover:shadow-xl transition-all duration-300 bg-white">
           {/* Image Container */}
-          <div className="relative bg-gray-50 overflow-hidden aspect-[3/4] flex items-center justify-center p-4">
+          <div className="relative bg-gray-50 overflow-hidden aspect-[3/4] flex items-center justify-center p-3">
             <Image
               src={image || "/placeholder.svg"}
               alt={title}
@@ -125,7 +127,7 @@ export function ProductCard({
             )}
 
             {/* Quick Actions Overlay */}
-            <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-2 group-hover:translate-x-0">
+            <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
               <Button
                 size="icon"
                 variant="secondary"
@@ -138,10 +140,17 @@ export function ProductCard({
           </div>
 
           {/* Content */}
-          <div className="p-4 flex-1 flex flex-col">
-            <div className="mb-1 flex items-center gap-1">
-              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-xs font-medium text-muted-foreground">{rating}</span>
+          <div className="p-3 flex-1 flex flex-col">
+            <div className="mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs font-medium text-muted-foreground">{rating}</span>
+              </div>
+              {category && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
+                  {category}
+                </span>
+              )}
             </div>
 
             <h3 className="font-bold text-sm line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">{title}</h3>
@@ -162,7 +171,7 @@ export function ProductCard({
 
               <Button
                 size="sm"
-                className="rounded-full px-4 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="rounded-full px-4 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300"
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="w-4 h-4 mr-1" />

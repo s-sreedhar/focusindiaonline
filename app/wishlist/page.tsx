@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { ProductCard } from '@/components/product-card';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function WishlistPage() {
@@ -45,6 +45,13 @@ export default function WishlistPage() {
 
       <main className="flex-1 pt-24">
         <div className="container mx-auto px-4 max-w-[1600px] py-12">
+          <Button variant="ghost" asChild className="mb-6 pl-0 hover:bg-transparent hover:text-primary">
+            <Link href="/account" className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Account
+            </Link>
+          </Button>
+
           <h1 className="text-3xl font-bold mb-8 pb-2 leading-tight">My Wishlist ({items.length})</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -33,6 +33,7 @@ export interface Book {
 export interface User {
   uid: string;
   displayName: string;
+  email?: string;
   photoURL?: string;
   role: 'superadmin' | 'customer';
   createdAt: any; // Timestamp
@@ -68,7 +69,7 @@ export interface Order {
   userId: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'placed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
   shippingAddress: Address & {
     fullName: string;
     phoneNumber: string;
