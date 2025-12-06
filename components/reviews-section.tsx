@@ -40,14 +40,29 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
+  useEffect(() => {
+    const checkUserReview = async () => {
+      if (!user) return;
+      try {
+        const q = query(
+          collection(db, 'books', bookId, 'reviews'),
+          where('userId', '==', user.id)
+        );
+        const snapshot = await getDocs(q);
+        setHasReviewed(!snapshot.empty);
+      } catch (error) {
+        console.error("Error checking user review:", error);
+      }
+    };
+
+    checkUserReview();
+  }, [bookId, user]);
 
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // Assuming reviews are a subcollection of books or a top-level collection with bookId
-        // Let's use a top-level collection 'reviews' for easier querying across the app if needed
-        // or subcollection 'books/{bookId}/reviews' which is cleaner for this use case.
-        // Let's go with subcollection 'reviews' inside the book document.
         const q = query(collection(db, 'books', bookId, 'reviews'), orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
 
@@ -82,7 +97,7 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
     if (bookId) {
       fetchReviews();
     }
-  }, [bookId]);
+  }, [bookId, totalReviews, averageRating]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,21 +106,13 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
       return;
     }
 
+    if (hasReviewed) {
+      toast.error('You have already reviewed this book');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Check if user already reviewed
-      const existingReviewQuery = query(
-        collection(db, 'books', bookId, 'reviews'),
-        where('userId', '==', user.id)
-      );
-      const existingDocs = await getDocs(existingReviewQuery);
-
-      if (!existingDocs.empty) {
-        toast.error('You have already reviewed this book');
-        setSubmitting(false);
-        return;
-      }
-
       const reviewData = {
         author: user.displayName || 'Anonymous',
         userId: user.id,
@@ -126,6 +133,8 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
         ...reviews
       ]);
 
+      setHasReviewed(true);
+
       // Reset form
       setTitle('');
       setContent('');
@@ -134,9 +143,6 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
 
       // Update book stats
       const newTotalReviews = totalReviews + 1;
-      // Calculate new average. Note: This is an approximation if we don't have the exact previous sum.
-      // Better approach: Store totalRatingSum in book doc.
-      // For now, we'll do: ((currentAvg * currentCount) + newRating) / newCount
       const currentTotalRating = averageRating * totalReviews;
       const newAverageRating = (currentTotalRating + rating) / newTotalReviews;
 
@@ -221,6 +227,11 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
             <Button asChild>
               <a href="/login">Login Now</a>
             </Button>
+          </div>
+        ) : hasReviewed ? (
+          <div className="text-center py-12 bg-muted/20 rounded-lg">
+            <p className="mb-4 text-lg font-semibold">You have already reviewed this product.</p>
+            <p className="text-muted-foreground">Thank you for your feedback!</p>
           </div>
         ) : (
           <form onSubmit={handleSubmitReview} className="space-y-6 bg-card p-6 rounded-lg border">

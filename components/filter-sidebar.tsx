@@ -7,48 +7,62 @@ import { Slider } from '@/components/ui/slider';
 import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
 
 interface FilterSidebarProps {
+  filters: {
+    priceRange: number[];
+    selectedCategories: string[];
+    selectedSubjects: string[];
+    selectedLanguages: string[];
+    inStockOnly: boolean;
+  };
   onFiltersChange: (filters: any) => void;
-  activeCategory?: string;
 }
 
-export function FilterSidebar({ onFiltersChange, activeCategory }: FilterSidebarProps) {
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  const [inStockOnly, setInStockOnly] = useState(false);
+export function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) {
+  const {
+    priceRange,
+    selectedCategories,
+    selectedSubjects,
+    selectedLanguages,
+    inStockOnly
+  } = filters;
 
   const handlePriceChange = (value: [number, number]) => {
-    setPriceRange(value);
-    onFiltersChange({ priceRange: value, selectedSubjects, selectedLanguages, inStockOnly });
+    onFiltersChange({ ...filters, priceRange: value });
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    const updated = selectedCategories.includes(category)
+      ? selectedCategories.filter(c => c !== category)
+      : [...selectedCategories, category];
+    onFiltersChange({ ...filters, selectedCategories: updated });
   };
 
   const handleSubjectToggle = (subject: string) => {
     const updated = selectedSubjects.includes(subject)
       ? selectedSubjects.filter(s => s !== subject)
       : [...selectedSubjects, subject];
-    setSelectedSubjects(updated);
-    onFiltersChange({ priceRange, selectedSubjects: updated, selectedLanguages, inStockOnly });
+    onFiltersChange({ ...filters, selectedSubjects: updated });
   };
 
   const handleLanguageToggle = (lang: string) => {
     const updated = selectedLanguages.includes(lang)
       ? selectedLanguages.filter(l => l !== lang)
       : [...selectedLanguages, lang];
-    setSelectedLanguages(updated);
-    onFiltersChange({ priceRange, selectedSubjects, selectedLanguages: updated, inStockOnly });
+    onFiltersChange({ ...filters, selectedLanguages: updated });
   };
 
   const handleStockToggle = () => {
-    setInStockOnly(!inStockOnly);
-    onFiltersChange({ priceRange, selectedSubjects, selectedLanguages, inStockOnly: !inStockOnly });
+    onFiltersChange({ ...filters, inStockOnly: !inStockOnly });
   };
 
   const handleReset = () => {
-    setPriceRange([0, 1000]);
-    setSelectedSubjects([]);
-    setSelectedLanguages([]);
-    setInStockOnly(false);
-    onFiltersChange({ priceRange: [0, 1000], selectedSubjects: [], selectedLanguages: [], inStockOnly: false });
+    onFiltersChange({
+      priceRange: [0, 1000],
+      selectedCategories: [],
+      selectedSubjects: [],
+      selectedLanguages: [],
+      inStockOnly: false
+    });
   };
 
   return (
@@ -57,7 +71,7 @@ export function FilterSidebar({ onFiltersChange, activeCategory }: FilterSidebar
       <div>
         <h3 className="font-bold mb-3">Filter by Price</h3>
         <Slider
-          value={priceRange}
+          value={priceRange as [number, number]}
           onValueChange={handlePriceChange}
           min={0}
           max={1000}
@@ -67,6 +81,23 @@ export function FilterSidebar({ onFiltersChange, activeCategory }: FilterSidebar
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>₹{priceRange[0]}</span>
           <span>₹{priceRange[1]}</span>
+        </div>
+      </div>
+
+      {/* Category Filter */}
+      <div>
+        <h3 className="font-bold mb-3">Categories</h3>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {PRIMARY_CATEGORIES.map((category) => (
+            <div key={category} className="flex items-center">
+              <Checkbox
+                id={category}
+                checked={selectedCategories.includes(category)}
+                onCheckedChange={() => handleCategoryToggle(category)}
+              />
+              <label htmlFor={category} className="ml-2 text-sm cursor-pointer">{category}</label>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -91,7 +122,7 @@ export function FilterSidebar({ onFiltersChange, activeCategory }: FilterSidebar
       <div>
         <h3 className="font-bold mb-3">Language</h3>
         <div className="space-y-2">
-          {['English Medium', 'Telugu Medium'].map((lang) => (
+          {['English', 'Telugu'].map((lang) => (
             <div key={lang} className="flex items-center">
               <Checkbox
                 id={lang}

@@ -12,6 +12,8 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { SUBJECTS } from '@/lib/constants';
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -33,6 +35,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         isFeatured: false,
         isNewArrival: false,
         isBestSeller: false,
+        subjects: [] as string[],
     });
 
     useEffect(() => {
@@ -58,6 +61,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         isFeatured: data.isFeatured ?? false,
                         isNewArrival: data.isNewArrival ?? false,
                         isBestSeller: data.isBestSeller ?? false,
+                        subjects: data.subjects || [],
                     });
                 } else {
                     alert('Product not found');
@@ -80,6 +84,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
     const handleSwitchChange = (name: string, checked: boolean) => {
         setFormData(prev => ({ ...prev, [name]: checked }));
+    };
+
+    const handleSubjectsChange = (selected: string[]) => {
+        setFormData(prev => ({ ...prev, subjects: selected }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +171,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <Label htmlFor="language">Language</Label>
                             <Input id="language" name="language" value={formData.language} onChange={handleChange} required />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Subjects</Label>
+                        <MultiSelect
+                            options={SUBJECTS.map(s => ({ label: s, value: s }))}
+                            selected={formData.subjects}
+                            onChange={handleSubjectsChange}
+                            placeholder="Select subjects..."
+                        />
                     </div>
 
                     <div className="space-y-2">

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut } from 'lucide-react';
+import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function AdminSidebar() {
@@ -33,6 +33,11 @@ export function AdminSidebar() {
       label: 'Settings',
       href: '/admin/settings',
       icon: Settings,
+    },
+    {
+      label: 'Banners',
+      href: '/admin/banners',
+      icon: Image,
     },
   ];
 

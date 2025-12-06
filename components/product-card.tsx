@@ -22,6 +22,8 @@ interface ProductCardProps {
   discount?: number;
   slug: string;
   category?: string;
+  language?: string;
+  subject?: string;
 }
 
 export function ProductCard({
@@ -34,7 +36,9 @@ export function ProductCard({
   rating = 4.5,
   discount,
   slug,
-  category
+  category,
+  language,
+  subject
 }: ProductCardProps) {
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -122,7 +126,7 @@ export function ProductCard({
             />
             {discount && (
               <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md">
-                -{discount}% OFF
+                {discount}% OFF
               </div>
             )}
 
@@ -146,11 +150,18 @@ export function ProductCard({
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 <span className="text-xs font-medium text-muted-foreground">{rating}</span>
               </div>
-              {category && (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
-                  {category}
-                </span>
-              )}
+              <div className="flex gap-1">
+                {language && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                    {language.split(' ')[0]}
+                  </span>
+                )}
+                {subject && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full border border-gray-200">
+                    {subject}
+                  </span>
+                )}
+              </div>
             </div>
 
             <h3 className="font-bold text-sm line-clamp-2 text-foreground mb-1 group-hover:text-primary transition-colors">{title}</h3>

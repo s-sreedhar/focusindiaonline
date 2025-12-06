@@ -39,6 +39,34 @@ export async function POST(request: Request) {
                 paymentId: data.transactionId, // PhonePe Transaction ID
                 updatedAt: serverTimestamp()
             });
+
+            // Fetch order details to send email
+            // We need to get the doc again to get the latest data or use what we have if possible
+            // But we need items and user details which are in the doc
+            // Since we are in a serverless function, we can just fetch it.
+            // Note: In a high-scale system, we might want to decouple this (e.g., via a queue)
+            // but for now, direct call is fine.
+
+            try {
+                const { getDoc } = require('firebase/firestore'); // Dynamic import to avoid top-level issues if any
+                const orderSnap = await getDoc(orderRef);
+
+                if (orderSnap.exists()) {
+                    const orderData = orderSnap.data();
+                    const { sendOrderConfirmationEmail } = require('@/lib/email');
+
+                    await sendOrderConfirmationEmail({
+                        orderId: orderData.orderId,
+                        customerName: orderData.shippingAddress?.firstName || 'Customer',
+                        customerEmail: orderData.shippingAddress?.email,
+                        items: orderData.items || [],
+                        totalAmount: orderData.totalAmount
+                    });
+                }
+            } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+                // We don't fail the request if email fails, just log it
+            }
         } else {
             // Update order as failed
             const orderRef = doc(db, 'orders', merchantTransactionId);

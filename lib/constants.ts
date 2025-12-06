@@ -69,7 +69,12 @@ export const SUBJECTS = [
   'General Knowledge',
   'Reasoning',
   'Mathematics',
-  'General English'
+  'General English',
+  'Biology',
+  'Mental Ability',
+  'Current Affairs',
+  'General Science',
+  'Arithmetic'
 ];
 
 export const PRIMARY_CATEGORIES = Object.keys(CATEGORIES);

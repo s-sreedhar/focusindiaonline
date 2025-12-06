@@ -1,6 +1,7 @@
 'use client';
 
 import { Header } from '@/components/layouts/header';
+import { HeroCarousel } from '@/components/hero-carousel';
 import { Footer } from '@/components/layouts/footer';
 import { ProductCard } from '@/components/product-card';
 import Link from 'next/link';
@@ -24,6 +25,16 @@ interface Book {
   slug: string;
   createdAt: any;
   category: string;
+  language?: string;
+  subject?: string;
+}
+
+interface Banner {
+  id: string;
+  imageUrl: string;
+  title: string;
+  link: string;
+  order?: number;
 }
 
 const testimonials = [
@@ -46,33 +57,63 @@ const testimonials = [
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchData = async () => {
       try {
         // Fetch latest books
-        const q = query(collection(db, 'books'), orderBy('createdAt', 'desc'), limit(20));
-        const querySnapshot = await getDocs(q);
-        const booksData = querySnapshot.docs.map(doc => ({
+        const booksQuery = query(collection(db, 'books'), orderBy('createdAt', 'desc'), limit(50));
+        const booksSnapshot = await getDocs(booksQuery);
+        const booksData = booksSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Book[];
         setBooks(booksData);
+
+        // Fetch banners
+        // We fetch by createdAt first to ensure we get them, then sort by order in memory
+        // This prevents issues where old banners without 'order' field disappear
+        const bannersQuery = query(collection(db, 'banners'));
+        const bannersSnapshot = await getDocs(bannersQuery);
+        const bannersData = bannersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Banner[];
+
+        // Sort by order (if exists) or fallback to createdAt
+        bannersData.sort((a, b) => {
+          const orderA = a.order ?? 999;
+          const orderB = b.order ?? 999;
+          return orderA - orderB;
+        });
+
+        setBanners(bannersData);
+
       } catch (error) {
-        console.error("Error fetching books:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBooks();
+    fetchData();
   }, []);
 
-  const newArrivals = books.slice(0, 8);
-  // For best sellers, we could sort by rating or just take another slice/random
-  // For now, let's just reverse the list to show some variety
-  const bestSellers = [...books].reverse().slice(0, 8);
+  // Algorithms for different sections
+  const newArrivals = books.slice(0, 10);
+
+  // Best Sellers: Sort by rating (desc)
+  const bestSellers = [...books].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+
+  // Trending: Sort by discount percentage (desc) or price
+  // Let's use discount percentage as a proxy for "Trending" (Hot Deals)
+  const trendingBooks = [...books].sort((a, b) => {
+    const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) : 0;
+    const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) : 0;
+    return discountB - discountA;
+  }).slice(0, 10);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50">
@@ -80,77 +121,83 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-28 lg:pb-20">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50" />
-          <div className="container mx-auto px-4 max-w-[1600px] relative">
-            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="lg:w-1/2 space-y-6 text-center lg:text-left"
-              >
-                <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  #1 Trusted Book Store
-                </div>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
-                  Master Your <br />
-                  <span className="text-primary">Competitive Exams</span>
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-                  Get the best study materials for UPSC, SSC, Banking, and more.
-                  Curated by experts to help you succeed.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
-                    <Link href="/shop">Start Learning Now</Link>
-                  </Button>
-                  {/* <Button asChild size="lg" variant="outline" className="rounded-full px-8 text-lg h-12 border-2 hover:bg-accent/5">
-                    <Link href="/shop/UPSC">Explore Categories</Link>
-                  </Button> */}
-                </div>
+        {banners.length > 0 ? (
+          <section className="pt-20 lg:pt-28">
+            <HeroCarousel banners={banners} />
+          </section>
+        ) : (
+          <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-28 lg:pb-20">
+            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50" />
+            <div className="container mx-auto px-4 max-w-[1600px] relative">
+              <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="lg:w-1/2 space-y-6 text-center lg:text-left"
+                >
+                  <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    #1 Trusted Book Store
+                  </div>
+                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
+                    Master Your <br />
+                    <span className="text-primary">Competitive Exams</span>
+                  </h1>
+                  <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+                    Get the best study materials for UPSC, SSC, Banking, and more.
+                    Curated by experts to help you succeed.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                      <Link href="/shop">Start Learning Now</Link>
+                    </Button>
+                    {/* <Button asChild size="lg" variant="outline" className="rounded-full px-8 text-lg h-12 border-2 hover:bg-accent/5">
+                      <Link href="/shop/UPSC">Explore Categories</Link>
+                    </Button> */}
+                  </div>
 
-                <div className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-green-100 rounded-full text-green-600"><Truck className="w-4 h-4" /></div>
-                    <span>Fast Delivery</span>
+                  <div className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-green-100 rounded-full text-green-600"><Truck className="w-4 h-4" /></div>
+                      <span>Fast Delivery</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 rounded-full text-blue-600"><Award className="w-4 h-4" /></div>
+                      <span>Genuine Books</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-orange-100 rounded-full text-orange-600"><BookOpen className="w-4 h-4" /></div>
+                      <span>Huge Collection</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-100 rounded-full text-blue-600"><Award className="w-4 h-4" /></div>
-                    <span>Genuine Books</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-orange-100 rounded-full text-orange-600"><BookOpen className="w-4 h-4" /></div>
-                    <span>Huge Collection</span>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="lg:w-1/2 relative"
-              >
-                <div className="relative z-10 bg-gradient-to-tr from-primary/20 to-accent/20 rounded-[2rem] p-8 rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-                    <div className="aspect-[4/3] relative bg-gray-50 flex items-center justify-center">
-                      {/* Placeholder for Hero Image */}
-                      <div className="text-center p-8">
-                        <BookOpen className="w-24 h-24 text-primary/20 mx-auto mb-4" />
-                        <p className="text-muted-foreground font-medium">Premium Study Materials</p>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="lg:w-1/2 relative"
+                >
+                  <div className="relative z-10 bg-gradient-to-tr from-primary/20 to-accent/20 rounded-[2rem] p-8 rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+                      <div className="aspect-[4/3] relative bg-gray-50 flex items-center justify-center">
+                        {/* Placeholder for Hero Image */}
+                        <div className="text-center p-8">
+                          <BookOpen className="w-24 h-24 text-primary/20 mx-auto mb-4" />
+                          <p className="text-muted-foreground font-medium">Premium Study Materials</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                {/* Decorative elements */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-200 rounded-full blur-3xl opacity-50" />
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-200 rounded-full blur-3xl opacity-50" />
-              </motion.div>
+                  {/* Decorative elements */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-200 rounded-full blur-3xl opacity-50" />
+                  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-200 rounded-full blur-3xl opacity-50" />
+                </motion.div>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {loading ? (
           <div className="py-20 flex justify-center">
@@ -159,20 +206,20 @@ export default function Home() {
         ) : (
           <>
             {/* Trending Books Carousel */}
-            {bestSellers.length > 0 && (
+            {trendingBooks.length > 0 && (
               <section className="py-12 bg-white">
                 <div className="container mx-auto px-4 max-w-[1600px]">
                   <div className="flex justify-between items-center mb-8">
                     <div>
                       <h2 className="text-3xl font-bold mb-2">Trending Books</h2>
-                      <p className="text-muted-foreground">Books that everyone is talking about</p>
+                      <p className="text-muted-foreground">Top deals and hot picks</p>
                     </div>
                   </div>
 
                   <Carousel>
-                    {Array.from({ length: Math.ceil(bestSellers.length / 4) }).map((_, slideIndex) => (
+                    {Array.from({ length: Math.ceil(trendingBooks.length / 4) }).map((_, slideIndex) => (
                       <div key={slideIndex} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
-                        {bestSellers.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
+                        {trendingBooks.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
                           <ProductCard
                             key={`${slideIndex}-${book.id}`}
                             {...book}
