@@ -4,8 +4,8 @@ import { AdminSidebar, adminMenuItems } from '@/components/admin/sidebar';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { Loader2, ShieldAlert, Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Loader2, ShieldAlert, Menu, LogOut } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -78,12 +78,12 @@ export default function AdminLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-64">
-              <div className="h-full bg-sidebar text-sidebar-foreground">
+              <div className="h-full bg-sidebar text-sidebar-foreground flex flex-col">
                 <div className="p-6 border-b border-sidebar-border/50">
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</h1>
+                  <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</SheetTitle>
                   <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
                 </div>
-                <nav className="space-y-2 px-4 py-4">
+                <nav className="flex-1 flex flex-col px-4 py-4 min-h-0">
                   <MobileNavItems />
                 </nav>
               </div>
@@ -107,24 +107,37 @@ function MobileNavItems() {
 
   return (
     <>
-      {adminMenuItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = pathname === item.href;
+      <div className="flex-1 overflow-y-auto">
+        {adminMenuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
 
-        return (
-          <Link key={item.href} href={item.href}>
-            <div
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-primary'
-                }`}
-            >
-              <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary'}`} />
-              <span className="font-medium">{item.label}</span>
-            </div>
-          </Link>
-        );
-      })}
+          return (
+            <SheetClose asChild key={item.href}>
+              <Link href={item.href}>
+                <div
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                    : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-primary'
+                    }`}
+                >
+                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary'}`} />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+              </Link>
+            </SheetClose>
+          );
+        })}
+      </div>
+
+      <div className="mt-auto pt-4 border-t border-sidebar-border/50 bg-sidebar pb-6">
+        <SheetClose asChild>
+          <Button variant="ghost" className="w-full gap-2 justify-start text-red-500 hover:text-red-600 hover:bg-red-50">
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+        </SheetClose>
+      </div>
     </>
   );
 }

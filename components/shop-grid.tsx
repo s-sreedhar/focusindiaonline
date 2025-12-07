@@ -65,7 +65,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
       // Subject filter
       if (filters.selectedSubjects.length > 0) {
         const hasSubject = filters.selectedSubjects.some(subject =>
-          book.subjects?.some(s => s.toLowerCase() === subject.toLowerCase())
+          book.subjects?.some(s => s && subject && s.toLowerCase().trim() === subject.toLowerCase().trim())
         );
         if (!hasSubject) return false;
       }
