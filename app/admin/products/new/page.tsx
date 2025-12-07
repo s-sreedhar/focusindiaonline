@@ -117,7 +117,7 @@ export default function NewProductPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="originalPrice">Original Price (MRP)</Label>
+                            <Label htmlFor="originalPrice">Original Price</Label>
                             <Input id="originalPrice" name="originalPrice" type="number" value={formData.originalPrice} onChange={handleChange} />
                         </div>
 

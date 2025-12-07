@@ -13,6 +13,7 @@ import { Carousel } from '@/components/carousel';
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { TestimonialsSection } from '@/components/testimonials-section';
 
 interface Book {
   id: string;
@@ -37,23 +38,7 @@ interface Banner {
   order?: number;
 }
 
-const testimonials = [
-  {
-    name: 'Rajesh Kumar',
-    text: 'Excellent collection of books. Fast delivery and great customer support!',
-    rating: 5
-  },
-  {
-    name: 'Priya Sharma',
-    text: 'The books helped me clear my SSC exam. Highly recommended!',
-    rating: 5
-  },
-  {
-    name: 'Amit Patel',
-    text: 'Best prices and authentic books. Great experience shopping here.',
-    rating: 4
-  }
-];
+
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -344,44 +329,7 @@ export default function Home() {
         </section>
 
         {/* Testimonials */}
-        <section className="py-16 bg-gray-50/50">
-          <div className="container mx-auto px-4 max-w-[1600px]">
-            <h2 className="text-3xl font-bold mb-12 text-center">What Our Customers Say</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {testimonials.map((testimonial, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <Card className="p-8 h-full border-none shadow-md hover:shadow-xl transition-all bg-white relative">
-                    <div className="absolute top-6 right-8 text-6xl text-primary/10 font-serif">"</div>
-                    <div className="flex items-center gap-1 mb-6">
-                      {[...Array(5)].map((_, j) => (
-                        <Star
-                          key={j}
-                          className={`w-4 h-4 ${j < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-muted-foreground mb-6 italic relative z-10">{testimonial.text}</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center font-bold text-primary">
-                        {testimonial.name[0]}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm">{testimonial.name}</p>
-                        <p className="text-xs text-muted-foreground">Verified Buyer</p>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <TestimonialsSection />
 
         {/* Newsletter */}
         {/* <section className="py-16 bg-white">

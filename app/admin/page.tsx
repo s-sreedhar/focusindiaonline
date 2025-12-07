@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { BarChart3, ShoppingBag, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { collection, getCountFromServer, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { AnalyticsDashboard } from '@/components/admin/analytics-dashboard';
@@ -23,7 +24,7 @@ export default function AdminDashboard() {
         // Get counts
         const ordersSnapshot = await getCountFromServer(collection(db, 'orders'));
         const productsSnapshot = await getCountFromServer(collection(db, 'books'));
-        const usersSnapshot = await getCountFromServer(collection(db, 'users'));
+        const usersSnapshot = await getCountFromServer(query(collection(db, 'users'), where('role', '!=', 'superadmin')));
 
         // Calculate total sales (this might be expensive on large datasets, better to keep a running total in a separate doc)
         // For now, we'll just sum up the last 100 orders or similar, or just show 0 if not implemented
@@ -103,14 +104,21 @@ export default function AdminDashboard() {
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Card key={i} className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <Icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-              <p className="text-muted-foreground text-sm mb-1">{stat.label}</p>
-              <p className="text-3xl font-bold mb-2">{stat.value}</p>
-              <p className="text-xs text-green-600">{stat.change}</p>
-            </Card>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="p-6 h-full hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  <Icon className={`w-8 h-8 ${stat.color}`} />
+                </div>
+                <p className="text-muted-foreground text-sm mb-1">{stat.label}</p>
+                <p className="text-3xl font-bold mb-2">{stat.value}</p>
+                <p className="text-xs text-green-600">{stat.change}</p>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
@@ -133,7 +141,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {recentOrders.length > 0 ? recentOrders.map((order, i) => (
                     <tr key={i} className="border-b hover:bg-secondary">
-                      <td className="py-3 font-semibold">#{order.id.slice(0, 8)}</td>
+                      <td className="py-3 font-semibold">#{order.orderId || order.id.slice(0, 8)}</td>
                       <td className="py-3">{order.shippingAddress?.firstName || 'Guest'}</td>
                       <td className="py-3 font-semibold">₹{order.totalAmount}</td>
                       <td className="py-3">

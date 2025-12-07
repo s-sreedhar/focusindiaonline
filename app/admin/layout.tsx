@@ -1,10 +1,13 @@
 'use client';
 
-import { AdminSidebar } from '@/components/admin/sidebar';
+import { AdminSidebar, adminMenuItems } from '@/components/admin/sidebar';
 import { useAuthStore } from '@/lib/auth-store';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function AdminLayout({
   children,
@@ -61,10 +64,67 @@ export default function AdminLayout({
 
   return (
     <div className="flex">
-      <AdminSidebar />
-      <main className="flex-1 ml-64 min-h-screen bg-background">
-        {children}
-      </main>
+      <div className="hidden md:block">
+        <AdminSidebar />
+      </div>
+
+      <div className="flex-1 md:ml-64 min-h-screen bg-background flex flex-col">
+        {/* Mobile Header */}
+        <header className="md:hidden border-b bg-white p-4 flex items-center gap-4 sticky top-0 z-40">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-64">
+              <div className="h-full bg-sidebar text-sidebar-foreground">
+                <div className="p-6 border-b border-sidebar-border/50">
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</h1>
+                  <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
+                </div>
+                <nav className="space-y-2 px-4 py-4">
+                  <MobileNavItems />
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <h1 className="font-bold text-lg">Admin Dashboard</h1>
+        </header>
+        <main className="flex-1 p-4 md:p-8">
+          {children}
+        </main>
+      </div>
     </div>
+  );
+}
+
+function MobileNavItems() {
+  const pathname = usePathname();
+  // Ensure adminMenuItems is available. If it was exported from sidebar, we imported it.
+
+  if (!adminMenuItems) return null;
+
+  return (
+    <>
+      {adminMenuItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = pathname === item.href;
+
+        return (
+          <Link key={item.href} href={item.href}>
+            <div
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                : 'hover:bg-sidebar-accent/50 text-sidebar-foreground hover:text-primary'
+                }`}
+            >
+              <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary'}`} />
+              <span className="font-medium">{item.label}</span>
+            </div>
+          </Link>
+        );
+      })}
+    </>
   );
 }

@@ -291,6 +291,7 @@ export function PhoneLogin() {
                 </div>
             )}
 
+            <div id="recaptcha-container"></div>
             <div className="space-y-4">
                 {step === 'phone' ? (
                     <>
@@ -304,7 +305,7 @@ export function PhoneLogin() {
                                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                             />
                         </div>
-                        <div id="recaptcha-container"></div>
+
                         <Button
                             className="w-full"
                             onClick={handleContinue}

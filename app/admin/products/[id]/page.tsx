@@ -158,7 +158,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="originalPrice">Original Price (MRP)</Label>
+                            <Label htmlFor="originalPrice">Original Price</Label>
                             <Input id="originalPrice" name="originalPrice" type="number" value={formData.originalPrice} onChange={handleChange} />
                         </div>
 

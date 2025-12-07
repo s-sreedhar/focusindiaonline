@@ -5,11 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateRange } from 'react-day-picker';
-import { addDays, format, isWithinInterval, startOfDay, subDays, subMonths, subWeeks } from 'date-fns';
-import { Calendar as CalendarIcon, Loader2, TrendingUp, Users, ShoppingBag, CreditCard } from 'lucide-react';
+import {
+    addDays,
+    format,
+    isWithinInterval,
+    startOfDay,
+    endOfDay,
+    startOfWeek,
+    endOfWeek,
+    startOfMonth,
+    endOfMonth,
+    subDays,
+    subMonths,
+    subWeeks
+} from 'date-fns';
+import { Calendar as CalendarIcon, Loader2, TrendingUp, Users, ShoppingBag, CreditCard, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
@@ -30,6 +45,7 @@ import {
 
 interface Order {
     id: string;
+    orderId?: string;
     totalAmount: number;
     createdAt: any;
     status: string;
@@ -42,6 +58,7 @@ interface Book {
     stockQuantity: number;
     stock?: number; // legacy
     price: number;
+    originalPrice?: number;
     category: string;
 }
 
@@ -54,6 +71,7 @@ export function AnalyticsDashboard() {
         to: new Date(),
     });
     const [timeFilter, setTimeFilter] = useState('30days');
+    const [inventoryBasis, setInventoryBasis] = useState<'selling' | 'original'>('selling');
 
     useEffect(() => {
         fetchData();
@@ -90,6 +108,15 @@ export function AnalyticsDashboard() {
         setTimeFilter(value);
         const today = new Date();
         switch (value) {
+            case 'today':
+                setDateRange({ from: startOfDay(today), to: endOfDay(today) });
+                break;
+            case 'week':
+                setDateRange({ from: startOfWeek(today), to: endOfWeek(today) });
+                break;
+            case 'month':
+                setDateRange({ from: startOfMonth(today), to: endOfMonth(today) });
+                break;
             case '7days':
                 setDateRange({ from: subDays(today, 7), to: today });
                 break;
@@ -113,12 +140,12 @@ export function AnalyticsDashboard() {
         if (!dateRange?.from) return orders;
 
         const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? startOfDay(addDays(dateRange.to, 1)) : addDays(from, 1);
+        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
 
         return orders.filter(order => {
             if (!order.createdAt) return false;
             const orderDate = order.createdAt.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
-            return orderDate >= from && orderDate < to;
+            return orderDate >= from && orderDate <= to;
         });
     }, [orders, dateRange]);
 
@@ -139,10 +166,7 @@ export function AnalyticsDashboard() {
             groupedData[dateKey].orders += 1;
         });
 
-        // Sort by date (this is a bit tricky with just MMM dd, but since we iterate filtered orders which are sorted desc, we might need to reverse or sort properly)
-        // Better approach: Create an array of dates in the range and fill in data
-
-        // For simplicity, let's just reverse the keys if they came from sorted orders
+        // Simple sort by date for display
         return Object.values(groupedData).reverse();
     }, [filteredOrders]);
 
@@ -154,7 +178,15 @@ export function AnalyticsDashboard() {
     // Inventory Stats
     const lowStockBooks = books.filter(b => (b.stockQuantity ?? b.stock ?? 0) < 5);
     const outOfStockBooks = books.filter(b => (b.stockQuantity ?? b.stock ?? 0) <= 0);
-    const totalInventoryValue = books.reduce((sum, b) => sum + (b.price * (b.stockQuantity ?? b.stock ?? 0)), 0);
+
+    // Calculate Inventory Value based on selection
+    const totalInventoryValue = books.reduce((sum, b) => {
+        const quantity = b.stockQuantity ?? b.stock ?? 0;
+        const value = inventoryBasis === 'selling'
+            ? b.price
+            : (b.originalPrice || b.price); // Fallback to price if originalPrice not set
+        return sum + (value * quantity);
+    }, 0);
 
     if (loading) {
         return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -168,12 +200,15 @@ export function AnalyticsDashboard() {
                     <p className="text-muted-foreground">Overview of your store's performance</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                     <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Select range" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">This Week</SelectItem>
+                            <SelectItem value="month">This Month</SelectItem>
                             <SelectItem value="7days">Last 7 Days</SelectItem>
                             <SelectItem value="30days">Last 30 Days</SelectItem>
                             <SelectItem value="90days">Last 3 Months</SelectItem>
@@ -189,7 +224,7 @@ export function AnalyticsDashboard() {
                                     id="date"
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[260px] justify-start text-left font-normal",
+                                        "w-full sm:w-[260px] justify-start text-left font-normal",
                                         !dateRange && "text-muted-foreground"
                                     )}
                                 >
@@ -268,9 +303,11 @@ export function AnalyticsDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">₹{totalInventoryValue.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Total stock value
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground">
+                                Based on {inventoryBasis} price
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -287,7 +324,7 @@ export function AnalyticsDashboard() {
                             <CardTitle>Revenue Overview</CardTitle>
                         </CardHeader>
                         <CardContent className="pl-2">
-                            <div className="h-[350px]">
+                            <div className="h-[350px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={chartData}>
                                         <defs>
@@ -334,7 +371,7 @@ export function AnalyticsDashboard() {
                                 <CardTitle>Orders Trend</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="h-[300px]">
+                                <div className="h-[300px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={chartData}>
                                             <XAxis
@@ -373,7 +410,7 @@ export function AnalyticsDashboard() {
                                     {filteredOrders.slice(0, 5).map(order => (
                                         <div key={order.id} className="flex items-center">
                                             <div className="ml-4 space-y-1">
-                                                <p className="text-sm font-medium leading-none">Order #{order.id.slice(0, 8)}</p>
+                                                <p className="text-sm font-medium leading-none">Order #{order.orderId || order.id.slice(0, 8)}</p>
                                                 <p className="text-sm text-muted-foreground">
                                                     {order.items.length} items
                                                 </p>
@@ -388,6 +425,30 @@ export function AnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="inventory" className="space-y-4">
+                    <div className="flex items-center justify-end space-x-2 mb-4">
+                        <Label htmlFor="inventory-basis" className="text-sm text-muted-foreground mr-2">
+                            Calculate Value Based On:
+                        </Label>
+                        <div className="flex items-center border rounded-md p-1 bg-muted/20">
+                            <Button
+                                variant={inventoryBasis === 'selling' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setInventoryBasis('selling')}
+                                className="h-7 text-xs"
+                            >
+                                Selling Price
+                            </Button>
+                            <Button
+                                variant={inventoryBasis === 'original' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setInventoryBasis('original')}
+                                className="h-7 text-xs"
+                            >
+                                Original Price
+                            </Button>
+                        </div>
+                    </div>
+
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

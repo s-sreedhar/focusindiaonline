@@ -2,44 +2,49 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image } from 'lucide-react';
+import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+export const adminMenuItems = [
+  {
+    label: 'Dashboard',
+    href: '/admin',
+    icon: BarChart3,
+  },
+  {
+    label: 'Books',
+    href: '/admin/books',
+    icon: BookOpen,
+  },
+  {
+    label: 'Orders',
+    href: '/admin/orders',
+    icon: ShoppingCart,
+  },
+  {
+    label: 'Users',
+    href: '/admin/users',
+    icon: Users,
+  },
+  {
+    label: 'Settings',
+    href: '/admin/settings',
+    icon: Settings,
+  },
+  {
+    label: 'Banners',
+    href: '/admin/banners',
+    icon: Image,
+  },
+  {
+    label: 'Testimonials',
+    href: '/admin/testimonials',
+    icon: Award,
+  },
+];
 
 export function AdminSidebar() {
   const pathname = usePathname();
-
-  const menuItems = [
-    {
-      label: 'Dashboard',
-      href: '/admin',
-      icon: BarChart3,
-    },
-    {
-      label: 'Books',
-      href: '/admin/books',
-      icon: BookOpen,
-    },
-    {
-      label: 'Orders',
-      href: '/admin/orders',
-      icon: ShoppingCart,
-    },
-    {
-      label: 'Users',
-      href: '/admin/users',
-      icon: Users,
-    },
-    {
-      label: 'Settings',
-      href: '/admin/settings',
-      icon: Settings,
-    },
-    {
-      label: 'Banners',
-      href: '/admin/banners',
-      icon: Image,
-    },
-  ];
 
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border min-h-screen fixed left-0 top-0">
@@ -48,8 +53,8 @@ export function AdminSidebar() {
         <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
       </div>
 
-      <nav className="space-y-2 px-4">
-        {menuItems.map((item) => {
+      <nav className="space-y-2 px-4 pt-4">
+        {adminMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
 
