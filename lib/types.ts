@@ -66,9 +66,14 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  orderId?: string; // Custom Order ID
   userId: string;
   items: OrderItem[];
   totalAmount: number;
+  subtotal?: number;
+  shippingCharges?: number;
+  discount?: number;
+  appliedCoupon?: string | null;
   status: 'placed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
   shippingAddress: Address & {
     fullName: string;
@@ -78,8 +83,9 @@ export interface Order {
   createdAt: any; // Timestamp
   updatedAt?: any; // Timestamp
   paymentId?: string;
-  paymentMethod: 'cod' | 'online';
+  paymentMethod: 'cod' | 'online' | 'PHONEPE';
   paymentStatus?: 'pending' | 'completed' | 'failed' | 'refunded';
+  adminNotes?: string;
 }
 
 export interface FilterOptions {

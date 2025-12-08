@@ -1,16 +1,24 @@
 import type { Metadata } from 'next'
-import { Outfit } from 'next/font/google'
+// import { Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { WishlistSync } from '@/components/wishlist-sync'
+import { GlobalPopup } from '@/components/global-popup'
 
+// Temporary fallback for offline build
+const outfit = {
+  variable: 'font-sans',
+};
+
+/*
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
   display: 'swap',
 });
+*/
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://focusindiaonline.com'),
@@ -98,6 +106,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <WishlistSync />
+          <GlobalPopup />
         </AuthProvider>
         <Analytics />
       </body>

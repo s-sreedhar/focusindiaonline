@@ -16,6 +16,7 @@ import { hashPassword } from '@/lib/crypto';
 
 export function PhoneRegister() {
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
@@ -96,6 +97,12 @@ export function PhoneRegister() {
         // Validation
         if (!name || name.trim().length < 2) {
             setError('Please enter your full name (at least 2 characters)');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            setError('Please enter a valid email address');
             return;
         }
 
@@ -218,6 +225,7 @@ export function PhoneRegister() {
             const newUserData = {
                 uid: user.uid,
                 displayName: name.trim(),
+                email: email.trim(),
                 phone: user.phoneNumber,
                 role: 'customer',
                 password: hashedPassword, // Store hashed password
@@ -232,6 +240,7 @@ export function PhoneRegister() {
                 id: user.uid,
                 username: user.phoneNumber || '',
                 displayName: name.trim(),
+                email: email.trim(),
                 phone: user.phoneNumber || '',
                 createdAt: new Date().toISOString(),
                 role: 'customer',
@@ -316,6 +325,17 @@ export function PhoneRegister() {
                                 className="pl-10"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
+                        <div className="relative">
+                            <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type="email"
+                                placeholder="Email Address"
+                                className="pl-10"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 disabled={loading}
                             />
                         </div>

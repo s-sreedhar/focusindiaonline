@@ -47,6 +47,17 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     setCurrentPage(1);
   }, [filters, sortBy, activeCategory, itemsPerPage]);
 
+  // Create dynamic subjects list from actual books
+  const availableSubjects = useMemo(() => {
+    const subjects = new Set<string>();
+    books.forEach(book => {
+      book.subjects?.forEach(s => {
+        if (s) subjects.add(s.trim());
+      });
+    });
+    return Array.from(subjects).sort();
+  }, [books]);
+
   const filteredAndSortedBooks = useMemo(() => {
     let result = books.filter((book) => {
       // Price filter
@@ -56,6 +67,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
 
       // Category filter
       if (filters.selectedCategories.length > 0) {
+        // ... (rest of the code)
         const bookCategory = book.primaryCategory || book.category;
         if (!bookCategory || !filters.selectedCategories.includes(bookCategory)) {
           return false;
@@ -121,7 +133,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* Sidebar - Desktop */}
       <div className="hidden md:block w-64 flex-shrink-0">
-        <FilterSidebar filters={filters} onFiltersChange={setFilters} />
+        <FilterSidebar filters={filters} onFiltersChange={setFilters} availableSubjects={availableSubjects} />
       </div>
 
       {/* Main Content */}
@@ -140,7 +152,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
               <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
                 <div className="py-6">
                   <h2 className="text-lg font-bold mb-4">Filters</h2>
-                  <FilterSidebar filters={filters} onFiltersChange={setFilters} />
+                  <FilterSidebar filters={filters} onFiltersChange={setFilters} availableSubjects={availableSubjects} />
                 </div>
               </SheetContent>
             </Sheet>

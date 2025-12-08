@@ -8,6 +8,7 @@ import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/fi
 import { Loader2, Package, Eye, Filter } from 'lucide-react';
 import { Order } from '@/lib/types';
 import { sendEmail } from '@/lib/brevo';
+import { getEmailTemplate } from '@/lib/email-templates';
 import {
   Select,
   SelectContent,
@@ -40,6 +41,8 @@ export default function OrdersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [adminNotes, setAdminNotes] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -67,22 +70,30 @@ export default function OrdersPage() {
       await updateDoc(doc(db, 'orders', orderId), {
         status: newStatus
       });
-      setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus } as Order : order
-      ));
 
-      // Send email notification
-      const order = orders.find(o => o.id === orderId);
-      if (order && order.shippingAddress?.email) {
-        await sendEmail(
-          order.shippingAddress.email,
-          `Order Status Update - ${newStatus.toUpperCase()}`,
-          `
-            <h1>Order Update</h1>
-            <p>Hi ${order.shippingAddress.fullName},</p>
-            <p>Your order #${order.id.slice(0, 8)} status has been updated to: <strong>${newStatus}</strong>.</p>
-          `
-        );
+      const updatedOrder = orders.find(o => o.id === orderId);
+      if (updatedOrder) {
+        const newOrder = { ...updatedOrder, status: newStatus } as Order;
+
+        // Update list
+        setOrders(prev => prev.map(order =>
+          order.id === orderId ? newOrder : order
+        ));
+
+        // Update selected order if it's the one being modified
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder(newOrder);
+        }
+
+        // Send email notification
+        if (newOrder.shippingAddress?.email) {
+          const { subject, htmlContent } = getEmailTemplate(newStatus, newOrder);
+          await sendEmail(
+            newOrder.shippingAddress.email,
+            subject,
+            htmlContent
+          );
+        }
       }
 
       toast.success(`Order status updated to ${newStatus}`);
@@ -90,6 +101,36 @@ export default function OrdersPage() {
       console.error("Error updating status:", error);
       toast.error('Failed to update status');
     }
+  };
+
+  const handleSaveNotes = async () => {
+    if (!selectedOrder) return;
+    try {
+      await updateDoc(doc(db, 'orders', selectedOrder.id), {
+        adminNotes: adminNotes
+      });
+
+      const updatedOrder = { ...selectedOrder, adminNotes };
+
+      // Update list
+      setOrders(prev => prev.map(o =>
+        o.id === selectedOrder.id ? updatedOrder : o
+      ));
+
+      // Update selected order so the change sticks in the UI context
+      setSelectedOrder(updatedOrder);
+
+      toast.success("Notes saved successfully");
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast.error("Failed to save notes");
+    }
+  };
+
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setAdminNotes(order.adminNotes || '');
+    setIsDialogOpen(true);
   };
 
   const filteredOrders = orders.filter(order =>
@@ -155,7 +196,7 @@ export default function OrdersPage() {
           <table className="w-full text-sm text-left">
             <thead className="bg-secondary text-secondary-foreground">
               <tr>
-                <th className="px-6 py-3 font-semibold">Order ID</th>
+                <th className="px-6 py-3 font-semibold">Order No</th>
                 <th className="px-6 py-3 font-semibold">Customer</th>
                 <th className="px-6 py-3 font-semibold">Items</th>
                 <th className="px-6 py-3 font-semibold">Total</th>
@@ -167,10 +208,10 @@ export default function OrdersPage() {
             <tbody className="divide-y">
               {paginatedOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="px-6 py-4 font-medium">#{order.id.slice(0, 8)}</td>
+                  <td className="px-6 py-4 font-medium">#{order.orderId || order.id.slice(0, 8)}</td>
                   <td className="px-6 py-4">
-                    <div className="font-medium">{order.shippingAddress?.fullName}</div>
-                    <div className="text-xs text-muted-foreground">{order.shippingAddress?.phoneNumber}</div>
+                    <div className="font-medium">{order.shippingAddress?.fullName || 'Guest'}</div>
+                    <div className="text-xs text-muted-foreground">{order.shippingAddress?.phoneNumber || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
@@ -194,71 +235,9 @@ export default function OrdersPage() {
                     {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Order Details #{order.id}</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid grid-cols-2 gap-6 py-4">
-                            <div>
-                              <h3 className="font-semibold mb-2">Shipping Address</h3>
-                              <div className="text-sm text-muted-foreground space-y-1">
-                                <p>{order.shippingAddress?.fullName}</p>
-                                <p>{order.shippingAddress?.street}</p>
-                                <p>{order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.zipCode}</p>
-                                <p>Phone: {order.shippingAddress?.phoneNumber}</p>
-                              </div>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold mb-2">Order Info</h3>
-                              <div className="text-sm text-muted-foreground space-y-1">
-                                <p>Date: {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</p>
-                                <p>Status: <span className="capitalize font-medium text-foreground">{order.status}</span></p>
-                                <p>Total: <span className="font-bold text-foreground">₹{order.totalAmount}</span></p>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold mb-2">Items</h3>
-                            <div className="border rounded-md divide-y">
-                              {order.items?.map((item, idx) => (
-                                <div key={idx} className="p-3 flex justify-between items-center text-sm">
-                                  <div>
-                                    <p className="font-medium">{item.title}</p>
-                                    <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                                  </div>
-                                  <p>₹{item.price * item.quantity}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex justify-end pt-4 gap-2">
-                            <Select
-                              value={order.status}
-                              onValueChange={(val) => handleStatusUpdate(order.id, val)}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Update Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="placed">Placed</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                                <SelectItem value="returned">Returned</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -305,6 +284,84 @@ export default function OrdersPage() {
           </div>
         )}
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Order #{selectedOrder.orderId || selectedOrder.id}</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-6 py-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Shipping Address</h3>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>{selectedOrder.shippingAddress?.fullName || 'N/A'}</p>
+                    <p>{selectedOrder.shippingAddress?.street || ''}</p>
+                    <p>{selectedOrder.shippingAddress?.city || ''}, {selectedOrder.shippingAddress?.state || ''} {selectedOrder.shippingAddress?.zipCode || ''}</p>
+                    <p>Phone: {selectedOrder.shippingAddress?.phoneNumber || 'N/A'}</p>
+                    <p>Email: {selectedOrder.shippingAddress?.email || 'N/A'}</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Order Info</h3>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>Date: {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</p>
+                    <p>Status: <span className="capitalize font-medium text-foreground">{selectedOrder.status}</span></p>
+                    <p>Total: <span className="font-bold text-foreground">₹{selectedOrder.totalAmount}</span></p>
+                    <p>Payment Method: <span className="capitalize">{selectedOrder.paymentMethod || 'N/A'}</span></p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Order Items</h3>
+                <div className="border rounded-md divide-y mb-6">
+                  {selectedOrder.items?.map((item, idx) => (
+                    <div key={idx} className="p-3 flex justify-between items-center text-sm">
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p>₹{item.price * item.quantity}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold">Admin Notes</h3>
+                <textarea
+                  className="w-full min-h-[100px] p-3 rounded-md border text-sm"
+                  placeholder="Add notes about this order..."
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                />
+                <Button onClick={handleSaveNotes} size="sm">Save Notes</Button>
+              </div>
+
+              <div className="flex justify-end pt-4 gap-2 border-t mt-4">
+                <Select
+                  value={selectedOrder.status}
+                  onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Update Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placed">Placed</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="returned">Returned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

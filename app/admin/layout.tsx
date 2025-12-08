@@ -68,7 +68,7 @@ export default function AdminLayout({
         <AdminSidebar />
       </div>
 
-      <div className="flex-1 md:ml-64 min-h-screen bg-background flex flex-col">
+      <div className="flex-1 md:ml-64 min-h-screen bg-[#f5f5f7] flex flex-col transition-all duration-300">
         {/* Mobile Header */}
         <header className="md:hidden border-b bg-white p-4 flex items-center gap-4 sticky top-0 z-40">
           <Sheet>

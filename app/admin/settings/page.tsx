@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
 import { updateProfile, updatePassword } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -28,7 +28,12 @@ export default function SettingsPage() {
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState(true);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +43,25 @@ export default function SettingsPage() {
       }));
     }
   }, [user]);
+
+  const fetchSettings = async () => {
+    try {
+      const docRef = doc(db, 'settings', 'general');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setSettings(prev => ({
+          ...prev,
+          ...data
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,8 +73,14 @@ export default function SettingsPage() {
     setProfileForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    toast.success('Site settings saved successfully!');
+  const handleSave = async () => {
+    try {
+      await setDoc(doc(db, 'settings', 'general'), settings);
+      toast.success('Site settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+    }
   };
 
   const handleProfileUpdate = async () => {

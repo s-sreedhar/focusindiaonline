@@ -193,19 +193,19 @@ export function AnalyticsDashboard() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-100">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h2>
-                    <p className="text-muted-foreground">Overview of your store's performance</p>
+                    <h2 className="text-xl font-semibold tracking-tight">Analytics Overview</h2>
+                    <p className="text-sm text-muted-foreground">Performance metrics for your store</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                     <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200 rounded-xl shadow-sm hover:border-gray-300 transition-colors">
                             <SelectValue placeholder="Select range" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-gray-100 shadow-lg">
                             <SelectItem value="today">Today</SelectItem>
                             <SelectItem value="week">This Week</SelectItem>
                             <SelectItem value="month">This Month</SelectItem>
@@ -216,6 +216,7 @@ export function AnalyticsDashboard() {
                             <SelectItem value="custom">Custom Range</SelectItem>
                         </SelectContent>
                     </Select>
+
 
                     {timeFilter === 'custom' && (
                         <Popover>
@@ -260,51 +261,59 @@ export function AnalyticsDashboard() {
 
             {/* Key Metrics */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
+                <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
+                        <div className="p-2 bg-green-50 rounded-full">
+                            <CreditCard className="h-4 w-4 text-green-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">
+                        <div className="text-2xl font-bold tracking-tight">₹{totalRevenue.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground mt-1 font-medium">
+                            <span className="text-green-600">↗</span> In selected period
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-600">Orders</CardTitle>
+                        <div className="p-2 bg-blue-50 rounded-full">
+                            <ShoppingBag className="h-4 w-4 text-blue-600" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold tracking-tight">+{totalOrders}</div>
+                        <p className="text-xs text-muted-foreground mt-1 font-medium">
                             In selected period
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-gray-600">Avg. Order Value</CardTitle>
+                        <div className="p-2 bg-purple-50 rounded-full">
+                            <TrendingUp className="h-4 w-4 text-purple-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">+{totalOrders}</div>
-                        <p className="text-xs text-muted-foreground">
-                            In selected period
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Avg. Order Value</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">₹{Math.round(averageOrderValue).toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">
+                        <div className="text-2xl font-bold tracking-tight">₹{Math.round(averageOrderValue).toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground mt-1 font-medium">
                             Per order
                         </p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Inventory Value</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-gray-600">Inventory Value</CardTitle>
+                        <div className="p-2 bg-orange-50 rounded-full">
+                            <Users className="h-4 w-4 text-orange-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">₹{totalInventoryValue.toLocaleString()}</div>
+                        <div className="text-2xl font-bold tracking-tight">₹{totalInventoryValue.toLocaleString()}</div>
                         <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground font-medium">
                                 Based on {inventoryBasis} price
                             </p>
                         </div>
@@ -319,9 +328,9 @@ export function AnalyticsDashboard() {
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4">
-                    <Card className="col-span-4">
+                    <Card className="col-span-4 rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                         <CardHeader>
-                            <CardTitle>Revenue Overview</CardTitle>
+                            <CardTitle className="text-lg font-semibold text-gray-800">Revenue Overview</CardTitle>
                         </CardHeader>
                         <CardContent className="pl-2">
                             <div className="h-[350px] w-full">
@@ -347,10 +356,10 @@ export function AnalyticsDashboard() {
                                             axisLine={false}
                                             tickFormatter={(value) => `₹${value}`}
                                         />
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                         <Tooltip
                                             formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Sales']}
-                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                                         />
                                         <Area
                                             type="monotone"
@@ -366,9 +375,9 @@ export function AnalyticsDashboard() {
                     </Card>
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                        <Card className="col-span-4">
+                        <Card className="col-span-4 rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                             <CardHeader>
-                                <CardTitle>Orders Trend</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-gray-800">Orders Trend</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="h-[300px] w-full">
@@ -389,7 +398,7 @@ export function AnalyticsDashboard() {
                                             />
                                             <Tooltip
                                                 cursor={{ fill: 'transparent' }}
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                                             />
                                             <Bar dataKey="orders" fill="#adfa1d" radius={[4, 4, 0, 0]} />
                                         </BarChart>
@@ -398,9 +407,9 @@ export function AnalyticsDashboard() {
                             </CardContent>
                         </Card>
 
-                        <Card className="col-span-3">
+                        <Card className="col-span-3 rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                             <CardHeader>
-                                <CardTitle>Recent Sales</CardTitle>
+                                <CardTitle className="text-lg font-semibold text-gray-800">Recent Sales</CardTitle>
                                 <CardDescription>
                                     Latest transactions from your store.
                                 </CardDescription>
@@ -450,26 +459,26 @@ export function AnalyticsDashboard() {
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
+                        <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                                <CardTitle className="text-sm font-medium text-gray-600">Total Products</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{books.length}</div>
                             </CardContent>
                         </Card>
-                        <Card>
+                        <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+                                <CardTitle className="text-sm font-medium text-gray-600">Low Stock Items</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-yellow-600">{lowStockBooks.length}</div>
-                                <p className="text-xs text-muted-foreground">Less than 5 items</p>
+                                <p className="text-xs text-muted-foreground mt-1">Less than 5 items</p>
                             </CardContent>
                         </Card>
-                        <Card>
+                        <Card className="rounded-2xl shadow-sm border-gray-100 bg-white hover:shadow-md transition-all duration-300">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+                                <CardTitle className="text-sm font-medium text-gray-600">Out of Stock</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-red-600">{outOfStockBooks.length}</div>
@@ -477,18 +486,18 @@ export function AnalyticsDashboard() {
                         </Card>
                     </div>
 
-                    <Card>
+                    <Card className="rounded-2xl shadow-sm border-gray-100 bg-white">
                         <CardHeader>
-                            <CardTitle>Low Stock Alert</CardTitle>
+                            <CardTitle className="text-lg font-semibold text-gray-800">Low Stock Alert</CardTitle>
                             <CardDescription>Items that need restocking soon</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 {lowStockBooks.length > 0 ? (
                                     lowStockBooks.map(book => (
-                                        <div key={book.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                                        <div key={book.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                                             <div>
-                                                <p className="font-medium">{book.title}</p>
+                                                <p className="font-medium text-gray-900">{book.title}</p>
                                                 <p className="text-sm text-muted-foreground">Category: {book.category}</p>
                                             </div>
                                             <div className="text-right">

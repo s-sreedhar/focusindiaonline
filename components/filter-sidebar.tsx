@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
+import { PRIMARY_CATEGORIES } from '@/lib/constants';
 
 interface FilterSidebarProps {
   filters: {
@@ -15,9 +15,10 @@ interface FilterSidebarProps {
     inStockOnly: boolean;
   };
   onFiltersChange: (filters: any) => void;
+  availableSubjects?: string[];
 }
 
-export function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) {
+export function FilterSidebar({ filters, onFiltersChange, availableSubjects = [] }: FilterSidebarProps) {
   const {
     priceRange,
     selectedCategories,
@@ -105,16 +106,20 @@ export function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) 
       <div>
         <h3 className="font-bold mb-3">Subjects</h3>
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {SUBJECTS.map((subject) => (
-            <div key={subject} className="flex items-center">
-              <Checkbox
-                id={subject}
-                checked={selectedSubjects.includes(subject)}
-                onCheckedChange={() => handleSubjectToggle(subject)}
-              />
-              <label htmlFor={subject} className="ml-2 text-sm cursor-pointer">{subject}</label>
-            </div>
-          ))}
+          {availableSubjects.length > 0 ? (
+            availableSubjects.map((subject) => (
+              <div key={subject} className="flex items-center">
+                <Checkbox
+                  id={subject}
+                  checked={selectedSubjects.includes(subject)}
+                  onCheckedChange={() => handleSubjectToggle(subject)}
+                />
+                <label htmlFor={subject} className="ml-2 text-sm cursor-pointer">{subject}</label>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No subjects available</p>
+          )}
         </div>
       </div>
 

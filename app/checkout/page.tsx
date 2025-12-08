@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
-import { ChevronDown, Loader2, Phone, Lock, ShieldCheck } from 'lucide-react';
+import { ChevronDown, Loader2, Phone, Lock, ShieldCheck, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { generateOrderId } from '@/lib/utils/order-id';
 
 type Step = 'address' | 'payment' | 'review' | 'verification';
@@ -38,6 +39,17 @@ export default function CheckoutPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [authError, setAuthError] = useState('');
 
+  // Coupon State
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    discountAmount: number;
+  } | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+
   // Pre-fill data if user is logged in
   useEffect(() => {
     if (user) {
@@ -53,12 +65,83 @@ export default function CheckoutPage() {
 
   const subtotal = getTotalPrice();
   const shippingCharges = subtotal > 500 ? 0 : 50;
-  const discount = Math.round(subtotal * 0.05);
-  const total = subtotal + shippingCharges - discount;
+
+  // Calculate total with coupon
+  const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const total = Math.max(0, subtotal + shippingCharges - discount);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    setCouponLoading(true);
+    setCouponError('');
+    setAppliedCoupon(null);
+
+    try {
+      const q = query(collection(db, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        setCouponError('Invalid coupon code');
+        return;
+      }
+
+      const couponDoc = querySnapshot.docs[0];
+      const coupon = couponDoc.data();
+
+      if (!coupon.isActive) {
+        setCouponError('This coupon is no longer active');
+        return;
+      }
+
+      const now = new Date();
+      const expiry = new Date(coupon.expiryDate);
+      if (now > expiry) {
+        setCouponError('This coupon has expired');
+        return;
+      }
+
+      if (subtotal < coupon.minPurchaseAmount) {
+        setCouponError(`Minimum purchase of ₹${coupon.minPurchaseAmount} required`);
+        return;
+      }
+
+      let discountAmount = 0;
+      if (coupon.type === 'percentage') {
+        discountAmount = Math.round((subtotal * coupon.value) / 100);
+      } else {
+        discountAmount = coupon.value;
+      }
+
+      // Ensure discount doesn't exceed subtotal
+      discountAmount = Math.min(discountAmount, subtotal);
+
+      setAppliedCoupon({
+        code: coupon.code,
+        type: coupon.type,
+        value: coupon.value,
+        discountAmount,
+      });
+
+      toast.success('Coupon applied successfully!');
+
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      setCouponError('Failed to apply coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
   };
 
   const handleStepChange = (step: Step) => {
@@ -169,13 +252,6 @@ export default function CheckoutPage() {
             throw new Error(`Insufficient stock for "${item.title}". Available: ${currentStock}`);
           }
 
-          // Note: We do NOT decrement stock here yet. 
-          // Stock should be decremented only after successful payment or reserved temporarily.
-          // For now, we'll decrement it here assuming high intent, but ideally should be on webhook success.
-          // To be safe and simple: Decrement here. If payment fails, we might need to restore (complex).
-          // Or better: Decrement on webhook. But then we risk overselling.
-          // Let's stick to decrementing here for now as per previous logic, but be aware of the risk.
-
           transaction.update(bookRef, {
             stockQuantity: currentStock - item.quantity
           });
@@ -202,8 +278,9 @@ export default function CheckoutPage() {
           subtotal,
           shippingCharges,
           discount,
+          appliedCoupon: appliedCoupon ? appliedCoupon.code : null, // Store used coupon
           totalAmount: total,
-          status: 'pending_payment', // Initial status
+          status: 'pending_payment',
           paymentStatus: 'pending',
           createdAt: serverTimestamp(),
         });
@@ -502,6 +579,37 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
+                {/* Coupon Code Section */}
+                <div className="pb-6 border-b">
+                  <h3 className="font-semibold mb-3 text-sm">Discount Code</h3>
+                  {appliedCoupon ? (
+                    <div className="bg-green-50 border border-green-200 rounded-md p-3 flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-green-700 text-sm">{appliedCoupon.code}</p>
+                        <p className="text-xs text-green-600">
+                          {appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}% off` : `₹${appliedCoupon.value} off`}
+                        </p>
+                      </div>
+                      <button onClick={handleRemoveCoupon} className="text-red-500 hover:text-red-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="h-9"
+                      />
+                      <Button size="sm" onClick={handleApplyCoupon} disabled={couponLoading}>
+                        {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                      </Button>
+                    </div>
+                  )}
+                  {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+                </div>
+
                 {/* Pricing */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
@@ -520,10 +628,12 @@ export default function CheckoutPage() {
                       <span>₹0</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Discount (5%)</span>
-                    <span>-₹{discount}</span>
-                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount {appliedCoupon && `(${appliedCoupon.code})`}</span>
+                      <span>-₹{discount}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Total */}
