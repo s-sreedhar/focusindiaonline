@@ -11,6 +11,7 @@ import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2 } from 'l
 import { motion } from 'framer-motion';
 import { Carousel } from '@/components/carousel';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { TestimonialsSection } from '@/components/testimonials-section';
@@ -137,9 +138,33 @@ export default function Home() {
                     <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
                       <Link href="/shop">Start Learning Now</Link>
                     </Button>
-                    {/* <Button asChild size="lg" variant="outline" className="rounded-full px-8 text-lg h-12 border-2 hover:bg-accent/5">
-                      <Link href="/shop/UPSC">Explore Categories</Link>
-                    </Button> */}
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="max-w-md mx-auto lg:mx-0 pt-4">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search for books, exams, or bundles..."
+                        className="w-full h-12 pl-4 pr-12 rounded-full border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            window.location.href = `/shop?search=${encodeURIComponent(e.currentTarget.value)}`;
+                          }
+                        }}
+                      />
+                      <div className="absolute right-1 top-1 h-10 w-10 bg-primary text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
+                        onClick={(e) => {
+                          // Find the input sibling and get value
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          if (input && input.value) {
+                            window.location.href = `/shop?search=${encodeURIComponent(input.value)}`;
+                          }
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-muted-foreground">
@@ -255,6 +280,76 @@ export default function Home() {
                 )}
               </div>
             </section>
+
+            {/* Combos / Bundles Section */}
+            {books.filter(b => b.category === 'Value Bundles').length > 0 && (
+              <section className="py-16 bg-white">
+                <div className="container mx-auto px-4 max-w-[1600px]">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Award className="w-6 h-6 text-purple-600" />
+                        <h2 className="text-3xl font-bold">Value Combos</h2>
+                      </div>
+                      <p className="text-muted-foreground">Save more with our curated book bundles</p>
+                    </div>
+                    <Button variant="outline" asChild className="rounded-full">
+                      <Link href="/shop?category=Value%20Bundles">View All Combos</Link>
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {books.filter(b => b.category === 'Value Bundles').slice(0, 3).map((combo, i) => (
+                      <motion.div
+                        key={combo.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                        className="group relative bg-white border border-purple-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                      >
+                        <div className="flex flex-col md:flex-row h-full">
+                          <div className="relative w-full md:w-2/5 aspect-[4/3] md:aspect-auto">
+                            <Image
+                              src={combo.image || '/placeholder-book.jpg'}
+                              alt={combo.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="p-6 flex flex-col justify-between flex-1">
+                            <div>
+                              <div className="inline-block px-3 py-1 mb-3 text-xs font-bold text-purple-700 bg-purple-100 rounded-full">
+                                Bundle Deal
+                              </div>
+                              <h3 className="text-xl font-bold mb-2 group-hover:text-purple-700 transition-colors">
+                                {combo.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                                {/* @ts-ignore */}
+                                {combo.description || 'Complete your preparation with this bundle.'}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between mt-auto">
+                              <div className="flex flex-col">
+                                <span className="text-2xl font-bold text-primary">₹{combo.price}</span>
+                                {/* @ts-ignore */}
+                                {combo.originalPrice > combo.price && (
+                                  <span className="text-sm text-muted-foreground line-through">₹{combo.originalPrice}</span>
+                                )}
+                              </div>
+                              <Button asChild className="rounded-full">
+                                <Link href={`/product/${combo.slug}`}>View Combo</Link>
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Best Sellers */}
             {bestSellers.length > 0 && (

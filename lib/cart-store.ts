@@ -20,6 +20,9 @@ interface CartStore {
   clearCart: () => void;
   getTotalPrice: () => number;
   getItemCount: () => number;
+  appliedCoupon: { code: string; type: 'percentage' | 'fixed'; value: number; minPurchaseAmount: number } | null;
+  applyCoupon: (coupon: any) => void;
+  removeCoupon: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -62,6 +65,9 @@ export const useCartStore = create<CartStore>()(
       getItemCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
       },
+      appliedCoupon: null,
+      applyCoupon: (coupon) => set({ appliedCoupon: coupon }),
+      removeCoupon: () => set({ appliedCoupon: null }),
     }),
     {
       name: 'cart-storage',

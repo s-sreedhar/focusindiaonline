@@ -69,7 +69,7 @@ export default function CouponsPage() {
         setLoading(true);
         try {
             const couponData = {
-                code: formData.code.toUpperCase(),
+                code: formData.code.trim().toUpperCase(),
                 type: formData.type,
                 value: Number(formData.value),
                 minPurchaseAmount: Number(formData.minPurchaseAmount) || 0,

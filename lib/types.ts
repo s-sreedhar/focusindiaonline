@@ -28,6 +28,8 @@ export interface Book {
   createdAt?: any; // Timestamp
   updatedAt?: any; // Timestamp
   category?: string;
+  isCombo?: boolean;
+  comboBookIds?: string[];
 }
 
 export interface User {

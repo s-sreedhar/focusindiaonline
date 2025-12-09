@@ -11,12 +11,87 @@ import Link from 'next/link';
 import { ShoppingBag, ArrowRight, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { toast } from 'sonner';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { Loader2, X } from 'lucide-react';
+import { useState } from 'react';
+
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotalPrice, clearCart, appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+
   const subtotal = getTotalPrice();
   const shippingCharges = subtotal > 500 ? 0 : 50;
-  const discount = Math.round(subtotal * 0.05);
+
+  // Calculate discount based on applied coupon
+  let discount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      discount = Math.round((subtotal * appliedCoupon.value) / 100);
+    } else {
+      discount = appliedCoupon.value;
+    }
+  }
+
   const total = subtotal + shippingCharges - discount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+
+    try {
+      const q = query(collection(db, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        setCouponError('Invalid coupon code');
+        return;
+      }
+
+      const couponDoc = querySnapshot.docs[0];
+      const coupon = couponDoc.data();
+
+      if (!coupon.isActive) {
+        setCouponError('This coupon is currently inactive');
+        return;
+      }
+
+      const now = new Date();
+      const expiry = coupon.expiryDate?.toDate ? coupon.expiryDate.toDate() : new Date(coupon.expiryDate);
+      if (now > expiry) {
+        setCouponError(`This coupon expired on ${expiry.toLocaleDateString()}`);
+        return;
+      }
+
+      if (subtotal < coupon.minPurchaseAmount) {
+        setCouponError(`Minimum purchase of ₹${coupon.minPurchaseAmount} required`);
+        return;
+      }
+
+      applyCoupon({
+        code: coupon.code,
+        type: coupon.type,
+        value: Number(coupon.value),
+        minPurchaseAmount: coupon.minPurchaseAmount
+      });
+      setCouponCode('');
+      toast.success('Coupon applied successfully');
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      setCouponError('Failed to apply coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    removeCoupon();
+    toast.info('Coupon removed');
+  };
 
   if (items.length === 0) {
     return (
@@ -103,10 +178,12 @@ export default function CartPage() {
                         {shippingCharges === 0 ? "Free" : `₹${shippingCharges}`}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount (5%)</span>
-                      <span>-₹{discount}</span>
-                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Discount {appliedCoupon ? `(${appliedCoupon.code})` : ''}</span>
+                        <span>-₹{discount}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Total */}
@@ -117,11 +194,33 @@ export default function CartPage() {
 
                   {/* Coupon Input */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground">Promo Code</label>
-                    <div className="flex gap-2">
-                      <Input placeholder="Enter code" className="bg-gray-50" />
-                      <Button variant="outline">Apply</Button>
-                    </div>
+                    <label className="text-sm font-medium text-muted-foreground">Coupon Code</label>
+                    {appliedCoupon ? (
+                      <div className="bg-green-50 border border-green-200 rounded-md p-3 flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-green-700 text-sm">{appliedCoupon.code}</p>
+                          <p className="text-xs text-green-600">
+                            {appliedCoupon.type === 'percentage' ? `${appliedCoupon.value}% off` : `₹${appliedCoupon.value} off`}
+                          </p>
+                        </div>
+                        <button onClick={handleRemoveCoupon} className="text-red-500 hover:text-red-700">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter code"
+                          className="bg-gray-50"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                        />
+                        <Button variant="outline" onClick={handleApplyCoupon} disabled={couponLoading}>
+                          {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                        </Button>
+                      </div>
+                    )}
+                    {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
                   </div>
 
                   {/* Action Buttons */}

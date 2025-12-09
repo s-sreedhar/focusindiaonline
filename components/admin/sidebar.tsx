@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone } from 'lucide-react';
+import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const adminMenuItems = [
@@ -15,6 +15,11 @@ export const adminMenuItems = [
     label: 'Books',
     href: '/admin/books',
     icon: BookOpen,
+  },
+  {
+    label: 'Combos',
+    href: '/admin/combos',
+    icon: Package,
   },
   {
     label: 'Orders',

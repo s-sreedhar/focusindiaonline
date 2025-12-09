@@ -57,7 +57,8 @@ export const CATEGORIES = {
     'Current Affairs',
     'Yojana',
     'Kurukshetra'
-  ]
+  ],
+  'Value Bundles': []
 };
 
 export const SUBJECTS = [

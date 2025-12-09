@@ -19,7 +19,7 @@ import { generateOrderId } from '@/lib/utils/order-id';
 type Step = 'address' | 'payment' | 'review' | 'verification';
 
 export default function CheckoutPage() {
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, getTotalPrice, clearCart, appliedCoupon: storeCoupon, applyCoupon: setStoreCoupon, removeCoupon: removeStoreCoupon } = useCartStore();
   const { user, isAuthenticated, setUser } = useAuthStore();
   const [currentStep, setCurrentStep] = useState<Step>('address');
   const [loading, setLoading] = useState(false);
@@ -50,6 +50,34 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
 
+  const subtotal = getTotalPrice();
+  const shippingCharges = subtotal > 500 ? 0 : 50;
+
+  // Sync coupon from store
+  useEffect(() => {
+    if (storeCoupon) {
+      let amount = 0;
+      if (storeCoupon.type === 'percentage') {
+        amount = Math.round((subtotal * storeCoupon.value) / 100);
+      } else {
+        amount = storeCoupon.value;
+      }
+      amount = Math.min(amount, subtotal);
+
+      // Only update if different to avoid loop loops (though useEffect dependency handles it)
+      if (!appliedCoupon || appliedCoupon.code !== storeCoupon.code || appliedCoupon.discountAmount !== amount) {
+        setAppliedCoupon({
+          code: storeCoupon.code,
+          type: storeCoupon.type,
+          value: storeCoupon.value,
+          discountAmount: amount,
+        });
+      }
+    } else {
+      if (appliedCoupon) setAppliedCoupon(null);
+    }
+  }, [storeCoupon, subtotal]);
+
   // Pre-fill data if user is logged in
   useEffect(() => {
     if (user) {
@@ -62,9 +90,6 @@ export default function CheckoutPage() {
       }));
     }
   }, [user]);
-
-  const subtotal = getTotalPrice();
-  const shippingCharges = subtotal > 500 ? 0 : 50;
 
   // Calculate total with coupon
   const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
@@ -80,7 +105,7 @@ export default function CheckoutPage() {
 
     setCouponLoading(true);
     setCouponError('');
-    setAppliedCoupon(null);
+    // Don't clear immediately, wait for validation
 
     try {
       const q = query(collection(db, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
@@ -95,39 +120,37 @@ export default function CheckoutPage() {
       const coupon = couponDoc.data();
 
       if (!coupon.isActive) {
-        setCouponError('This coupon is no longer active');
+        const msg = 'This coupon is currently inactive';
+        setCouponError(msg);
+        toast.error(msg);
         return;
       }
 
       const now = new Date();
-      const expiry = new Date(coupon.expiryDate);
+      const expiry = coupon.expiryDate?.toDate ? coupon.expiryDate.toDate() : new Date(coupon.expiryDate);
       if (now > expiry) {
-        setCouponError('This coupon has expired');
+        const msg = `This coupon expired on ${expiry.toLocaleDateString()}`;
+        setCouponError(msg);
+        toast.error(msg);
         return;
       }
 
       if (subtotal < coupon.minPurchaseAmount) {
-        setCouponError(`Minimum purchase of ₹${coupon.minPurchaseAmount} required`);
+        const msg = `Minimum purchase of ₹${coupon.minPurchaseAmount} required for this coupon`;
+        setCouponError(msg);
+        toast.error(msg);
         return;
       }
 
-      let discountAmount = 0;
-      if (coupon.type === 'percentage') {
-        discountAmount = Math.round((subtotal * coupon.value) / 100);
-      } else {
-        discountAmount = coupon.value;
-      }
-
-      // Ensure discount doesn't exceed subtotal
-      discountAmount = Math.min(discountAmount, subtotal);
-
-      setAppliedCoupon({
+      // Update Store (Effect will update local state)
+      setStoreCoupon({
         code: coupon.code,
         type: coupon.type,
-        value: coupon.value,
-        discountAmount,
+        value: Number(coupon.value),
+        minPurchaseAmount: coupon.minPurchaseAmount
       });
 
+      setCouponCode('');
       toast.success('Coupon applied successfully!');
 
     } catch (error) {
@@ -139,10 +162,10 @@ export default function CheckoutPage() {
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponError('');
+    removeStoreCoupon();
+    toast.info('Coupon removed');
   };
+
 
   const handleStepChange = (step: Step) => {
     setCurrentStep(step);

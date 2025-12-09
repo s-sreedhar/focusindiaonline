@@ -24,6 +24,7 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [profileData, setProfileData] = useState({
         displayName: '',
+        email: '',
         phone: '',
         address: {
             street: '',
@@ -41,6 +42,7 @@ export default function ProfilePage() {
         } else if (user) {
             setProfileData({
                 displayName: user.displayName || '',
+                email: user.email || '',
                 phone: user.phone || '',
                 address: user.address || {
                     street: '',
@@ -66,6 +68,7 @@ export default function ProfilePage() {
             const userRef = doc(db, 'users', userId);
             await updateDoc(userRef, {
                 displayName: profileData.displayName,
+                email: profileData.email,
                 phone: profileData.phone,
                 address: profileData.address
             });
@@ -111,14 +114,16 @@ export default function ProfilePage() {
                                     <User className="w-4 h-4 mr-2" />
                                     My Profile
                                 </Button>
-                                <Button
-                                    variant={activeTab === 'orders' ? 'default' : 'ghost'}
-                                    className="w-full justify-start"
-                                    onClick={() => setActiveTab('orders')}
-                                >
-                                    <ShoppingBag className="w-4 h-4 mr-2" />
-                                    Orders
-                                </Button>
+                                {user.role !== 'superadmin' && (
+                                    <Button
+                                        variant={activeTab === 'orders' ? 'default' : 'ghost'}
+                                        className="w-full justify-start"
+                                        onClick={() => setActiveTab('orders')}
+                                    >
+                                        <ShoppingBag className="w-4 h-4 mr-2" />
+                                        Orders
+                                    </Button>
+                                )}
                                 <Button
                                     variant={activeTab === 'wishlist' ? 'default' : 'ghost'}
                                     className="w-full justify-start"
@@ -156,6 +161,16 @@ export default function ProfilePage() {
                                             id="name"
                                             value={profileData.displayName}
                                             onChange={(e) => setProfileData({ ...profileData, displayName: e.target.value })}
+                                            disabled={!isEditing}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email Address</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={profileData.email}
+                                            onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                                             disabled={!isEditing}
                                         />
                                     </div>
@@ -253,7 +268,7 @@ export default function ProfilePage() {
                         </Card>
                     )}
 
-                    {activeTab === 'orders' && (
+                    {activeTab === 'orders' && user.role !== 'superadmin' && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>My Orders</CardTitle>
@@ -302,6 +317,6 @@ export default function ProfilePage() {
                     )}
                 </main>
             </div>
-        </div>
+        </div >
     );
 }
