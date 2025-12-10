@@ -15,7 +15,7 @@ export function Footer() {
 
               </div>
               <div className="font-bold text-lg leading-none text-primary">
-                Focus India
+                Imam's Focus India
                 <span className="block text-[10px] font-medium text-muted-foreground tracking-wider">ONLINE</span>
               </div>
             </Link>
@@ -49,6 +49,10 @@ export function Footer() {
               <li><Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact Us</Link></li>
               <li><Link href="/shipping" className="text-muted-foreground hover:text-primary transition-colors">Shipping Info</Link></li>
               <li><Link href="/returns" className="text-muted-foreground hover:text-primary transition-colors">Returns & Exchanges</Link></li>
+              <li><Link href="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">Refund Policy</Link></li>
+              <li><Link href="/cancellation-policy" className="text-muted-foreground hover:text-primary transition-colors">Cancellation Policy</Link></li>
+              <li><Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms & Conditions</Link></li>
             </ul>
           </div>
 
@@ -87,8 +91,8 @@ export function Footer() {
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Focus India Online. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
           </div>
         </div>
       </div>

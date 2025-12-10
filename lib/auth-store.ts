@@ -72,6 +72,13 @@ export const useAuthStore = create<AuthStore>()(
       initialize: () => {
         console.log('[AuthStore] Initializing auth listener...');
 
+        // Check if auth is properly initialized
+        if (!auth) {
+          console.warn('[AuthStore] Firebase auth not initialized');
+          set({ loading: false });
+          return () => {}; // Return no-op unsubscribe
+        }
+
         return onAuthStateChanged(auth, async (firebaseUser) => {
           console.log('[AuthStore] Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
 

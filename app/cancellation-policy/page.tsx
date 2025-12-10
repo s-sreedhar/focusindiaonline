@@ -5,7 +5,7 @@ import { Phone, Mail } from 'lucide-react';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 
-export default function ReturnsPage() {
+export default function CancellationPolicyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -14,78 +14,49 @@ export default function ReturnsPage() {
         <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Return Policy</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Cancellation Policy</h1>
             <p className="text-muted-foreground">FocusIndiaOnline.com</p>
           </div>
 
           <div className="prose max-w-none space-y-8">
             {/* Intro */}
             <p className="text-lg text-muted-foreground">
-              We accept returns only under valid conditions.
+              Orders can be cancelled only before shipping.
             </p>
 
-            {/* Valid Returns */}
+            {/* Cancellation Rules */}
             <section>
-              <h2 className="text-2xl font-bold text-foreground mb-4">You can request a return if:</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Cancellation Rules</h2>
               <ul className="space-y-2 text-muted-foreground">
                 <li className="flex items-start gap-3">
                   <span className="text-primary font-bold mt-1">•</span>
-                  <span>You received a damaged book</span>
+                  <span>Orders can be cancelled only before shipping.</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary font-bold mt-1">•</span>
-                  <span>You received a wrong product</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Pages are missing / printing errors</span>
+                  <span>Once shipped, orders cannot be cancelled.</span>
                 </li>
               </ul>
             </section>
 
-            {/* Conditions */}
+            {/* Refund for Cancellation */}
             <section>
-              <h2 className="text-2xl font-bold text-foreground mb-4">Conditions for Return:</h2>
-              <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Return request must be made within 3 days of delivery.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>The product must be unused and in its original condition.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Proof (photo/video) of the issue is required.</span>
-                </li>
-              </ul>
-            </section>
-
-            {/* Not Eligible */}
-            <section>
-              <h2 className="text-2xl font-bold text-foreground mb-4">Products Not Eligible for Return</h2>
-              <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Digital products / PDF materials</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Books damaged by the customer</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-primary font-bold mt-1">•</span>
-                  <span>Books with minor external wear caused during shipping</span>
-                </li>
-              </ul>
-            </section>
-
-            {/* Return Process */}
-            <section>
-              <h2 className="text-2xl font-bold text-foreground mb-4">How to Request a Return</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Refund for Cancellation</h2>
               <p className="text-muted-foreground mb-4">
-                For return requests, contact support with your order number:
+                For prepaid orders cancelled before dispatch, refund will be issued within 7–10 business days.
+              </p>
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <p className="text-blue-900 text-sm">
+                  <strong>Note:</strong> The refund amount will be credited to the original payment method used during purchase.
+                </p>
+              </div>
+            </section>
+
+            {/* How to Cancel */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">How to Cancel Your Order</h2>
+              <p className="text-muted-foreground mb-4">
+                To cancel your order before it ships, please contact our support team immediately with your order number:
               </p>
               <div className="bg-slate-50 p-6 rounded-lg space-y-3">
                 <div className="flex items-center gap-3">
@@ -103,6 +74,14 @@ export default function ReturnsPage() {
               </div>
             </section>
 
+            {/* Already Shipped */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">If Your Order is Already Shipped</h2>
+              <p className="text-muted-foreground">
+                If your order has already been shipped, you cannot cancel it. However, you can proceed with the return process as per our <Link href="/returns" className="text-primary hover:underline">Returns Policy</Link>.
+              </p>
+            </section>
+
             {/* Related Links */}
             <div className="border-t pt-8">
               <p className="text-sm text-muted-foreground mb-4">Related Policies:</p>
@@ -110,11 +89,11 @@ export default function ReturnsPage() {
                 <Link href="/shipping" className="text-primary hover:underline">
                   Shipping Policy
                 </Link>
+                <Link href="/returns" className="text-primary hover:underline">
+                  Returns Policy
+                </Link>
                 <Link href="/refund-policy" className="text-primary hover:underline">
                   Refund Policy
-                </Link>
-                <Link href="/cancellation-policy" className="text-primary hover:underline">
-                  Cancellation Policy
                 </Link>
                 <Link href="/privacy-policy" className="text-primary hover:underline">
                   Privacy Policy

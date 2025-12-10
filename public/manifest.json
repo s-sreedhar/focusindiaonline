@@ -1,0 +1,57 @@
+{
+  "name": "Focus India Online",
+  "short_name": "Focus India",
+  "description": "Premium competitive exam books for UPSC, SSC, RRB, Banking, APPSC, TGPSC and more",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/favicon.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "1080x1440",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["shopping", "education"],
+  "shortcuts": [
+    {
+      "name": "Shop Books",
+      "short_name": "Shop",
+      "description": "Browse our collection of competitive exam books",
+      "url": "/shop",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

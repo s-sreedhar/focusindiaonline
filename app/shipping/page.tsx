@@ -1,101 +1,134 @@
+'use client';
+
+import Link from 'next/link';
+import { Phone, Mail } from 'lucide-react';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
-import { Card } from '@/components/ui/card';
-import { Truck, Clock, IndianRupee, MapPin, Box, ShieldCheck } from 'lucide-react';
 
 export default function ShippingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
       <main className="flex-1 w-full">
-        <div className="bg-primary text-primary-foreground py-16">
-          <div className="container mx-auto px-4 max-w-7xl text-center">
-            <h1 className="text-4xl font-bold mb-4">Shipping & Delivery</h1>
-            <p className="text-primary-foreground/80 max-w-2xl mx-auto text-lg">
-              Transparent policies and fast delivery across India.
-            </p>
+        <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-12">
+            <h1 className="text-4xl font-bold text-foreground mb-2">Shipping Policy</h1>
+            <p className="text-muted-foreground">FocusIndiaOnline.com</p>
           </div>
-        </div>
 
-        <div className="container mx-auto px-4 max-w-4xl -mt-8 pb-16 space-y-8">
-          <Card className="p-8 shadow-lg border-none">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-primary/10 p-3 rounded-full text-primary">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h2 className="text-2xl font-bold">Delivery Timeline</h2>
-            </div>
+          <div className="prose max-w-none space-y-8">
+            {/* Intro */}
+            <p className="text-lg text-muted-foreground">
+              At Focus India Online, we ensure timely and safe delivery of all competitive exam books and study materials.
+            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-primary" /> Standard Delivery
-                </h3>
-                <p className="text-muted-foreground">3-5 business days across India</p>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-primary" /> Express Delivery
-                </h3>
-                <p className="text-muted-foreground">1-2 business days (metro cities)</p>
-              </div>
-            </div>
-            <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-lg">
-              <p className="text-green-700 font-medium flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Free Shipping on orders above ₹500
+            {/* Shipping Time */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Shipping Time</h2>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Orders are processed within 1–2 business days.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Delivery within 5–7 business days for major cities.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Delivery within 7–10 business days for other locations.</span>
+                </li>
+              </ul>
+            </section>
+
+            {/* Shipping Charges */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Shipping Charges</h2>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Shipping charges (if any) are displayed at checkout.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Free delivery may be offered on selected orders.</span>
+                </li>
+              </ul>
+            </section>
+
+            {/* Order Tracking */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Order Tracking</h2>
+              <p className="text-muted-foreground">
+                Once your order is shipped, a tracking link will be shared via SMS/Email.
               </p>
-            </div>
-          </Card>
+            </section>
 
-          <Card className="p-8 shadow-lg border-none">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-primary/10 p-3 rounded-full text-primary">
-                <IndianRupee className="w-6 h-6" />
-              </div>
-              <h2 className="text-2xl font-bold">Shipping Charges</h2>
-            </div>
-            <ul className="space-y-4">
-              <li className="flex items-center justify-between p-3 border-b last:border-0">
-                <span className="text-muted-foreground">Orders up to ₹500</span>
-                <span className="font-semibold">₹50 flat rate</span>
-              </li>
-              <li className="flex items-center justify-between p-3 border-b last:border-0">
-                <span className="text-muted-foreground">Orders above ₹500</span>
-                <span className="font-semibold text-green-600">FREE</span>
-              </li>
-              <li className="flex items-center justify-between p-3">
-                <span className="text-muted-foreground">Express Delivery surcharge</span>
-                <span className="font-semibold">₹100 extra</span>
-              </li>
-            </ul>
-          </Card>
+            {/* Delivery Delays */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Delivery Delays</h2>
+              <p className="text-muted-foreground mb-4">Delivery may be delayed due to:</p>
+              <ul className="space-y-2 text-muted-foreground mb-4">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Courier delays</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Weather conditions</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Remote area shipping</span>
+                </li>
+              </ul>
+              <p className="text-muted-foreground">
+                If delays occur, our support team will assist you.
+              </p>
+            </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="p-6 border-none shadow-md">
-              <div className="flex items-start gap-4">
-                <Box className="w-8 h-8 text-primary shrink-0" />
-                <div>
-                  <h3 className="font-bold text-lg mb-2">Secure Packaging</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    We ensure safe and waterproof packaging to prevent any damage during transit. Your books arrive in pristine condition.
-                  </p>
+            {/* Contact */}
+            <section className="bg-slate-50 p-6 rounded-lg">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Contact for Delivery Issues</h2>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-primary" />
+                  <a href="tel:+919390861116" className="text-primary hover:underline">
+                    +91 93908 61116
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-primary" />
+                  <a href="mailto:support@focusindiaonline.com" className="text-primary hover:underline">
+                    support@focusindiaonline.com
+                  </a>
                 </div>
               </div>
-            </Card>
+            </section>
 
-            <Card className="p-6 border-none shadow-md">
-              <div className="flex items-start gap-4">
-                <MapPin className="w-8 h-8 text-primary shrink-0" />
-                <div>
-                  <h3 className="font-bold text-lg mb-2">Live Tracking</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Once dispatched, you'll receive a tracking ID via email and SMS to track your package in real-time.
-                  </p>
-                </div>
+            {/* Related Links */}
+            <div className="border-t pt-8">
+              <p className="text-sm text-muted-foreground mb-4">Related Policies:</p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/returns" className="text-primary hover:underline">
+                  Returns Policy
+                </Link>
+                <Link href="/refund-policy" className="text-primary hover:underline">
+                  Refund Policy
+                </Link>
+                <Link href="/privacy-policy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="text-primary hover:underline">
+                  Terms & Conditions
+                </Link>
+                <Link href="/cancellation-policy" className="text-primary hover:underline">
+                  Cancellation Policy
+                </Link>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </main>
