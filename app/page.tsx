@@ -99,7 +99,7 @@ export default function Home() {
     const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) : 0;
     const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) : 0;
     return discountB - discountA;
-  }).slice(0, 10);
+  }).slice(0, 12);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/50">

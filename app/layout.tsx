@@ -5,6 +5,7 @@ import './globals.css'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { WishlistSync } from '@/components/wishlist-sync'
+import { CartSync } from '@/components/cart-sync'
 import { GlobalPopup } from '@/components/global-popup'
 import { MobileNav } from '@/components/layouts/mobile-nav'
 
@@ -110,6 +111,7 @@ export default function RootLayout({
           <MobileNav />
           <Toaster />
           <WishlistSync />
+          <CartSync />
           <GlobalPopup />
         </AuthProvider>
         <Analytics />

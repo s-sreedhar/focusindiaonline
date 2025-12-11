@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { db } from '@/lib/firebase';
@@ -9,12 +9,14 @@ import { handleFirebaseError } from '@/lib/error-utils';
 
 export function WishlistSync() {
     const { user } = useAuthStore();
-    const { setItems } = useWishlistStore();
+    const { items, setItems } = useWishlistStore();
+    const isFetching = useRef(false);
 
     // Sync from Firestore on login
     useEffect(() => {
         const syncFromFirestore = async () => {
             if (!user) return;
+            isFetching.current = true; // Block writes while fetching
 
             try {
                 const userId = user.id || (user as any).uid;
@@ -58,11 +60,37 @@ export function WishlistSync() {
             } catch (error) {
                 console.error('Error syncing wishlist from Firestore:', error);
                 handleFirebaseError(error);
+            } finally {
+                isFetching.current = false;
             }
         };
 
         syncFromFirestore();
     }, [user, setItems]);
+
+    // Sync TO Firestore on store change
+    useEffect(() => {
+        if (!user || isFetching.current) return;
+        const userId = user.id || (user as any).uid;
+        if (!userId) return;
+
+        const wishlistIds = items.map(item => item.bookId);
+
+        const writeWishlist = async () => {
+            try {
+                const { setDoc, doc } = await import('firebase/firestore');
+                const userRef = doc(db, 'users', userId);
+                await setDoc(userRef, { wishlist: wishlistIds }, { merge: true });
+                console.log('Wishlist synced to Firestore');
+            } catch (error) {
+                console.error('Error syncing wishlist to Firestore:', error);
+            }
+        };
+
+        const timeoutId = setTimeout(writeWishlist, 2000);
+        return () => clearTimeout(timeoutId);
+
+    }, [items, user]);
 
     return null;
 }
