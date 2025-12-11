@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, Youtube, Send } from 'lucide-react';
 
 export function Footer() {
@@ -10,10 +11,14 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
-
-              </div>
+            <Link href="/" className="flex items-center gap-3">
+              <Image
+                src="/footer-logo.svg"
+                alt="Books & Study Circle"
+                height={120}
+                width={150}
+                className="object-contain h-24 w-auto"
+              />
               <div className="font-bold text-lg leading-none text-primary">
                 Imam's Focus India
                 <span className="block text-[10px] font-medium text-muted-foreground tracking-wider">ONLINE</span>
@@ -51,8 +56,6 @@ export function Footer() {
               <li><Link href="/returns" className="text-muted-foreground hover:text-primary transition-colors">Returns & Exchanges</Link></li>
               <li><Link href="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">Refund Policy</Link></li>
               <li><Link href="/cancellation-policy" className="text-muted-foreground hover:text-primary transition-colors">Cancellation Policy</Link></li>
-              <li><Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">Terms & Conditions</Link></li>
             </ul>
           </div>
 

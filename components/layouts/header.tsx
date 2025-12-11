@@ -88,11 +88,15 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link href="/" className="flex-shrink-0 relative w-32 md:w-40 h-10 md:h-12">
-              {/* Replace with actual logo if available, or text */}
-              <div className="font-bold text-xl md:text-2xl text-primary flex items-center h-full">
-                Focus India
-              </div>
+            <Link href="/" className="flex-shrink-0 relative h-16 md:h-20 flex items-center">
+              <Image
+                src="/logo.svg"
+                alt="Focus India"
+                height={120}
+                width={200}
+                className="object-contain h-full w-auto"
+                priority
+              />
             </Link>
 
             {/* Mobile Menu Button */}
