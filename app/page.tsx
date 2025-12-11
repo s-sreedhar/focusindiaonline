@@ -11,6 +11,7 @@ import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2, Search }
 import { motion } from 'framer-motion';
 import { Carousel } from '@/components/carousel';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
@@ -42,6 +43,7 @@ interface Banner {
 
 
 export default function Home() {
+  const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,7 @@ export default function Home() {
                         className="w-full h-12 pl-4 pr-12 rounded-full border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && typeof window !== 'undefined') {
-                            window.location.href = `/shop?search=${encodeURIComponent(e.currentTarget.value)}`;
+                            router.push(`/shop?search=${encodeURIComponent(e.currentTarget.value)}`);
                           }
                         }}
                       />
@@ -158,7 +160,7 @@ export default function Home() {
                           // Find the input sibling and get value
                           const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                           if (input && input.value) {
-                            window.location.href = `/shop?search=${encodeURIComponent(input.value)}`;
+                            router.push(`/shop?search=${encodeURIComponent(input.value)}`);
                           }
                         }}
                       >

@@ -437,7 +437,9 @@ export default function CheckoutPage() {
 
       if (data.success && data.url) {
         // Redirect to PhonePe
-        window.location.href = data.url;
+        if (typeof window !== 'undefined') {
+          window.location.href = data.url;
+        }
       } else {
         throw new Error(data.error || 'Payment initiation failed');
       }
