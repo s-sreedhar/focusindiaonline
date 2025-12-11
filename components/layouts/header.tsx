@@ -79,16 +79,24 @@ export function Header() {
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-md py-2' : 'bg-white py-4'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-md py-0.5' : 'bg-white py-1'
           }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', damping: 20, stiffness: 100 }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2 md:gap-3">
+            {/* Mobile Menu Button - Left Side */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-1.5 hover:bg-muted rounded-full order-first shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             {/* Logo */}
-            <Link href="/" className="flex-shrink-0 relative h-16 md:h-20 flex items-center">
+            <Link href="/" className="flex-shrink-0 relative h-16 md:h-14 lg:h-16 flex items-center">
               <Image
                 src="/logo.svg"
                 alt="Focus India"
@@ -98,14 +106,6 @@ export function Header() {
                 priority
               />
             </Link>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 hover:bg-muted rounded-full"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-8">
@@ -149,11 +149,11 @@ export function Header() {
             </form>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-1 md:gap-2 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               {/* Wishlist */}
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-9 w-9 md:h-10 md:w-10" asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9" asChild>
                 <Link href="/wishlist">
-                  <Heart className="w-4 h-4 md:w-5 md:h-5" />
+                  <Heart className="w-4 h-4" />
                   {mounted && wishlistCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {wishlistCount}
@@ -165,8 +165,8 @@ export function Header() {
               {/* Compare Button - Hide on very small screens */}
               <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-9 w-9 md:h-10 md:w-10 hidden sm:flex">
-                    <ArrowRightLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 hidden sm:flex">
+                    <ArrowRightLeft className="w-4 h-4" />
                     {mounted && compareCount > 0 && (
                       <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                         {compareCount}
@@ -248,9 +248,9 @@ export function Header() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative h-9 w-9 md:h-10 md:w-10" asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative h-8 w-8 md:h-9 md:w-9" asChild>
                 <Link href="/cart">
-                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                  <ShoppingCart className="w-4 h-4" />
                   {mounted && cartCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {cartCount}
@@ -262,8 +262,8 @@ export function Header() {
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 h-9 w-9 md:h-10 md:w-10">
-                      <User className="w-4 h-4 md:w-5 md:h-5" />
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 h-8 w-8 md:h-9 md:w-9">
+                      <User className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 p-2">
@@ -290,7 +290,7 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button asChild variant="default" size="sm" className="rounded-full px-3 md:px-6 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-sm">
+                <Button asChild variant="default" size="sm" className="rounded-full px-2.5 md:px-5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-xs md:text-sm">
                   <Link href="/login">Login</Link>
                 </Button>
               )}
