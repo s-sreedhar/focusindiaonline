@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     description: 'Premium competitive exam books for UPSC, SSC, RRB, Banking, APPSC, TGPSC and more. Authentic study materials at best prices.',
     images: [
       {
-        url: '/favicon.png',
+        url: '/favicon.svg',
         width: 1200,
         height: 630,
         alt: 'Focus India Online - Competitive Exam Books',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Focus India Online - Competitive Exam Books',
     description: 'Premium competitive exam books for UPSC, SSC, RRB, Banking, APPSC, TGPSC and more.',
-    images: ['/favicon.png'],
+    images: ['/favicon.svg'],
   },
   robots: {
     index: true,
@@ -86,7 +86,7 @@ export default function RootLayout({
     '@type': 'Organization',
     name: 'Focus India Online',
     url: 'https://focusindiaonline.com',
-    logo: 'https://focusindiaonline.com/favicon.png',
+    logo: 'https://focusindiaonline.com/favicon.svg',
     description: 'Premium competitive exam books and study materials for UPSC, SSC, RRB, Banking, APPSC, TGPSC and more.',
     sameAs: [
       // Add social media links here when available
@@ -96,6 +96,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
