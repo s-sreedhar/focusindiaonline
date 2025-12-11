@@ -39,8 +39,6 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCategory, setSearchCategory] = useState('All');
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
 
@@ -88,14 +86,6 @@ export function Header() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-2 md:gap-3">
-            {/* Mobile Menu Button - Left Side */}
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 hover:bg-muted rounded-full order-first shrink-0"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             {/* Logo */}
             <Link href="/" className="flex-shrink-0 relative h-16 md:h-14 lg:h-16 flex items-center">
               <Image
@@ -291,7 +281,7 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button asChild variant="default" size="sm" className="rounded-full px-2.5 md:px-5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-xs md:text-sm">
+                <Button asChild variant="default" size="sm" className="rounded-full px-3 md:px-5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-xs md:text-sm h-8 md:h-9">
                   <Link href="/login">Login</Link>
                 </Button>
               )}
@@ -300,126 +290,7 @@ export function Header() {
         </div>
       </motion.header>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm lg:hidden"
-            />
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl lg:hidden flex flex-col"
-            >
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="font-bold text-lg text-primary">Menu</div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-muted rounded-full">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-4">
-                <form onSubmit={(e) => { handleSearch(e); setIsMobileMenuOpen(false); }} className="mb-6">
-                  <div className="relative">
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search..."
-                      className="pl-9 bg-muted/50 rounded-full"
-                    />
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  </div>
-                </form>
-
-                <div className="space-y-1">
-                  <Link
-                    href="/"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
-                  >
-                    Home
-                  </Link>
-
-                  {/* Mobile Categories Dropdown */}
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
-                      className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
-                    >
-                      <span>Books / Categories</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {isMobileCategoriesOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden pl-4"
-                        >
-                          <div className="border-l-2 border-muted ml-2 pl-2 py-1 space-y-1">
-                            <Link
-                              href="/shop"
-                              onClick={() => setIsMobileMenuOpen(false)}
-                              className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                            >
-                              All Books
-                            </Link>
-                            {PRIMARY_CATEGORIES.map((cat) => (
-                              <Link
-                                key={cat}
-                                href={`/shop?category=${encodeURIComponent(cat)}`}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                              >
-                                {cat}
-                              </Link>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <Link
-                    href="/about"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
-                  >
-                    About
-                  </Link>
-                  <Link
-                    href="/contact"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
-                  >
-                    Contact
-                  </Link>
-                </div>
-              </div>
-
-              <div className="mt-auto p-4 border-t bg-muted/20">
-                {!isAuthenticated && (
-                  <Button asChild className="w-full rounded-full mb-2">
-                    <Link href="/login">Login / Sign Up</Link>
-                  </Button>
-                )}
-                <div className="text-xs text-center text-muted-foreground">
-                  &copy; 2025 Focus India Online
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Mobile Menu Overlay Removed via User Request */}
     </>
   );
 }

@@ -124,9 +124,9 @@ export default function CartPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 pt-24">
-        <div className="container mx-auto px-4 max-w-[1600px] py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+      <main className="flex-1 pt-20 md:pt-24">
+        <div className="container mx-auto px-4 max-w-[1600px] py-6 md:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-8 gap-4">
             <h1 className="text-3xl font-bold break-words pb-2 leading-tight">Shopping Cart</h1>
             <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={clearCart}>
               <Trash2 className="w-4 h-4 mr-2" />

@@ -10,14 +10,18 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full pt-20 md:pt-28">
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
-            <p className="text-muted-foreground">FocusIndiaOnline.com</p>
+      <main className="flex-1 w-full">
+        {/* Hero Section */}
+        <div className="bg-primary text-primary-foreground py-16">
+          <div className="container mx-auto px-4 max-w-7xl text-center">
+            <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
+            <p className="text-primary-foreground/80 max-w-2xl mx-auto text-lg">
+              Your privacy is our priority.
+            </p>
           </div>
+        </div>
 
+        <div className="container mx-auto px-4 max-w-4xl mt-8 pb-16 space-y-8">
           <div className="prose max-w-none space-y-8">
             {/* Intro */}
             <p className="text-lg text-muted-foreground">

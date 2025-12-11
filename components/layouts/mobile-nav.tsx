@@ -34,16 +34,16 @@ export function MobileNav() {
             icon: ShoppingBag,
         },
         {
-            label: 'Cart',
-            href: '/cart',
-            icon: ShoppingCart,
-            count: cartCount,
-        },
-        {
             label: 'Wishlist',
             href: '/wishlist',
             icon: Heart,
             count: wishlistCount,
+        },
+        {
+            label: 'Cart',
+            href: '/cart',
+            icon: ShoppingCart,
+            count: cartCount,
         },
         {
             label: 'Account',

@@ -74,23 +74,23 @@ export default function ShopPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-20 md:pt-24">
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="bg-white border-b py-12"
+          className="bg-white border-b py-4 md:py-12"
         >
           <div className="max-w-7xl mx-auto px-4">
-            <h1 className="text-4xl font-bold mb-3 text-foreground">Explore Our Collection</h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
+            <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 text-foreground">Explore Our Collection</h1>
+            <p className="text-muted-foreground text-sm md:text-lg max-w-2xl">
               Discover the best study materials for your competitive exams. Filter by category, price, and more.
             </p>
           </div>
         </motion.section>
 
         {/* Shop Grid */}
-        <section className="max-w-7xl mx-auto px-4 py-12">
+        <section className="max-w-7xl mx-auto px-4 py-4 md:py-12">
           {/* We pass all fetched subjects and categories to ShopGrid so filters can show them all */}
           <ShopGrid books={books} allSubjects={allSubjects} allCategories={allCategories} />
         </section>

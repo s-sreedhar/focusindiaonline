@@ -168,19 +168,29 @@ export default function CheckoutPage() {
 
 
   const validateAddress = () => {
-    const { firstName, lastName, address, city, state, zipCode, phone } = formData;
-    if (!firstName.trim() || !lastName.trim() || !address.trim() || !city.trim() || !state.trim() || !zipCode.trim() || !phone.trim()) {
+    const { firstName, lastName, address, city, state, zipCode, phone, email } = formData;
+
+    if (!firstName.trim() || !lastName.trim() || !address.trim() || !city.trim() || !state.trim() || !zipCode.trim() || !phone.trim() || !email.trim()) {
       toast.error("Please fill in all address details");
       return false;
     }
-    if (phone.length < 10) {
-      toast.error("Please enter a valid phone number");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
       return false;
     }
-    if (zipCode.length < 6) {
-      toast.error("Please enter a valid PIN code");
+
+    if (phone.length < 10 || !/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+      toast.error("Please enter a valid 10-digit phone number");
       return false;
     }
+
+    if (zipCode.length < 6 || !/^\d{6}$/.test(zipCode)) {
+      toast.error("Please enter a valid 6-digit PIN code");
+      return false;
+    }
+
     return true;
   };
 

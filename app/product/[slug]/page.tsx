@@ -239,25 +239,27 @@ export default function ProductPage({
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(product.rating || 0)
-                          ? 'fill-accent text-accent'
-                          : 'text-muted'
-                          }`}
-                      />
-                    ))}
+              {(product.rating || 0) > 0 && (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < Math.floor(product.rating || 0)
+                            ? 'fill-accent text-accent'
+                            : 'text-muted'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-semibold">{product.rating || 0}</span>
                   </div>
-                  <span className="font-semibold">{product.rating || 0}</span>
+                  <a href="#reviews" className="text-primary hover:underline">
+                    {product.reviewCount || 0} Reviews
+                  </a>
                 </div>
-                <a href="#reviews" className="text-primary hover:underline">
-                  {product.reviewCount || 0} Reviews
-                </a>
-              </div>
+              )}
 
               {/* Pricing */}
               <div className="space-y-2">
@@ -300,7 +302,7 @@ export default function ProductPage({
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3 pt-6">
-                <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-2xl sm:static sm:bg-transparent sm:p-0 sm:border-0 sm:shadow-none z-50 flex gap-3">
+                <div className="fixed bottom-[64px] left-0 right-0 bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:static sm:bg-transparent sm:p-0 sm:border-0 sm:shadow-none z-40 flex gap-3">
                   <Button
                     className="flex-1 gap-2 rounded-xl h-12 text-base shadow-lg shadow-primary/20"
                     size="lg"

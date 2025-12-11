@@ -62,6 +62,25 @@ export default function ProfilePage() {
 
     const handleSaveProfile = async () => {
         if (!user) return;
+
+        // Validation
+        if (!profileData.displayName.trim()) {
+            toast.error("Name is required");
+            return;
+        }
+        if (!profileData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email)) {
+            toast.error("Valid email is required");
+            return;
+        }
+        if (!profileData.phone.trim() || !/^\d{10}$/.test(profileData.phone.replace(/\D/g, ''))) {
+            toast.error("Valid 10-digit phone number is required");
+            return;
+        }
+        if (profileData.address.zipCode && !/^\d{6}$/.test(profileData.address.zipCode)) {
+            toast.error("Valid 6-digit PIN code is required");
+            return;
+        }
+
         setSaving(true);
         try {
             const userId = user.id || (user as any).uid;

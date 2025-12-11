@@ -180,7 +180,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
       {/* Main Content */}
       <div className="flex-1">
         {/* Top Controls */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4 border-b pb-4">
           <div className="flex items-center gap-4">
             {/* Mobile Filter Trigger */}
             <Sheet>
@@ -190,7 +190,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
                   Filters
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
+              <SheetContent side="left" className="w-[85vw] max-w-[350px] overflow-y-auto px-4">
                 <div className="py-6">
                   <h2 className="text-lg font-bold mb-4">Filters</h2>
                   <FilterSidebar

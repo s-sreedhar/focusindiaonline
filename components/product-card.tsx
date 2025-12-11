@@ -190,8 +190,12 @@ export function ProductCard({
           <div className="p-2 sm:p-3 flex-1 flex flex-col">
             <div className="mb-1 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-medium text-muted-foreground">{rating}</span>
+                {(rating || 0) > 0 && (
+                  <>
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    <span className="text-xs font-medium text-muted-foreground">{rating}</span>
+                  </>
+                )}
               </div>
               <div className="flex gap-1 flex-wrap justify-end">
                 {language && (
