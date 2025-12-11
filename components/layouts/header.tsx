@@ -94,7 +94,7 @@ export function Header() {
                 alt="Focus India"
                 height={120}
                 width={200}
-                className="object-contain h-full w-auto"
+                style={{ width: 'auto', height: '100%' }}
                 priority
               />
             </Link>
