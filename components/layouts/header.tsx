@@ -149,11 +149,11 @@ export function Header() {
             </form>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2 shrink-0">
               {/* Wishlist */}
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative" asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-9 w-9 md:h-10 md:w-10" asChild>
                 <Link href="/wishlist">
-                  <Heart className="w-5 h-5" />
+                  <Heart className="w-4 h-4 md:w-5 md:h-5" />
                   {mounted && wishlistCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {wishlistCount}
@@ -162,11 +162,11 @@ export function Header() {
                 </Link>
               </Button>
 
-              {/* Compare Button */}
+              {/* Compare Button - Hide on very small screens */}
               <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative">
-                    <ArrowRightLeft className="w-5 h-5" />
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-9 w-9 md:h-10 md:w-10 hidden sm:flex">
+                    <ArrowRightLeft className="w-4 h-4 md:w-5 md:h-5" />
                     {mounted && compareCount > 0 && (
                       <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                         {compareCount}
@@ -248,9 +248,9 @@ export function Header() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative" asChild>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative h-9 w-9 md:h-10 md:w-10" asChild>
                 <Link href="/cart">
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
                   {mounted && cartCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
                       {cartCount}
@@ -262,8 +262,8 @@ export function Header() {
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
-                      <User className="w-5 h-5" />
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 h-9 w-9 md:h-10 md:w-10">
+                      <User className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 p-2">
@@ -290,7 +290,7 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button asChild variant="default" size="sm" className="rounded-full px-6 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+                <Button asChild variant="default" size="sm" className="rounded-full px-3 md:px-6 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 text-sm">
                   <Link href="/login">Login</Link>
                 </Button>
               )}
