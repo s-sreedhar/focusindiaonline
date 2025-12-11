@@ -113,7 +113,7 @@ export default function Home() {
           </section>
         ) : (
           <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-28 lg:pb-20">
-            <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50" />
+            <div className="absolute inset-0 opacity-50" style={{backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px'}} />
             <div className="container mx-auto px-4 max-w-[1600px] relative">
               <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
                 <motion.div
@@ -148,7 +148,7 @@ export default function Home() {
                         placeholder="Search for books, exams, or bundles..."
                         className="w-full h-12 pl-4 pr-12 rounded-full border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === 'Enter' && typeof window !== 'undefined') {
                             window.location.href = `/shop?search=${encodeURIComponent(e.currentTarget.value)}`;
                           }
                         }}
@@ -388,7 +388,7 @@ export default function Home() {
 
         {/* Why Choose Us */}
         <section className="py-16 bg-primary text-primary-foreground relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/pattern.png')] opacity-10" />
+          <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '20px 20px'}} />
           <div className="container mx-auto px-4 max-w-[1600px] relative z-10">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Focus India Online?</h2>

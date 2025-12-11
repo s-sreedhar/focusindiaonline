@@ -1,11 +1,13 @@
+'use client';
+
+import Link from 'next/link';
+import { Phone, Mail } from 'lucide-react';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
-import { Card } from '@/components/ui/card';
-import { RefreshCcw, CheckCircle2, AlertCircle, Phone, Mail } from 'lucide-react';
 
 export default function ReturnsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
       <main className="flex-1 w-full">
@@ -45,69 +47,113 @@ export default function ReturnsPage() {
             </Card>
           </div>
 
-          <Card className="p-8 shadow-lg border-none">
-            <h2 className="text-2xl font-bold mb-6">Return Policy Framework</h2>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              <p>
-                We strive to ensure every book you order meets your expectations. However, if you're not completely satisfied, we're here to help.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/10 text-primary rounded-full p-1 mt-0.5"><CheckCircle2 className="w-3 h-3" /></span>
-                  <span><strong>Condition:</strong> Books must be unused, unmarked, and in their original condition.</span>
+          <div className="prose max-w-none space-y-8">
+            {/* Intro */}
+            <p className="text-lg text-muted-foreground">
+              We accept returns only under valid conditions.
+            </p>
+
+            {/* Valid Returns */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">You can request a return if:</h2>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>You received a damaged book</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/10 text-primary rounded-full p-1 mt-0.5"><CheckCircle2 className="w-3 h-3" /></span>
-                  <span><strong>Packaging:</strong> Please keep the original packaging and receipt/invoice intact.</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>You received a wrong product</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="bg-primary/10 text-primary rounded-full p-1 mt-0.5"><CheckCircle2 className="w-3 h-3" /></span>
-                  <span><strong>Timing:</strong> Initiate the return request within 7 days of receiving your order.</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Pages are missing / printing errors</span>
                 </li>
               </ul>
-            </div>
-          </Card>
+            </section>
 
-          <Card className="p-8 shadow-lg border-none">
-            <h2 className="text-2xl font-bold mb-8">How to Initiate a Return</h2>
-            <div className="relative">
-              {/* Timeline Line */}
-              <div className="absolute left-8 top-4 bottom-4 w-0.5 bg-muted hidden md:block"></div>
+            {/* Conditions */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Conditions for Return:</h2>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Return request must be made within 3 days of delivery.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>The product must be unused and in its original condition.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Proof (photo/video) of the issue is required.</span>
+                </li>
+              </ul>
+            </section>
 
-              <div className="space-y-8">
-                {[
-                  { step: 1, title: 'Contact Support', desc: 'Call us at +91 99595 94444 or email info@timesbookstall.com with your Order ID.' },
-                  { step: 2, title: 'Verification', desc: 'Our team will verify your request and approve the return within 24 hours.' },
-                  { step: 3, title: 'Ship Back', desc: 'We will provide a return shipping label. Pack the item securely and ship it back.' },
-                  { step: 4, title: 'Refund Processed', desc: 'Once we receive the item, your refund will be processed within 5-7 business days.' }
-                ].map((item) => (
-                  <div key={item.step} className="flex gap-6 relative bg-white md:bg-transparent p-4 md:p-0 rounded-lg border md:border-none">
-                    <div className="flex-shrink-0 w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl shadow-lg z-10">
-                      {item.step}
-                    </div>
-                    <div className="pt-2">
-                      <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                      <p className="text-muted-foreground">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+            {/* Not Eligible */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">Products Not Eligible for Return</h2>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Digital products / PDF materials</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Books damaged by the customer</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <span>Books with minor external wear caused during shipping</span>
+                </li>
+              </ul>
+            </section>
+
+            {/* Return Process */}
+            <section>
+              <h2 className="text-2xl font-bold text-foreground mb-4">How to Request a Return</h2>
+              <p className="text-muted-foreground mb-4">
+                For return requests, contact support with your order number:
+              </p>
+              <div className="bg-slate-50 p-6 rounded-lg space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-primary" />
+                  <a href="tel:+919390861116" className="text-primary hover:underline">
+                    +91 93908 61116
+                  </a>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-primary" />
+                  <a href="mailto:support@focusindiaonline.com" className="text-primary hover:underline">
+                    support@focusindiaonline.com
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            {/* Related Links */}
+            <div className="border-t pt-8">
+              <p className="text-sm text-muted-foreground mb-4">Related Policies:</p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/shipping" className="text-primary hover:underline">
+                  Shipping Policy
+                </Link>
+                <Link href="/refund-policy" className="text-primary hover:underline">
+                  Refund Policy
+                </Link>
+                <Link href="/cancellation-policy" className="text-primary hover:underline">
+                  Cancellation Policy
+                </Link>
+                <Link href="/privacy-policy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="text-primary hover:underline">
+                  Terms & Conditions
+                </Link>
               </div>
             </div>
-          </Card>
-
-          <div className="bg-muted/30 rounded-xl p-6 border border-dashed border-muted-foreground/30 text-center">
-            <h3 className="font-bold mb-2">Need Immediate Assistance?</h3>
-            <p className="text-sm text-muted-foreground mb-4">Our support team is available Mon-Fri, 9am - 6pm</p>
-            <div className="flex justify-center gap-6">
-              <a href="tel:+919959594444" className="flex items-center gap-2 text-primary font-medium hover:underline">
-                <Phone className="w-4 h-4" /> Call Us
-              </a>
-              <a href="mailto:info@timesbookstall.com" className="flex items-center gap-2 text-primary font-medium hover:underline">
-                <Mail className="w-4 h-4" /> Email Us
-              </a>
-            </div>
           </div>
-
         </div>
       </main>
 

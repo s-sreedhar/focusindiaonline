@@ -23,7 +23,7 @@ export default function AboutPage() {
       <main className="flex-1 w-full">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-primary text-primary-foreground py-20 lg:py-32">
-          <div className="absolute inset-0 bg-[url('/pattern.png')] opacity-10" />
+          <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '20px 20px'}} />
           <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
           <div className="container mx-auto px-4 max-w-7xl relative z-10 text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
