@@ -6,7 +6,7 @@ import { useCartStore } from '@/lib/cart-store';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { handleFirebaseError } from '@/lib/error-utils';
-import { debounce } from 'lodash';
+import { debounce } from '@/lib/utils';
 
 // Helper to debounce writes
 const debouncedWriteCart = debounce(async (userId: string, items: { bookId: string; quantity: number }[]) => {
