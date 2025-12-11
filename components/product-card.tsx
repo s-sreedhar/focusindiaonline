@@ -164,7 +164,7 @@ export function ProductCard({
             )}
 
             {/* Quick Actions Overlay */}
-            <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
+            <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0 z-10">
               <Button
                 size="icon"
                 variant="secondary"

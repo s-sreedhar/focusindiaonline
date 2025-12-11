@@ -199,8 +199,38 @@ export default function CheckoutPage() {
     setCurrentStep(step);
   };
 
+  // Initialize Recaptcha when entering verification step
+  useEffect(() => {
+    if (currentStep === 'verification' && !window.recaptchaVerifier) {
+      // Ensure DOM is ready
+      const initRecaptcha = async () => {
+        try {
+          if (!document.getElementById('recaptcha-container')) {
+            console.error("Recaptcha container not found");
+            return;
+          }
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            size: 'invisible',
+            callback: () => {
+              // reCAPTCHA solved, allow signInWithPhoneNumber.
+            },
+          });
+          // Auto-send OTP once recaptcha is ready
+          await sendOtp();
+        } catch (err) {
+          console.error("Recaptcha init error:", err);
+          setAuthError("Failed to initialize security check. Please refresh.");
+        }
+      };
+
+      // Small delay to allow React to render the container
+      setTimeout(initRecaptcha, 100);
+    }
+  }, [currentStep]);
+
   const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
+    // Kept for manual retry if needed, but useEffect handles primary init
+    if (!window.recaptchaVerifier && document.getElementById('recaptcha-container')) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
       });
@@ -211,10 +241,8 @@ export default function CheckoutPage() {
     if (isAuthenticated) {
       await initiatePayment(user!.id);
     } else {
-      // Start Phone Verification
+      // Start Phone Verification - logical flow triggers useEffect
       setCurrentStep('verification');
-      setTimeout(() => setupRecaptcha(), 100); // Delay to ensure container exists
-      await sendOtp();
     }
   };
 
@@ -223,11 +251,26 @@ export default function CheckoutPage() {
     setAuthError('');
     try {
       const formattedPhone = formData.phone.startsWith('+91') ? formData.phone : `+91${formData.phone}`;
+
+      if (!window.recaptchaVerifier) {
+        setupRecaptcha(); // Try one last time
+        if (!window.recaptchaVerifier) throw new Error("Recaptcha not initialized");
+      }
+
       const appVerifier = window.recaptchaVerifier;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(confirmation);
+      toast.success("OTP sent successfully!");
+
     } catch (err: any) {
       console.error('Error sending OTP:', err);
+      // Reset recaptcha if it fails, so it can be re-rendered
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = undefined;
+        } catch (clearErr) { console.error("Failed to clear recaptcha", clearErr); }
+      }
       setAuthError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
@@ -287,28 +330,44 @@ export default function CheckoutPage() {
       let orderId = '';
 
       await runTransaction(db, async (transaction) => {
-        // 1. Check stock for all items
+        // 1. READS: Check stock for all items FIRST
+        const bookReads: { ref: any, item: typeof items[0] }[] = [];
         for (const item of items) {
           const bookRef = doc(db, 'books', item.bookId);
-          const bookDoc = await transaction.get(bookRef);
+          bookReads.push({ ref: bookRef, item });
+        }
 
+        const bookDocs = await Promise.all(bookReads.map(b => transaction.get(b.ref)));
+
+        // Validate all stocks
+        bookDocs.forEach((bookDoc, index) => {
+          const { item } = bookReads[index];
           if (!bookDoc.exists()) {
             throw new Error(`Book "${item.title}" not found`);
           }
-
-          const bookData = bookDoc.data();
-          const currentStock = bookData.stockQuantity ?? bookData.stock ?? 0;
+          const bookData = bookDoc.data() as any;
+          // bookData is typed as DocumentData, we need safe access
+          const currentStock = bookData?.stockQuantity ?? bookData?.stock ?? 0;
 
           if (currentStock < item.quantity) {
             throw new Error(`Insufficient stock for "${item.title}". Available: ${currentStock}`);
           }
+        });
 
-          transaction.update(bookRef, {
+        // 2. WRITES: All updates and creations
+
+        // Update stock
+        bookDocs.forEach((bookDoc, index) => {
+          const { ref, item } = bookReads[index];
+          const bookData = bookDoc.data() as any;
+          const currentStock = bookData?.stockQuantity ?? bookData?.stock ?? 0;
+
+          transaction.update(ref, {
             stockQuantity: currentStock - item.quantity
           });
-        }
+        });
 
-        // 2. Create Order
+        // Create Order
         const newOrderRef = doc(collection(db, 'orders'));
         orderId = generateOrderId();
         transaction.set(newOrderRef, {
@@ -360,7 +419,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           amount: total,
           orderId: orderId,
-          mobileNumber: formData.phone
+          mobileNumber: formData.phone.replace(/\D/g, '') // Send clean digits to backend
         })
       });
 

@@ -132,7 +132,11 @@ function MobileNavItems() {
 
       <div className="mt-auto pt-4 border-t border-sidebar-border/50 bg-sidebar pb-6">
         <SheetClose asChild>
-          <Button variant="ghost" className="w-full gap-2 justify-start text-red-500 hover:text-red-600 hover:bg-red-50">
+          <Button
+            variant="ghost"
+            className="w-full gap-2 justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={() => useAuthStore.getState().logout()}
+          >
             <LogOut className="w-4 h-4" />
             Logout
           </Button>

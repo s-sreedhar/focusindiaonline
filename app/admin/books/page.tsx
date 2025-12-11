@@ -11,6 +11,14 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/fi
 import Image from 'next/image';
 import { SubjectManager } from '@/components/admin/subject-manager';
 import { CategoryManager } from '@/components/admin/category-manager';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Book {
     id: string;
@@ -36,6 +44,8 @@ export default function BooksPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -133,12 +143,18 @@ export default function BooksPage() {
                             placeholder="Search by title or author..."
                             className="pl-9"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
                         />
                     </div>
                     <select
                         value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedCategory(e.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                         <option value="">All Categories</option>
@@ -150,7 +166,10 @@ export default function BooksPage() {
                     </select>
                     <select
                         value={selectedSubject}
-                        onChange={(e) => setSelectedSubject(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedSubject(e.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                         <option value="">All Subjects</option>
@@ -163,53 +182,98 @@ export default function BooksPage() {
                 </div>
             </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredBooks.map((book) => (
-                    <Card key={book.id} className="overflow-hidden group">
-                        <div className="relative aspect-[3/4]">
-                            <Image
-                                src={book.image || '/placeholder-book.jpg'}
-                                alt={book.title}
-                                fill
-                                className="object-cover transition-transform group-hover:scale-105"
-                            />
-                        </div>
-                        <div className="p-3">
-                            <div className="flex justify-between items-start mb-1">
-                                <h3 className="font-bold truncate flex-1" title={book.title}>{book.title}</h3>
-                                {book.category && (
-                                    <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full ml-2 shrink-0">
-                                        {book.category}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
+            {/* Pagination Logic */}
+            {(() => {
+                const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+                const paginatedBooks = filteredBooks.slice(
+                    (currentPage - 1) * itemsPerPage,
+                    currentPage * itemsPerPage
+                );
 
-                            {/* Display Subject if available */}
-                            {book.subject && (
-                                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                                    {book.subject}
-                                </p>
-                            )}
+                return (
+                    <>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            {paginatedBooks.map((book) => (
+                                <Card key={book.id} className="overflow-hidden group">
+                                    <div className="relative aspect-[3/4]">
+                                        <Image
+                                            src={book.image || '/placeholder-book.jpg'}
+                                            alt={book.title}
+                                            fill
+                                            className="object-cover transition-transform group-hover:scale-105"
+                                        />
+                                    </div>
+                                    <div className="p-3">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h3 className="font-bold truncate flex-1" title={book.title}>{book.title}</h3>
+                                            {book.category && (
+                                                <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full ml-2 shrink-0">
+                                                    {book.category}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
 
-                            <div className="flex justify-between items-center mt-2">
-                                <span className="font-bold text-primary">₹{book.price}</span>
-                                <div className="flex gap-2">
-                                    <Button size="icon" variant="ghost" asChild>
-                                        <Link href={`/admin/books/${book.id}`}>
-                                            <Pencil className="w-4 h-4" />
-                                        </Link>
-                                    </Button>
-                                    <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(book.id)}>
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
+                                        {/* Display Subject if available */}
+                                        {book.subject && (
+                                            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                                {book.subject}
+                                            </p>
+                                        )}
+
+                                        <div className="flex justify-between items-center mt-2">
+                                            <span className="font-bold text-primary">₹{book.price}</span>
+                                            <div className="flex gap-2">
+                                                <Button size="icon" variant="ghost" asChild>
+                                                    <Link href={`/admin/books/${book.id}`}>
+                                                        <Pencil className="w-4 h-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(book.id)}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
                         </div>
-                    </Card>
-                ))}
-            </div>
+
+                        {totalPages > 1 && (
+                            <div className="mt-8">
+                                <Pagination>
+                                    <PaginationContent>
+                                        <PaginationItem>
+                                            <PaginationPrevious
+                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                            />
+                                        </PaginationItem>
+                                        {[...Array(totalPages)].map((_, i) => (
+                                            <PaginationItem key={i}>
+                                                <PaginationLink
+                                                    isActive={currentPage === i + 1}
+                                                    onClick={() => setCurrentPage(i + 1)}
+                                                    className="cursor-pointer"
+                                                >
+                                                    {i + 1}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                        ))}
+                                        <PaginationItem>
+                                            <PaginationNext
+                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                            />
+                                        </PaginationItem>
+                                    </PaginationContent>
+                                </Pagination>
+                            </div>
+                        )}
+                    </>
+                );
+            })()}
 
             {filteredBooks.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">

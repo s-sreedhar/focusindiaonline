@@ -16,7 +16,16 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination";
 import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 interface Book {
     id: string;
@@ -49,13 +58,17 @@ export default function CombosPage() {
         price: '',
         description: '',
         image: '',
-        comboBookIds: [] as string[]
+        comboBookIds: [] as string[],
+        categories: [] as string[],
+        subjects: [] as string[]
     });
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     const filteredBooks = books.filter(book => {
         const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -126,11 +139,13 @@ export default function CombosPage() {
                 image: imageUrl,
                 comboBookIds: formData.comboBookIds,
                 isCombo: true,
-                category: 'Value Bundles', // Special category for easy filtering
+                category: formData.categories[0] || 'Value Bundles',
+                categories: formData.categories,
                 author: 'Focus India Bundle', // Default author
                 stockQuantity: 999, // Virtual stock, or manageable
                 language: 'English', // Default
-                subject: 'Mixed',
+                subject: formData.subjects[0] || 'Mixed',
+                subjects: formData.subjects,
                 slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
             };
 
@@ -153,7 +168,9 @@ export default function CombosPage() {
                 price: '',
                 description: '',
                 image: '',
-                comboBookIds: []
+                comboBookIds: [],
+                categories: [],
+                subjects: []
             });
             setImageFile(null);
             setEditingId(null);
@@ -174,7 +191,9 @@ export default function CombosPage() {
             price: combo.price.toString(),
             description: combo.description || '',
             image: combo.image,
-            comboBookIds: combo.comboBookIds || []
+            comboBookIds: combo.comboBookIds || [],
+            categories: (combo as any).categories || (combo.category ? [combo.category] : []),
+            subjects: (combo as any).subjects || (combo.subject ? [combo.subject] : [])
         });
         setIsDialogOpen(true);
     };
@@ -219,7 +238,9 @@ export default function CombosPage() {
                             price: '',
                             description: '',
                             image: '',
-                            comboBookIds: []
+                            comboBookIds: [],
+                            categories: [],
+                            subjects: []
                         });
                         setImageFile(null);
                     }
@@ -253,6 +274,26 @@ export default function CombosPage() {
                                     placeholder="e.g. 999"
                                     value={formData.price}
                                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label>Categories</Label>
+                                <MultiSelect
+                                    options={PRIMARY_CATEGORIES.map(c => ({ label: c, value: c }))}
+                                    selected={formData.categories}
+                                    onChange={(selected) => setFormData(prev => ({ ...prev, categories: selected }))}
+                                    placeholder="Select Categories"
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label>Subjects</Label>
+                                <MultiSelect
+                                    options={SUBJECTS.map(s => ({ label: s, value: s }))}
+                                    selected={formData.subjects}
+                                    onChange={(selected) => setFormData(prev => ({ ...prev, subjects: selected }))}
+                                    placeholder="Select Subjects"
                                 />
                             </div>
 
@@ -367,49 +408,83 @@ export default function CombosPage() {
                         No combos found. Create your first bundle!
                     </div>
                 ) : (
-                    combos.map((combo) => (
-                        <div key={combo.id} className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                            <div className="aspect-[16/9] relative bg-muted">
-                                {combo.image ? (
-                                    <Image
-                                        src={combo.image}
-                                        alt={combo.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                                        <Package className="w-12 h-12 opacity-20" />
+                    <>
+                        {combos.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((combo) => (
+                            <div key={combo.id} className="group relative bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                <div className="aspect-[16/9] relative bg-muted">
+                                    {combo.image ? (
+                                        <Image
+                                            src={combo.image}
+                                            alt={combo.title}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                                            <Package className="w-12 h-12 opacity-20" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => handleEdit(combo)}>
+                                            <Edit2 className="w-4 h-4" />
+                                        </Button>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(combo.id)}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
                                     </div>
-                                )}
-                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => handleEdit(combo)}>
-                                        <Edit2 className="w-4 h-4" />
-                                    </Button>
-                                    <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(combo.id)}>
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-lg leading-tight">{combo.title}</h3>
+                                        <span className="font-bold text-primary shrink-0 bg-primary/5 px-2 py-1 rounded">
+                                            ₹{combo.price}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10">
+                                        {combo.description || 'No description provided.'}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Package className="w-3 h-3" />
+                                        {combo.comboBookIds?.length || 0} Books Included
+                                    </div>
                                 </div>
                             </div>
-                            <div className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-lg leading-tight">{combo.title}</h3>
-                                    <span className="font-bold text-primary shrink-0 bg-primary/5 px-2 py-1 rounded">
-                                        ₹{combo.price}
-                                    </span>
-                                </div>
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10">
-                                    {combo.description || 'No description provided.'}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Package className="w-3 h-3" />
-                                    {combo.comboBookIds?.length || 0} Books Included
-                                </div>
-                            </div>
-                        </div>
-                    ))
+                        ))}
+                    </>
                 )}
             </div>
+
+            {combos.length > itemsPerPage && (
+                <div className="mt-8">
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                            {[...Array(Math.ceil(combos.length / itemsPerPage))].map((_, i) => (
+                                <PaginationItem key={i}>
+                                    <PaginationLink
+                                        isActive={currentPage === i + 1}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        className="cursor-pointer"
+                                    >
+                                        {i + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(combos.length / itemsPerPage), p + 1))}
+                                    className={currentPage === Math.ceil(combos.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
         </div>
     );
 }

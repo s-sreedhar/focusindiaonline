@@ -185,7 +185,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
             {/* Mobile Filter Trigger */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="md:hidden">
+                <Button size="sm" className="md:hidden bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
                   <Filter className="w-4 h-4 mr-2" />
                   Filters
                 </Button>
@@ -218,8 +218,8 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
             </div>
           </div>
 
-          <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
+            <div className="hidden md:flex items-center gap-2">
               <button
                 onClick={() => setGridColumns(2)}
                 className={`p-1 rounded hover:bg-muted ${gridColumns === 2 ? 'text-primary' : 'text-muted-foreground'}`}
@@ -243,22 +243,25 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
               </button>
             </div>
 
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-[180px] border-none shadow-none focus:ring-0 px-0 text-right">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground font-normal">Sort by:</span>
-                  <SelectValue placeholder="Sort by" />
-                </div>
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="featured">Default sorting</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="bestselling">Best Selling</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <span className="text-sm text-muted-foreground whitespace-nowrap md:hidden">Sort:</span>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-full md:w-[180px] border-none shadow-none focus:ring-0 px-0 md:text-right h-auto py-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground font-normal hidden md:inline">Sort by:</span>
+                    <SelectValue placeholder="Sort by" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="featured">Default sorting</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="bestselling">Best Selling</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

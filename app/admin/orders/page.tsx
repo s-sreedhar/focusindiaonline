@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Package, Eye, Filter } from 'lucide-react';
+import { Loader2, Package, MoreHorizontal, Filter } from 'lucide-react';
 import { Order } from '@/lib/types';
 import { sendEmail } from '@/lib/brevo';
 import { getEmailTemplate } from '@/lib/email-templates';
@@ -104,13 +104,26 @@ export default function OrdersPage() {
   };
 
   const handleSaveNotes = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !adminNotes.trim()) return;
     try {
+      const newNote = {
+        content: adminNotes,
+        createdAt: new Date().toISOString(),
+        adminName: 'Admin' // You might want to get this from auth store
+      };
+
+      const updatedHistory = [...(selectedOrder.notesHistory || []), newNote];
+
       await updateDoc(doc(db, 'orders', selectedOrder.id), {
-        adminNotes: adminNotes
+        notesHistory: updatedHistory,
+        adminNotes: adminNotes // Keep legacy field updated with latest note
       });
 
-      const updatedOrder = { ...selectedOrder, adminNotes };
+      const updatedOrder = {
+        ...selectedOrder,
+        notesHistory: updatedHistory,
+        adminNotes: adminNotes
+      };
 
       // Update list
       setOrders(prev => prev.map(o =>
@@ -119,8 +132,10 @@ export default function OrdersPage() {
 
       // Update selected order so the change sticks in the UI context
       setSelectedOrder(updatedOrder);
+      setAdminNotes(''); // Clear input
+      setIsDialogOpen(false); // Close dialog
 
-      toast.success("Notes saved successfully");
+      toast.success("Note saved successfully");
     } catch (error) {
       console.error("Error saving notes:", error);
       toast.error("Failed to save notes");
@@ -129,7 +144,7 @@ export default function OrdersPage() {
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
-    setAdminNotes(order.adminNotes || '');
+    setAdminNotes('');
     setIsDialogOpen(true);
   };
 
@@ -236,7 +251,7 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
-                      <Eye className="w-4 h-4" />
+                      <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </td>
                 </tr>
@@ -329,15 +344,40 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="font-semibold">Admin Notes</h3>
-                <textarea
-                  className="w-full min-h-[100px] p-3 rounded-md border text-sm"
-                  placeholder="Add notes about this order..."
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                />
-                <Button onClick={handleSaveNotes} size="sm">Save Notes</Button>
+              <div className="space-y-4">
+                <h3 className="font-semibold">Order Notes</h3>
+
+                {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 && (
+                  <div className="space-y-3 max-h-48 overflow-y-auto pr-2 mb-4 border p-3 rounded-md bg-muted/20">
+                    {[...selectedOrder.notesHistory].reverse().map((note, idx) => (
+                      <div key={idx} className="bg-background p-3 rounded-md border shadow-sm text-sm">
+                        <p className="mb-1">{note.content}</p>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{note.adminName || 'Admin'}</span>
+                          <span>{new Date(note.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!selectedOrder.notesHistory?.length && selectedOrder.adminNotes && (
+                  <div className="bg-muted/30 p-3 rounded-md border text-sm italic text-muted-foreground mb-4">
+                    Latest Note: {selectedOrder.adminNotes}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <textarea
+                    className="flex-1 min-h-[80px] p-3 rounded-md border text-sm"
+                    placeholder="Add a new note..."
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveNotes} size="sm">Save Note</Button>
+                </div>
               </div>
 
               <div className="flex justify-end pt-4 gap-2 border-t mt-4">

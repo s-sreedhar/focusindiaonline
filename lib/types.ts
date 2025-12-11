@@ -89,6 +89,11 @@ export interface Order {
   paymentMethod: 'cod' | 'online' | 'PHONEPE';
   paymentStatus?: 'pending' | 'completed' | 'failed' | 'refunded';
   adminNotes?: string;
+  notesHistory?: {
+    content: string;
+    createdAt: string;
+    adminName?: string;
+  }[];
 }
 
 export interface FilterOptions {

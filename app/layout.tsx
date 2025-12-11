@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth/auth-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { WishlistSync } from '@/components/wishlist-sync'
 import { GlobalPopup } from '@/components/global-popup'
+import { MobileNav } from '@/components/layouts/mobile-nav'
 
 // Temporary fallback for offline build
 const outfit = {
@@ -106,6 +107,7 @@ export default function RootLayout({
       <body className={`${outfit.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
+          <MobileNav />
           <Toaster />
           <WishlistSync />
           <GlobalPopup />

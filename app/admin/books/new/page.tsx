@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 interface Item {
     id: string;
@@ -32,7 +33,9 @@ export default function NewBookPage() {
         originalPrice: '',
         description: '',
         category: '',
+        categories: [] as string[],
         subject: '',
+        subjects: [] as string[],
         language: 'English Medium',
         stock: '100'
     });
@@ -85,10 +88,11 @@ export default function NewBookPage() {
                 price: Number(formData.price),
                 originalPrice: Number(formData.originalPrice),
                 description: formData.description,
-                category: formData.category,
-                primaryCategory: formData.category,
-                subject: formData.subject, // Keep legacy field for now
-                subjects: [formData.subject], // Add array field for filtering
+                category: formData.categories[0] || formData.category, // Legacy support
+                categories: formData.categories,
+                primaryCategory: formData.categories[0] || formData.category,
+                subject: formData.subjects[0] || formData.subject, // Legacy support
+                subjects: formData.subjects,
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
                 image: imageUrl,
@@ -147,42 +151,24 @@ export default function NewBookPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
-                            <select
-                                id="category"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleInputChange}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option value="">Select Category</option>
-                                {categoriesList.map((cat) => (
-                                    <option key={cat.id} value={cat.name}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <Label>Categories</Label>
+                            <MultiSelect
+                                options={categoriesList.map(c => ({ label: c.name, value: c.name }))}
+                                selected={formData.categories}
+                                onChange={(selected) => setFormData(prev => ({ ...prev, categories: selected }))}
+                                placeholder="Select Categories"
+                            />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <select
-                            id="subject"
-                            name="subject"
-                            value={formData.subject}
-                            onChange={handleInputChange}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            required
-                        >
-                            <option value="">Select Subject</option>
-                            {subjectsList.map((subject) => (
-                                <option key={subject.id} value={subject.name}>
-                                    {subject.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Label>Subjects</Label>
+                        <MultiSelect
+                            options={subjectsList.map(s => ({ label: s.name, value: s.name }))}
+                            selected={formData.subjects}
+                            onChange={(selected) => setFormData(prev => ({ ...prev, subjects: selected }))}
+                            placeholder="Select Subjects"
+                        />
                         <p className="text-xs text-muted-foreground mt-1">
                             Manage subjects and categories on the main Books page.
                         </p>

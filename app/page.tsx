@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/product-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2 } from 'lucide-react';
+import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Carousel } from '@/components/carousel';
 import { useEffect, useState } from 'react';
@@ -113,7 +113,7 @@ export default function Home() {
           </section>
         ) : (
           <section className="relative overflow-hidden bg-white pt-20 pb-12 lg:pt-28 lg:pb-20">
-            <div className="absolute inset-0 opacity-50" style={{backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px'}} />
+            <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
             <div className="container mx-auto px-4 max-w-[1600px] relative">
               <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
                 <motion.div
@@ -126,26 +126,26 @@ export default function Home() {
                     <TrendingUp className="w-3 h-3 mr-1" />
                     #1 Trusted Book Store
                   </div>
-                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
+                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground">
                     Master Your <br />
                     <span className="text-primary">Competitive Exams</span>
                   </h1>
-                  <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+                  <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
                     Get the best study materials for UPSC, SSC, Banking, and more.
                     Curated by experts to help you succeed.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                    <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                    <Button asChild size="lg" className="rounded-full px-8 text-lg h-12 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all w-full sm:w-auto">
                       <Link href="/shop">Start Learning Now</Link>
                     </Button>
                   </div>
 
                   {/* Search Bar */}
-                  <div className="max-w-md mx-auto lg:mx-0 pt-4">
+                  <div className="max-w-md mx-auto lg:mx-0 pt-4 w-full px-4 sm:px-0">
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Search for books, exams, or bundles..."
+                        placeholder="Search books..."
                         className="w-full h-12 pl-4 pr-12 rounded-full border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && typeof window !== 'undefined') {
@@ -162,22 +162,22 @@ export default function Home() {
                           }
                         }}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        <Search className="w-5 h-5" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-muted-foreground">
+                  <div className="pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-8 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-green-100 rounded-full text-green-600"><Truck className="w-4 h-4" /></div>
+                      <div className="p-2 bg-green-100 rounded-full text-green-600"><Truck className="w-3 h-3 md:w-4 md:h-4" /></div>
                       <span>Fast Delivery</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-blue-100 rounded-full text-blue-600"><Award className="w-4 h-4" /></div>
+                      <div className="p-2 bg-blue-100 rounded-full text-blue-600"><Award className="w-3 h-3 md:w-4 md:h-4" /></div>
                       <span>Genuine Books</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-orange-100 rounded-full text-orange-600"><BookOpen className="w-4 h-4" /></div>
+                      <div className="p-2 bg-orange-100 rounded-full text-orange-600"><BookOpen className="w-3 h-3 md:w-4 md:h-4" /></div>
                       <span>Huge Collection</span>
                     </div>
                   </div>
@@ -187,14 +187,14 @@ export default function Home() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="lg:w-1/2 relative"
+                  className="lg:w-1/2 relative mt-8 lg:mt-0"
                 >
-                  <div className="relative z-10 bg-gradient-to-tr from-primary/20 to-accent/20 rounded-[2rem] p-8 rotate-3 hover:rotate-0 transition-transform duration-500">
+                  <div className="relative z-10 bg-gradient-to-tr from-primary/20 to-accent/20 rounded-[2rem] p-4 md:p-8 rotate-3 hover:rotate-0 transition-transform duration-500">
                     <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
                       <div className="aspect-[4/3] relative bg-gray-50 flex items-center justify-center">
                         {/* Placeholder for Hero Image */}
                         <div className="text-center p-8">
-                          <BookOpen className="w-24 h-24 text-primary/20 mx-auto mb-4" />
+                          <BookOpen className="w-16 h-16 md:w-24 md:h-24 text-primary/20 mx-auto mb-4" />
                           <p className="text-muted-foreground font-medium">Premium Study Materials</p>
                         </div>
                       </div>
@@ -221,14 +221,14 @@ export default function Home() {
                 <div className="container mx-auto px-4 max-w-[1600px]">
                   <div className="flex justify-between items-center mb-8">
                     <div>
-                      <h2 className="text-3xl font-bold mb-2">Trending Books</h2>
-                      <p className="text-muted-foreground">Top deals and hot picks</p>
+                      <h2 className="text-2xl md:text-3xl font-bold mb-2">Trending Books</h2>
+                      <p className="text-muted-foreground text-sm md:text-base">Top deals and hot picks</p>
                     </div>
                   </div>
 
                   <Carousel>
                     {Array.from({ length: Math.ceil(trendingBooks.length / 4) }).map((_, slideIndex) => (
-                      <div key={slideIndex} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-4">
+                      <div key={slideIndex} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-1 md:px-4">
                         {trendingBooks.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
                           <ProductCard
                             key={`${slideIndex}-${book.id}`}
@@ -248,10 +248,10 @@ export default function Home() {
               <div className="container mx-auto px-4 max-w-[1600px]">
                 <div className="flex justify-between items-center mb-8">
                   <div>
-                    <h2 className="text-3xl font-bold mb-2">New Arrivals</h2>
-                    <p className="text-muted-foreground">Freshly added study materials</p>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2">New Arrivals</h2>
+                    <p className="text-muted-foreground text-sm md:text-base">Freshly added study materials</p>
                   </div>
-                  <Button variant="outline" asChild className="rounded-full">
+                  <Button variant="outline" asChild className="rounded-full text-xs md:text-sm h-8 md:h-10">
                     <Link href="/shop?sort=newest">View All</Link>
                   </Button>
                 </div>
@@ -388,7 +388,7 @@ export default function Home() {
 
         {/* Why Choose Us */}
         <section className="py-16 bg-primary text-primary-foreground relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '20px 20px'}} />
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
           <div className="container mx-auto px-4 max-w-[1600px] relative z-10">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Focus India Online?</h2>

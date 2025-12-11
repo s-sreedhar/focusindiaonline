@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/lib/auth-store';
 
 export const adminMenuItems = [
   {
@@ -95,7 +96,11 @@ export function AdminSidebar() {
       </nav>
 
       <div className="absolute bottom-6 left-4 right-4">
-        <Button variant="outline" className="w-full gap-2 justify-start bg-white/50 border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-300">
+        <Button
+          variant="outline"
+          className="w-full gap-2 justify-start bg-white/50 border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-300"
+          onClick={() => useAuthStore.getState().logout()}
+        >
           <LogOut className="w-4 h-4" />
           Logout
         </Button>

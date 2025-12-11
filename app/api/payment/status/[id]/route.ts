@@ -1,30 +1,60 @@
 import { NextResponse } from 'next/server';
-import { verifyChecksum } from '@/lib/phonepe';
+import { checkPaymentStatus } from '@/lib/phonepe';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const formData = await request.formData();
         const merchantId = formData.get('merchantId');
-        const transactionId = formData.get('transactionId');
-        const code = formData.get('code');
-        const providerReferenceId = formData.get('providerReferenceId');
-        const amount = formData.get('amount');
-        const checksum = formData.get('checksum');
+        const transactionId = formData.get('transactionId') as string;
 
-        // In a real scenario, you might want to verify the checksum here as well
-        // But since the callback handles the actual status update, this is mainly for UX redirection
+        if (!transactionId) {
+            return NextResponse.redirect(new URL('/checkout/failure?reason=missing_transaction_id', request.url), 303);
+        }
 
+        // 1. Verify Payment Status with PhonePe API
+        const statusResponse = await checkPaymentStatus(transactionId);
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-        if (code === 'PAYMENT_SUCCESS') {
+        if (statusResponse && statusResponse.success && statusResponse.code === 'PAYMENT_SUCCESS') {
+            // 2. Update Order in Firestore
+            const orderRef = doc(db, 'orders', transactionId);
+
+            // Check current status to avoid redundant updates
+            const orderSnap = await getDoc(orderRef);
+            if (orderSnap.exists() && orderSnap.data().paymentStatus !== 'paid') {
+                await updateDoc(orderRef, {
+                    paymentStatus: 'paid',
+                    paymentId: statusResponse.data?.transactionId || 'PHONEPE_PAID',
+                    updatedAt: serverTimestamp()
+                });
+            }
+
             return NextResponse.redirect(`${baseUrl}/checkout/success?orderId=${transactionId}`, 303);
+
         } else {
-            return NextResponse.redirect(`${baseUrl}/checkout/failure?orderId=${transactionId}&reason=${code}`, 303);
+            // Payment Failed or Pending
+            const failureReason = statusResponse?.code || 'PAYMENT_FAILED';
+            const message = statusResponse?.message || 'Payment failed';
+
+            const orderRef = doc(db, 'orders', transactionId);
+            // Verify order exists before updating
+            const orderSnap = await getDoc(orderRef);
+            if (orderSnap.exists()) {
+                await updateDoc(orderRef, {
+                    paymentStatus: 'failed',
+                    failureReason: failureReason,
+                    updatedAt: serverTimestamp()
+                });
+            }
+
+            return NextResponse.redirect(`${baseUrl}/checkout/failure?orderId=${transactionId}&reason=${failureReason}&message=${encodeURIComponent(message)}`, 303);
         }
 
     } catch (error) {
         console.error('Status Redirect Error:', error);
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        return NextResponse.redirect(`${baseUrl}/checkout/failure?reason=error`, 303);
+        return NextResponse.redirect(`${baseUrl}/checkout/failure?reason=internal_error`, 303);
     }
 }

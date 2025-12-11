@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { toast } from 'sonner';
 
 interface Item {
@@ -38,7 +39,9 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         originalPrice: '',
         description: '',
         category: '',
+        categories: [] as string[],
         subject: '',
+        subjects: [] as string[],
         language: 'English Medium',
         stock: '100'
     });
@@ -71,7 +74,9 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         originalPrice: data.originalPrice?.toString() || '',
                         description: data.description || '',
                         category: data.category || '',
+                        categories: data.categories || (data.category ? [data.category] : []),
                         subject: data.subject || '', // Primary subject
+                        subjects: data.subjects || (data.subject ? [data.subject] : []),
                         language: data.language || 'English Medium',
                         stock: data.stockQuantity?.toString() || '0'
                     });
@@ -118,9 +123,10 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                 price: Number(formData.price),
                 originalPrice: Number(formData.originalPrice),
                 description: formData.description,
-                category: formData.category,
-                subject: formData.subject,
-                subjects: [formData.subject], // Keep synced for ArrayFilter
+                category: formData.categories[0] || formData.category,
+                categories: formData.categories,
+                subject: formData.subjects[0] || formData.subject,
+                subjects: formData.subjects,
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
                 image: imageUrl,
@@ -182,42 +188,24 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
-                            <select
-                                id="category"
-                                name="category"
-                                value={formData.category}
-                                onChange={handleInputChange}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                required
-                            >
-                                <option value="">Select Category</option>
-                                {categoriesList.map((cat) => (
-                                    <option key={cat.id} value={cat.name}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <Label>Categories</Label>
+                            <MultiSelect
+                                options={categoriesList.map(c => ({ label: c.name, value: c.name }))}
+                                selected={formData.categories}
+                                onChange={(selected) => setFormData(prev => ({ ...prev, categories: selected }))}
+                                placeholder="Select Categories"
+                            />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <select
-                            id="subject"
-                            name="subject"
-                            value={formData.subject}
-                            onChange={handleInputChange}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            required
-                        >
-                            <option value="">Select Subject</option>
-                            {subjectsList.map((subject) => (
-                                <option key={subject.id} value={subject.name}>
-                                    {subject.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Label>Subjects</Label>
+                        <MultiSelect
+                            options={subjectsList.map(s => ({ label: s.name, value: s.name }))}
+                            selected={formData.subjects}
+                            onChange={(selected) => setFormData(prev => ({ ...prev, subjects: selected }))}
+                            placeholder="Select Subjects"
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

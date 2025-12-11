@@ -299,25 +299,29 @@ export default function ProductPage({
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-6">
-                <Button
-                  className="flex-1 gap-2"
-                  size="lg"
-                  disabled={product.stockQuantity <= 0}
-                  onClick={handleAddToCart}
-                  variant={cartAdded ? "secondary" : "default"}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {cartAdded ? 'Added to Cart!' : 'Add to Cart'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-14"
-                  onClick={handleToggleWishlist}
-                >
-                  <Heart className={`w-5 h-5 ${isInWish ? 'fill-accent text-accent' : ''}`} />
-                </Button>
+              <div className="flex flex-col sm:flex-row gap-3 pt-6">
+                <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-2xl sm:static sm:bg-transparent sm:p-0 sm:border-0 sm:shadow-none z-50 flex gap-3">
+                  <Button
+                    className="flex-1 gap-2 rounded-xl h-12 text-base shadow-lg shadow-primary/20"
+                    size="lg"
+                    disabled={product.stockQuantity <= 0}
+                    onClick={handleAddToCart}
+                    variant={cartAdded ? "secondary" : "default"}
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartAdded ? 'Added!' : 'Add to Cart'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-14 h-12 rounded-xl"
+                    onClick={handleToggleWishlist}
+                  >
+                    <Heart className={`w-5 h-5 ${isInWish ? 'fill-accent text-accent' : ''}`} />
+                  </Button>
+                </div>
+                {/* Spacer for fixed bottom bar on mobile */}
+                <div className="h-20 sm:hidden"></div>
               </div>
 
               {/* Features */}
@@ -349,20 +353,21 @@ export default function ProductPage({
             </div>
           </div>
 
+
+          {/* Related Products - Moved above Reviews as requested */}
+          <div className="border-t pt-12 mt-12">
+            <RelatedProducts
+              currentBookId={product.id}
+              category={product.category || product.primaryCategory}
+            />
+          </div>
+
           {/* Reviews Section */}
           <div className="border-t pt-12 mt-12" id="reviews">
             <ReviewsSection
               bookId={product.id}
               averageRating={product.rating || 0}
               totalReviews={product.reviewCount || 0}
-            />
-          </div>
-
-          {/* Related Products */}
-          <div className="border-t pt-12 mt-12">
-            <RelatedProducts
-              currentBookId={product.id}
-              category={product.category || product.primaryCategory}
             />
           </div>
         </section>

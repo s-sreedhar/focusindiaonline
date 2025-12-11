@@ -54,7 +54,7 @@ export function MultiSelect({
     return (
         <Command
             onKeyDown={(e) => {
-                if (e.key === "Backspace" && e.currentTarget.value === "") {
+                if (e.key === "Backspace" && inputRef.current?.value === "") {
                     if (selected.length > 0) {
                         handleUnselect(selected[selected.length - 1]);
                     }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart, User, Search, LogOut, Menu, X, ArrowRightLeft } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, LogOut, Menu, X, ArrowRightLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
@@ -40,6 +40,7 @@ export function Header() {
   const [searchCategory, setSearchCategory] = useState('All');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
 
@@ -165,7 +166,7 @@ export function Header() {
               {/* Compare Button - Hide on very small screens */}
               <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 hidden sm:flex">
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 flex">
                     <ArrowRightLeft className="w-4 h-4" />
                     {mounted && compareCount > 0 && (
                       <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
@@ -338,16 +339,70 @@ export function Header() {
                 </form>
 
                 <div className="space-y-1">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
+                  <Link
+                    href="/"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
+                  >
+                    Home
+                  </Link>
+
+                  {/* Mobile Categories Dropdown */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsMobileCategoriesOpen(!isMobileCategoriesOpen)}
+                      className="flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
                     >
-                      {link.name}
-                    </Link>
-                  ))}
+                      <span>Books / Categories</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isMobileCategoriesOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {isMobileCategoriesOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden pl-4"
+                        >
+                          <div className="border-l-2 border-muted ml-2 pl-2 py-1 space-y-1">
+                            <Link
+                              href="/shop"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              All Books
+                            </Link>
+                            {PRIMARY_CATEGORIES.map((cat) => (
+                              <Link
+                                key={cat}
+                                href={`/shop?category=${encodeURIComponent(cat)}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                {cat}
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <Link
+                    href="/about"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
+                  >
+                    About
+                  </Link>
+                  <Link
+                    href="/contact"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary rounded-xl transition-colors"
+                  >
+                    Contact
+                  </Link>
                 </div>
               </div>
 
