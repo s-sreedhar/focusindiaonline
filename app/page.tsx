@@ -88,10 +88,10 @@ export default function Home() {
   }, []);
 
   // Algorithms for different sections
-  const newArrivals = books.slice(0, 10);
+  const newArrivals = books.slice(0, 12);
 
   // Best Sellers: Sort by rating (desc)
-  const bestSellers = [...books].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+  const bestSellers = [...books].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 12);
 
   // Trending: Sort by discount percentage (desc) or price
   // Let's use discount percentage as a proxy for "Trending" (Hot Deals)

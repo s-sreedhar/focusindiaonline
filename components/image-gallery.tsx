@@ -24,14 +24,15 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Main Image */}
-      <div className="relative bg-secondary rounded-lg overflow-hidden aspect-square flex items-center justify-center">
+      {/* Main Image */}
+      <div className="relative bg-secondary/20 rounded-lg overflow-hidden aspect-[3/4] md:aspect-square w-full flex items-center justify-center">
         <Image
           src={images[selectedIndex] || '/placeholder.svg'}
           alt={`${title} - Image ${selectedIndex + 1}`}
-          width={400}
-          height={500}
-          className="object-contain"
+          fill
+          className="object-contain p-4 mix-blend-multiply"
           priority
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
 
         {images.length > 1 && (
@@ -63,9 +64,8 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${
-                index === selectedIndex ? 'border-primary' : 'border-transparent'
-              }`}
+              className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${index === selectedIndex ? 'border-primary' : 'border-transparent'
+                }`}
             >
               <Image
                 src={image || "/placeholder.svg"}
