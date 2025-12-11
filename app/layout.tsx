@@ -70,8 +70,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
   },
   manifest: '/manifest.json',
 }
