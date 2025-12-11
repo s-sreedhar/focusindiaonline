@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package } from 'lucide-react';
+import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const adminMenuItems = [
@@ -55,6 +55,11 @@ export const adminMenuItems = [
     label: 'Testimonials',
     href: '/admin/testimonials',
     icon: Award,
+  },
+  {
+    label: 'Enquiries',
+    href: '/admin/enquiries',
+    icon: MessageSquare,
   },
 ];
 

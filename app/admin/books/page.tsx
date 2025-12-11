@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import Image from 'next/image';
+import { SubjectManager } from '@/components/admin/subject-manager';
+import { CategoryManager } from '@/components/admin/category-manager';
 
 interface Book {
     id: string;
@@ -17,32 +19,62 @@ interface Book {
     price: number;
     image: string;
     category: string;
+    subject?: string;
+    subjects?: string[];
+}
+
+interface Item {
+    id: string;
+    name: string;
 }
 
 export default function BooksPage() {
     const [books, setBooks] = useState<Book[]>([]);
+    const [subjects, setSubjects] = useState<Item[]>([]);
+    const [categories, setCategories] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedSubject, setSelectedSubject] = useState('');
 
     useEffect(() => {
-        fetchBooks();
-    }, []);
+        const fetchData = async () => {
+            try {
+                // Fetch Books
+                const booksSnapshot = await getDocs(collection(db, 'books'));
+                const booksData = booksSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Book[];
+                setBooks(booksData);
 
-    const fetchBooks = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, 'books'));
-            const booksData = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Book[];
-            setBooks(booksData);
-        } catch (error) {
-            console.error("Error fetching books:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+                // Fetch Subjects
+                const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
+                const subjectsSnapshot = await getDocs(subjectsQuery);
+                const subjectsData = subjectsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    name: doc.data().name
+                }));
+                setSubjects(subjectsData);
+
+                // Fetch Categories
+                const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
+                const categoriesSnapshot = await getDocs(categoriesQuery);
+                const categoriesData = categoriesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    name: doc.data().name
+                }));
+                setCategories(categoriesData);
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this book?')) return;
@@ -59,8 +91,15 @@ export default function BooksPage() {
     const filteredBooks = books.filter(book => {
         const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             book.author.toLowerCase().includes(searchQuery.toLowerCase());
+
         const matchesCategory = selectedCategory ? book.category === selectedCategory : true;
-        return matchesSearch && matchesCategory;
+
+        const matchesSubject = selectedSubject ? (
+            (book.subject === selectedSubject) ||
+            (book.subjects && book.subjects.includes(selectedSubject))
+        ) : true;
+
+        return matchesSearch && matchesCategory && matchesSubject;
     });
 
     if (loading) {
@@ -74,12 +113,16 @@ export default function BooksPage() {
                     <h1 className="text-3xl font-bold mb-2">Books</h1>
                     <p className="text-muted-foreground">Manage your book inventory</p>
                 </div>
-                <Button asChild>
-                    <Link href="/admin/books/new">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Book
-                    </Link>
-                </Button>
+                <div className="flex gap-2">
+                    <CategoryManager />
+                    <SubjectManager />
+                    <Button asChild>
+                        <Link href="/admin/books/new">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add New Book
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <Card className="p-4 mb-8">
@@ -99,13 +142,23 @@ export default function BooksPage() {
                         className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                         <option value="">All Categories</option>
-                        <option value="UPSC">UPSC</option>
-                        <option value="SSC">SSC</option>
-                        <option value="RRB">RRB</option>
-                        <option value="BANKING">Banking</option>
-                        <option value="APPSC">APPSC</option>
-                        <option value="TSPSC">TSPSC</option>
-                        <option value="OTHER">Other</option>
+                        {categories.map((cat) => (
+                            <option key={cat.id} value={cat.name}>
+                                {cat.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={selectedSubject}
+                        onChange={(e) => setSelectedSubject(e.target.value)}
+                        className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                        <option value="">All Subjects</option>
+                        {subjects.map((subject) => (
+                            <option key={subject.id} value={subject.name}>
+                                {subject.name}
+                            </option>
+                        ))}
                     </select>
                 </div>
             </Card>
@@ -131,7 +184,16 @@ export default function BooksPage() {
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
-                            <div className="flex justify-between items-center">
+
+                            {/* Display Subject if available */}
+                            {book.subject && (
+                                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                    {book.subject}
+                                </p>
+                            )}
+
+                            <div className="flex justify-between items-center mt-2">
                                 <span className="font-bold text-primary">₹{book.price}</span>
                                 <div className="flex gap-2">
                                     <Button size="icon" variant="ghost" asChild>

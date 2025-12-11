@@ -10,31 +10,52 @@ import { motion } from 'framer-motion';
 // Since this is a client component, metadata is handled in layout or parent
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function ShopPage() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [allSubjects, setAllSubjects] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'books'));
-        const booksData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Book[];
+        // Fetch Books
+        const booksSnapshot = await getDocs(collection(db, 'books'));
+        const booksData = booksSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Ensure inStock is determined by stockQuantity if explicit inStock boolean is missing
+            inStock: data.inStock !== undefined ? data.inStock : (data.stockQuantity ? Number(data.stockQuantity) > 0 : false),
+          };
+        }) as Book[];
         setBooks(booksData);
+
+        // Fetch Subjects
+        const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
+        const subjectsSnapshot = await getDocs(subjectsQuery);
+        const subjectsData = subjectsSnapshot.docs.map(doc => doc.data().name as string);
+        setAllSubjects(subjectsData);
+
+        // Fetch Categories
+        const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
+        const categoriesSnapshot = await getDocs(categoriesQuery);
+        const categoriesData = categoriesSnapshot.docs.map(doc => doc.data().name as string);
+        setAllCategories(categoriesData);
+
       } catch (error) {
-        console.error("Error fetching books:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBooks();
+    fetchData();
   }, []);
 
   if (loading) {
@@ -70,7 +91,8 @@ export default function ShopPage() {
 
         {/* Shop Grid */}
         <section className="max-w-7xl mx-auto px-4 py-12">
-          <ShopGrid books={books} />
+          {/* We pass all fetched subjects and categories to ShopGrid so filters can show them all */}
+          <ShopGrid books={books} allSubjects={allSubjects} allCategories={allCategories} />
         </section>
       </main>
 

@@ -167,7 +167,35 @@ export default function CheckoutPage() {
   };
 
 
+  const validateAddress = () => {
+    const { firstName, lastName, address, city, state, zipCode, phone } = formData;
+    if (!firstName.trim() || !lastName.trim() || !address.trim() || !city.trim() || !state.trim() || !zipCode.trim() || !phone.trim()) {
+      toast.error("Please fill in all address details");
+      return false;
+    }
+    if (phone.length < 10) {
+      toast.error("Please enter a valid phone number");
+      return false;
+    }
+    if (zipCode.length < 6) {
+      toast.error("Please enter a valid PIN code");
+      return false;
+    }
+    return true;
+  };
+
   const handleStepChange = (step: Step) => {
+    if (step === 'payment' || step === 'review') {
+      // If we are currently at address step, validate it
+      if (currentStep === 'address' && !validateAddress()) {
+        return;
+      }
+      // If we jump from random step to payment/review, ensure valid data (optional but safer)
+      if (!formData.firstName) {
+        // If somehow formData is empty (e.g. dev tools), block
+        if (!validateAddress()) return;
+      }
+    }
     setCurrentStep(step);
   };
 

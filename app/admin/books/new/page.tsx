@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,14 +10,21 @@ import { Loader2, Upload, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { SUBJECTS } from '@/lib/constants';
+
+interface Item {
+    id: string;
+    name: string;
+}
 
 export default function NewBookPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [subjectsList, setSubjectsList] = useState<Item[]>([]);
+    const [categoriesList, setCategoriesList] = useState<Item[]>([]);
+
     const [formData, setFormData] = useState({
         title: '',
         author: '',
@@ -29,6 +36,27 @@ export default function NewBookPage() {
         language: 'English Medium',
         stock: '100'
     });
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch Subjects
+                const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
+                const subjectsSnapshot = await getDocs(subjectsQuery);
+                const fetchedSubjects = subjectsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+                setSubjectsList(fetchedSubjects);
+
+                // Fetch Categories
+                const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
+                const categoriesSnapshot = await getDocs(categoriesQuery);
+                const fetchedCategories = categoriesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+                setCategoriesList(fetchedCategories);
+            } catch (error) {
+                console.error("Error fetching data", error);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -58,7 +86,9 @@ export default function NewBookPage() {
                 originalPrice: Number(formData.originalPrice),
                 description: formData.description,
                 category: formData.category,
-                subject: formData.subject,
+                primaryCategory: formData.category,
+                subject: formData.subject, // Keep legacy field for now
+                subjects: [formData.subject], // Add array field for filtering
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
                 image: imageUrl,
@@ -127,13 +157,11 @@ export default function NewBookPage() {
                                 required
                             >
                                 <option value="">Select Category</option>
-                                <option value="UPSC">UPSC</option>
-                                <option value="SSC">SSC</option>
-                                <option value="RRB">RRB</option>
-                                <option value="BANKING">Banking</option>
-                                <option value="APPSC">APPSC</option>
-                                <option value="TSPSC">TSPSC</option>
-                                <option value="OTHER">Other</option>
+                                {categoriesList.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -149,12 +177,15 @@ export default function NewBookPage() {
                             required
                         >
                             <option value="">Select Subject</option>
-                            {SUBJECTS.map((subject) => (
-                                <option key={subject} value={subject}>
-                                    {subject}
+                            {subjectsList.map((subject) => (
+                                <option key={subject.id} value={subject.name}>
+                                    {subject.name}
                                 </option>
                             ))}
                         </select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Manage subjects and categories on the main Books page.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

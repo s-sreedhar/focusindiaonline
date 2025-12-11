@@ -130,6 +130,8 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    @apply text-foreground;
+    min-height: 100vh;
   }
 }

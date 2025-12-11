@@ -4,10 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Star, ArrowRightLeft } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
+import { useCompareStore } from '@/lib/compare-store';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -24,6 +25,7 @@ interface ProductCardProps {
   category?: string;
   language?: string;
   subject?: string;
+  isCombo?: boolean;
 }
 
 export function ProductCard({
@@ -38,11 +40,15 @@ export function ProductCard({
   slug,
   category,
   language,
-  subject
+  subject,
+  isCombo
 }: ProductCardProps) {
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { addToCompare, isInCompare, removeFromCompare } = useCompareStore();
   const [isInWish, setIsInWish] = useState(isInWishlist(id));
+
+  const isCompared = isInCompare(id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -56,6 +62,33 @@ export function ProductCard({
       quantity: 1,
       slug,
     });
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isCompared) {
+      removeFromCompare(id);
+    } else {
+      addToCompare({
+        id,
+        title,
+        author,
+        image,
+        price,
+        originalPrice,
+        rating,
+        slug,
+        category: category || '',
+        subjects: subject ? [subject] : [],
+        language: language || '',
+        inStock: true, // Assuming true for now as card doesn't convey this fully except via disable
+        stockQuantity: 10,
+        primaryCategory: category || '',
+        subCategories: [],
+        description: '',
+        publisher: ''
+      });
+    }
   };
 
   const handleToggleWishlist = async (e: React.MouseEvent) => {
@@ -137,8 +170,18 @@ export function ProductCard({
                 variant="secondary"
                 className="rounded-full w-8 h-8 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:text-red-500"
                 onClick={handleToggleWishlist}
+                title="Add to Wishlist"
               >
                 <Heart className={`w-4 h-4 ${isInWish ? 'fill-red-500 text-red-500' : ''}`} />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className={`rounded-full w-8 h-8 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:text-blue-500 ${isCompared ? 'text-blue-500 bg-blue-50' : ''}`}
+                onClick={handleToggleCompare}
+                title="Compare"
+              >
+                <ArrowRightLeft className="w-4 h-4" />
               </Button>
             </div>
           </div>

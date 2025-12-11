@@ -16,9 +16,10 @@ interface FilterSidebarProps {
   };
   onFiltersChange: (filters: any) => void;
   availableSubjects?: string[];
+  availableCategories?: string[]; // New prop
 }
 
-export function FilterSidebar({ filters, onFiltersChange, availableSubjects = [] }: FilterSidebarProps) {
+export function FilterSidebar({ filters, onFiltersChange, availableSubjects = [], availableCategories = [] }: FilterSidebarProps) {
   const {
     priceRange,
     selectedCategories,
@@ -58,13 +59,16 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
 
   const handleReset = () => {
     onFiltersChange({
-      priceRange: [0, 1000],
+      priceRange: [0, 2000],
       selectedCategories: [],
       selectedSubjects: [],
       selectedLanguages: [],
       inStockOnly: false
     });
   };
+
+  // Use dynamic categories if provided, otherwise fallback to constants
+  const categoriesToDisplay = availableCategories.length > 0 ? availableCategories : PRIMARY_CATEGORIES;
 
   return (
     <div className="w-full md:w-64 space-y-6">
@@ -75,7 +79,7 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
           value={priceRange as [number, number]}
           onValueChange={handlePriceChange}
           min={0}
-          max={1000}
+          max={2000}
           step={50}
           className="mb-2"
         />
@@ -89,7 +93,7 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
       <div>
         <h3 className="font-bold mb-3">Categories</h3>
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {PRIMARY_CATEGORIES.map((category) => (
+          {categoriesToDisplay.map((category) => (
             <div key={category} className="flex items-center">
               <Checkbox
                 id={category}

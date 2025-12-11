@@ -10,9 +10,14 @@ import { Loader2, Upload, ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
+
+interface Item {
+    id: string;
+    name: string;
+}
 
 export default function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -23,6 +28,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
     const [saving, setSaving] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [currentImageUrl, setCurrentImageUrl] = useState('');
+    const [subjectsList, setSubjectsList] = useState<Item[]>([]);
+    const [categoriesList, setCategoriesList] = useState<Item[]>([]);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -37,8 +44,21 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
     });
 
     useEffect(() => {
-        const fetchBook = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch Subjects
+                const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
+                const subjectsSnapshot = await getDocs(subjectsQuery);
+                const fetchedSubjects = subjectsSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+                setSubjectsList(fetchedSubjects);
+
+                // Fetch Categories
+                const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
+                const categoriesSnapshot = await getDocs(categoriesQuery);
+                const fetchedCategories = categoriesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+                setCategoriesList(fetchedCategories);
+
+                // Fetch Book
                 const docRef = doc(db, 'books', id);
                 const docSnap = await getDoc(docRef);
 
@@ -51,7 +71,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         originalPrice: data.originalPrice?.toString() || '',
                         description: data.description || '',
                         category: data.category || '',
-                        subject: data.subject || '',
+                        subject: data.subject || '', // Primary subject
                         language: data.language || 'English Medium',
                         stock: data.stockQuantity?.toString() || '0'
                     });
@@ -61,14 +81,14 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                     router.push('/admin/books');
                 }
             } catch (error) {
-                console.error("Error fetching book:", error);
-                toast.error('Failed to fetch book details');
+                console.error("Error fetching data:", error);
+                toast.error('Failed to fetch data');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchBook();
+        fetchData();
     }, [id, router]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -100,6 +120,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                 description: formData.description,
                 category: formData.category,
                 subject: formData.subject,
+                subjects: [formData.subject], // Keep synced for ArrayFilter
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
                 image: imageUrl,
@@ -171,15 +192,32 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                                 required
                             >
                                 <option value="">Select Category</option>
-                                <option value="UPSC">UPSC</option>
-                                <option value="SSC">SSC</option>
-                                <option value="RRB">RRB</option>
-                                <option value="BANKING">Banking</option>
-                                <option value="APPSC">APPSC</option>
-                                <option value="TSPSC">TSPSC</option>
-                                <option value="OTHER">Other</option>
+                                {categoriesList.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
+                        <select
+                            id="subject"
+                            name="subject"
+                            value={formData.subject}
+                            onChange={handleInputChange}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                        >
+                            <option value="">Select Subject</option>
+                            {subjectsList.map((subject) => (
+                                <option key={subject.id} value={subject.name}>
+                                    {subject.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

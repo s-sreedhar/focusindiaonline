@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart, User, Search, LogOut, Menu, X } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, LogOut, Menu, X, ArrowRightLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
+import { useCompareStore } from '@/lib/compare-store';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,94 +17,99 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PRIMARY_CATEGORIES } from '@/lib/constants';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import Image from 'next/image';
 
 export function Header() {
   const { getItemCount: getCartCount } = useCartStore();
   const { getItemCount: getWishlistCount } = useWishlistStore();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { comparedBooks, removeFromCompare } = useCompareStore();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchCategory, setSearchCategory] = useState('All');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  const cartCount = getCartCount();
-  const wishlistCount = getWishlistCount();
-
-  useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      setIsScrolled(window.scrollY > 0);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
+  const cartCount = getCartCount();
+  const wishlistCount = getWishlistCount();
+  const compareCount = comparedBooks.length;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/shop?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(searchCategory)}`);
+      setSearchQuery('');
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
+
   const navLinks = [
-    { name: 'APPSC', href: '/shop/APPSC' },
-    { name: 'TGPSC', href: '/shop/TGPSC' },
-    { name: 'UPSC', href: '/shop/UPSC' },
-    { name: 'SSC', href: '/shop/SSC' },
-    { name: 'RRB', href: '/shop/RRB' },
-    { name: 'BANKING', href: '/shop/BANKING' },
-    { name: 'MAGAZINES', href: '/shop/MAGAZINES' },
+    { name: 'Home', href: '/' },
+    { name: 'Shop', href: '/shop' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
   ];
 
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-border/50'
-          : 'bg-white border-b border-transparent'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-md py-2' : 'bg-white py-4'
           }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ type: 'spring', damping: 20, stiffness: 100 }}
       >
-        <div className="container mx-auto px-4 py-3 max-w-[1600px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
+            {/* Logo */}
+            <Link href="/" className="flex-shrink-0 relative w-32 md:w-40 h-10 md:h-12">
+              {/* Replace with actual logo if available, or text */}
+              <div className="font-bold text-xl md:text-2xl text-primary flex items-center h-full">
+                Focus India
+              </div>
+            </Link>
+
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden p-2 hover:bg-accent/10 rounded-full"
               onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 hover:bg-muted rounded-full"
             >
               <Menu className="w-6 h-6" />
             </button>
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform">
-                F
-              </div>
-              <div className="hidden sm:block">
-                <div className="font-bold text-lg leading-none text-primary">Focus India</div>
-                <div className="text-[10px] font-medium text-muted-foreground tracking-wider">ONLINE</div>
-              </div>
-            </Link>
-
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-full transition-colors"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -111,19 +117,36 @@ export function Header() {
             </nav>
 
             {/* Search Bar (Desktop) */}
-            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xs relative group">
-              <Input
-                type="text"
-                placeholder="Search books..."
-                className="pl-10 pr-4 py-2 bg-muted/50 border-transparent focus:bg-white focus:border-primary/20 rounded-full transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl relative group items-center">
+              <div className="flex w-full items-center rounded-full bg-muted/50 border border-transparent focus-within:bg-white focus-within:border-primary/20 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                <Select value={searchCategory} onValueChange={setSearchCategory}>
+                  <SelectTrigger className="w-[140px] border-none bg-transparent h-10 rounded-l-full pl-4 focus:ring-0 text-muted-foreground font-medium">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Categories</SelectItem>
+                    {PRIMARY_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="w-px h-6 bg-gray-300 mx-2" />
+                <Input
+                  type="text"
+                  placeholder="Search books..."
+                  className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-r-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Button type="submit" size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary mr-1">
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
             </form>
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Wishlist */}
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative" asChild>
                 <Link href="/wishlist">
                   <Heart className="w-5 h-5" />
@@ -134,6 +157,92 @@ export function Header() {
                   )}
                 </Link>
               </Button>
+
+              {/* Compare Button */}
+              <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative">
+                    <ArrowRightLeft className="w-5 h-5" />
+                    {mounted && compareCount > 0 && (
+                      <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
+                        {compareCount}
+                      </span>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="text-2xl font-bold">Compare Books</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    {compareCount > 0 ? (
+                      <div className="grid grid-cols-[150px_repeat(4,1fr)] gap-4 min-w-[800px]">
+                        {/* Header Row - Images */}
+                        <div className="font-bold text-muted-foreground pt-10">Product</div>
+                        {comparedBooks.map((book) => (
+                          <div key={book.id} className="flex flex-col items-center text-center">
+                            <div className="relative w-32 h-44 mb-4 rounded-lg overflow-hidden shadow-md">
+                              <Image src={book.image} alt={book.title} fill className="object-cover" />
+                            </div>
+                            <h3 className="font-bold text-sm line-clamp-2 min-h-[40px]">{book.title}</h3>
+                            <Button variant="outline" size="sm" className="mt-2" onClick={() => removeFromCompare(book.id)}>Remove</Button>
+                          </div>
+                        ))}
+                        {/* Fill empty columns if less than 4 */}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => (
+                          <div key={`empty-${i}`} className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-50/50">
+                            <div className="text-muted-foreground text-sm">Empty Slot</div>
+                          </div>
+                        ))}
+
+                        {/* Price */}
+                        <div className="font-semibold text-muted-foreground border-t pt-4">Price</div>
+                        {comparedBooks.map(book => (
+                          <div key={book.id} className="border-t pt-4 text-center font-bold text-primary">₹{book.price}</div>
+                        ))}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+
+                        {/* Category */}
+                        <div className="font-semibold text-muted-foreground border-t pt-4">Category</div>
+                        {comparedBooks.map(book => (
+                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.category}</div>
+                        ))}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+
+                        {/* Subject */}
+                        <div className="font-semibold text-muted-foreground border-t pt-4">Subject</div>
+                        {comparedBooks.map(book => (
+                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.subjects?.join(', ') || '-'}</div>
+                        ))}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+
+                        {/* Author */}
+                        <div className="font-semibold text-muted-foreground border-t pt-4">Author</div>
+                        {comparedBooks.map(book => (
+                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.author}</div>
+                        ))}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+
+                        {/* Pages */}
+                        <div className="font-semibold text-muted-foreground border-t pt-4">Action</div>
+                        {comparedBooks.map(book => (
+                          <div key={book.id} className="border-t pt-4 text-center">
+                            <Button size="sm" asChild>
+                              <Link href={`/product/${book.slug}`}>View Details</Link>
+                            </Button>
+                          </div>
+                        ))}
+                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground mb-4">No books selected for comparison.</p>
+                        <Button onClick={() => setIsCompareOpen(false)}>Continue Shopping</Button>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative" asChild>
                 <Link href="/cart">

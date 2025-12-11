@@ -14,15 +14,19 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Filter, Grid2x2, Grid3x3, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Book } from '@/lib/types';
+import { CompareBar } from '@/components/compare-bar';
 
 interface ShopGridProps {
   books: Book[];
   activeCategory?: string;
+  showCombos?: boolean;
+  allSubjects?: string[];
+  allCategories?: string[];
 }
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest' | 'bestselling' | 'rating';
 
-export function ShopGrid({ books, activeCategory }: ShopGridProps) {
+export function ShopGrid({ books, activeCategory, showCombos = false, allSubjects = [], allCategories = [] }: ShopGridProps) {
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(3);
   const [itemsPerPage, setItemsPerPage] = useState(12);
@@ -33,7 +37,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     selectedLanguages: string[];
     inStockOnly: boolean;
   }>({
-    priceRange: [0, 1000],
+    priceRange: [0, 2000],
     selectedCategories: activeCategory ? [activeCategory] : [],
     selectedSubjects: [],
     selectedLanguages: [],
@@ -47,19 +51,43 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     setCurrentPage(1);
   }, [filters, sortBy, activeCategory, itemsPerPage]);
 
-  // Create dynamic subjects list from actual books
-  const availableSubjects = useMemo(() => {
+  const displaySubjects = useMemo(() => {
+    if (allSubjects && allSubjects.length > 0) {
+      return allSubjects;
+    }
     const subjects = new Set<string>();
     books.forEach(book => {
       book.subjects?.forEach(s => {
         if (s) subjects.add(s.trim());
       });
+      if (book.subject) subjects.add(book.subject.trim());
     });
     return Array.from(subjects).sort();
-  }, [books]);
+  }, [books, allSubjects]);
+
+  const displayCategories = useMemo(() => {
+    if (allCategories && allCategories.length > 0) {
+      return allCategories;
+    }
+    const categories = new Set<string>();
+    books.forEach(book => {
+      if (book.category) categories.add(book.category);
+      if (book.primaryCategory) categories.add(book.primaryCategory);
+    });
+    return Array.from(categories).sort();
+  }, [books, allCategories]);
+
 
   const filteredAndSortedBooks = useMemo(() => {
     let result = books.filter((book) => {
+      // Combo vs Regular Book Filter
+      const isCombo = book.isCombo || book.category === 'Value Bundles';
+      if (showCombos) {
+        if (!isCombo) return false;
+      } else {
+        if (isCombo) return false;
+      }
+
       // Price filter
       if (book.price < filters.priceRange[0] || book.price > filters.priceRange[1]) {
         return false;
@@ -67,18 +95,22 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
 
       // Category filter
       if (filters.selectedCategories.length > 0) {
-        // ... (rest of the code)
-        const bookCategory = book.primaryCategory || book.category;
-        if (!bookCategory || !filters.selectedCategories.includes(bookCategory)) {
-          return false;
-        }
+        const bookCategory = (book.primaryCategory || book.category || '').toLowerCase().trim();
+        const moves = filters.selectedCategories.some(selected =>
+          selected.toLowerCase().trim() === bookCategory
+        );
+        if (!moves) return false;
       }
 
       // Subject filter
       if (filters.selectedSubjects.length > 0) {
-        const hasSubject = filters.selectedSubjects.some(subject =>
-          book.subjects?.some(s => s && subject && s.toLowerCase().trim() === subject.toLowerCase().trim())
-        );
+        const hasSubject = filters.selectedSubjects.some(subject => {
+          // Check array
+          const inArray = book.subjects?.some(s => s && subject && s.toLowerCase().trim() === subject.toLowerCase().trim());
+          // Check legacy string
+          const inString = book.subject && book.subject.toLowerCase().trim() === subject.toLowerCase().trim();
+          return inArray || inString;
+        });
         if (!hasSubject) return false;
       }
 
@@ -91,8 +123,12 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
       }
 
       // Stock filter
-      if (filters.inStockOnly && !book.inStock) {
-        return false;
+      if (filters.inStockOnly) {
+        // Check both inStock boolean (if present) and stockQuantity
+        const isOutOfStock = (book.inStock === false) || (book.stockQuantity !== undefined && book.stockQuantity <= 0);
+        // If we don't know (both undefined), assume in stock? No, let's assume out if we are strict, or in if we are lenient.
+        // Given the user issue, let's treat any indication of 0 stock as OOS.
+        if (isOutOfStock) return false;
       }
 
       return true;
@@ -107,7 +143,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
         result.sort((a, b) => b.price - a.price);
         break;
       case 'newest':
-        result.sort((a, b) => new Date(b.id).getTime() - new Date(a.id).getTime());
+        result.sort((a, b) => new Date(b.id || 0).getTime() - new Date(a.id || 0).getTime());
         break;
       case 'bestselling':
         result.sort((a, b) => (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0));
@@ -121,7 +157,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     }
 
     return result;
-  }, [books, filters, sortBy]);
+  }, [books, filters, sortBy, showCombos]);
 
   const totalPages = Math.ceil(filteredAndSortedBooks.length / itemsPerPage);
   const currentBooks = filteredAndSortedBooks.slice(
@@ -133,7 +169,12 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
     <div className="flex flex-col md:flex-row gap-6">
       {/* Sidebar - Desktop */}
       <div className="hidden md:block w-64 flex-shrink-0">
-        <FilterSidebar filters={filters} onFiltersChange={setFilters} availableSubjects={availableSubjects} />
+        <FilterSidebar
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableSubjects={displaySubjects}
+          availableCategories={displayCategories}
+        />
       </div>
 
       {/* Main Content */}
@@ -152,7 +193,12 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
               <SheetContent side="left" className="w-[300px] sm:w-[400px] overflow-y-auto">
                 <div className="py-6">
                   <h2 className="text-lg font-bold mb-4">Filters</h2>
-                  <FilterSidebar filters={filters} onFiltersChange={setFilters} availableSubjects={availableSubjects} />
+                  <FilterSidebar
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    availableSubjects={displaySubjects}
+                    availableCategories={displayCategories}
+                  />
                 </div>
               </SheetContent>
             </Sheet>
@@ -272,6 +318,7 @@ export function ShopGrid({ books, activeCategory }: ShopGridProps) {
           </div>
         )}
       </div>
+      <CompareBar />
     </div>
   );
 }
