@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, Mail } from 'lucide-react';
+import { Phone, Mail, CheckCircle2, RefreshCcw, AlertCircle } from 'lucide-react';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
+import { Card } from '@/components/ui/card';
 
 export default function ReturnsPage() {
   return (

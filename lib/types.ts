@@ -15,6 +15,7 @@ export interface Book {
   primaryCategory: string;
   subCategories: string[];
   subjects: string[];
+  subject?: string;
   language: string;
   rating?: number;
   reviewCount?: number;
