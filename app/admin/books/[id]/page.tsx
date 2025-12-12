@@ -43,7 +43,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         subject: '',
         subjects: [] as string[],
         language: 'English Medium',
-        stock: '100'
+        stock: '100',
+        weight: '500' // Default
     });
 
     useEffect(() => {
@@ -78,7 +79,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         subject: data.subject || '', // Primary subject
                         subjects: data.subjects || (data.subject ? [data.subject] : []),
                         language: data.language || 'English Medium',
-                        stock: data.stockQuantity?.toString() || '0'
+                        stock: data.stockQuantity?.toString() || '0',
+                        weight: data.weight?.toString() || '500'
                     });
                     setCurrentImageUrl(data.image || '');
                 } else {
@@ -129,6 +131,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                 subjects: formData.subjects,
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
+                weight: Number(formData.weight),
                 image: imageUrl,
                 updatedAt: serverTimestamp(),
                 slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
@@ -250,6 +253,9 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                                 <option value="Hindi Medium">Hindi Medium</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="stock">Stock Quantity</Label>
                             <Input
@@ -260,6 +266,19 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                                 onChange={handleInputChange}
                                 required
                                 min="0"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="weight">Weight (in grams)</Label>
+                            <Input
+                                id="weight"
+                                name="weight"
+                                type="number"
+                                value={formData.weight}
+                                onChange={handleInputChange}
+                                required
+                                min="0"
+                                placeholder="e.g. 500"
                             />
                         </div>
                     </div>

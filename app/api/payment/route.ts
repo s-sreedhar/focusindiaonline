@@ -18,7 +18,8 @@ export async function POST(request: Request) {
             );
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const origin = request.headers.get('origin');
+        const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
         const callbackUrl = `${baseUrl}/api/payment/callback`;
         const redirectUrl = `${baseUrl}/api/payment/status/${orderId}`;
 

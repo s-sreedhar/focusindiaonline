@@ -10,6 +10,7 @@ export interface Book {
   mrp?: number;
   inStock: boolean;
   stockQuantity: number;
+  weight: number; // Weight in grams
   image: string;
   images?: string[];
   primaryCategory: string;

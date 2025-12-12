@@ -213,6 +213,7 @@ export default function OrdersPage() {
               <tr>
                 <th className="px-6 py-3 font-semibold">Order No</th>
                 <th className="px-6 py-3 font-semibold">Customer</th>
+                <th className="px-6 py-3 font-semibold">Weight</th>
                 <th className="px-6 py-3 font-semibold">Items</th>
                 <th className="px-6 py-3 font-semibold">Total</th>
                 <th className="px-6 py-3 font-semibold">Status</th>
@@ -227,6 +228,12 @@ export default function OrdersPage() {
                   <td className="px-6 py-4">
                     <div className="font-medium">{order.shippingAddress?.fullName || 'Guest'}</div>
                     <div className="text-xs text-muted-foreground">{order.shippingAddress?.phoneNumber || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {/* Calculate total weight from items if not in order object, but here we can just sum if not persisted or show if persisted */}
+                    <span className="text-sm">
+                      {(order.items.reduce((sum, item) => sum + ((item as any).weight || 500) * item.quantity, 0) / 1000).toFixed(1)} kg
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">

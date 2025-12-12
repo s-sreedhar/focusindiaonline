@@ -244,40 +244,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {/* Shipping Settings */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-6">Shipping Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Standard Shipping Charge (₹)</label>
-              <Input
-                type="number"
-                name="shippingCharges"
-                value={settings.shippingCharges}
-                onChange={handleInputChange}
-              />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Free Shipping Threshold (₹)</label>
-              <Input
-                type="number"
-                name="freeShippingThreshold"
-                value={settings.freeShippingThreshold}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Currency</label>
-              <Input
-                name="currency"
-                value={settings.currency}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-        </Card>
 
         {/* Action Buttons */}
         <div className="flex gap-4">

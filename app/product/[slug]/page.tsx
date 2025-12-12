@@ -18,6 +18,7 @@ import Head from 'next/head';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function ProductPage({
   params,
@@ -30,6 +31,7 @@ export default function ProductPage({
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuthStore();
+  const router = useRouter();
 
   // We need to wait for product to be loaded to check wishlist status
   const [isInWish, setIsInWish] = useState(false);
@@ -78,10 +80,31 @@ export default function ProductPage({
       image: product.image,
       quantity: 1,
       slug: product.slug,
+      weight: product.weight || 500,
     });
     setCartAdded(true);
     setTimeout(() => setCartAdded(false), 2000);
     toast.success('Added to cart');
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+
+    addToCart({
+      bookId: product.id,
+      title: product.title,
+      author: product.author,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      image: product.image,
+      quantity: 1,
+      slug: product.slug,
+      weight: product.weight || 500,
+    });
+
+    // Use window.location.href or imported router for navigation
+    // Since we don't have router imported at top, let's use router
+    router.push('/checkout');
   };
 
   const handleToggleWishlist = async () => {
@@ -207,7 +230,7 @@ export default function ProductPage({
 
       <main className="flex-1">
         {/* Product Section */}
-        <section className="max-w-7xl mx-auto px-4 py-12">
+        <section className="max-w-7xl mx-auto px-4 py-12 pb-32 md:pb-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             {/* Image Gallery */}
             <ImageGallery images={product.images || [product.image]} title={product.title} />
@@ -302,28 +325,35 @@ export default function ProductPage({
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3 pt-6">
-                <div className="fixed bottom-[64px] left-0 right-0 bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:static sm:bg-transparent sm:p-0 sm:border-0 sm:shadow-none z-40 flex gap-3">
+                <div className="fixed bottom-[64px] left-0 right-0 bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:static sm:bg-transparent sm:p-0 sm:border-0 sm:shadow-none z-40 flex gap-2 sm:gap-3 items-center">
                   <Button
-                    className="flex-1 gap-2 rounded-xl h-12 text-base shadow-lg shadow-primary/20"
+                    variant="outline"
+                    size="icon"
+                    className="w-12 h-12 rounded-xl shrink-0"
+                    onClick={handleToggleWishlist}
+                  >
+                    <Heart className={`w-5 h-5 ${isInWish ? 'fill-accent text-accent' : ''}`} />
+                  </Button>
+
+                  <Button
+                    className="flex-1 gap-2 rounded-xl h-12 text-sm sm:text-base shadow-lg shadow-primary/20 px-2 sm:px-4"
                     size="lg"
                     disabled={product.stockQuantity <= 0}
                     onClick={handleAddToCart}
                     variant={cartAdded ? "secondary" : "default"}
                   >
-                    <ShoppingCart className="w-5 h-5" />
-                    {cartAdded ? 'Added!' : 'Add to Cart'}
+                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                    <span className="truncate">{cartAdded ? 'Added' : 'Add to Cart'}</span>
                   </Button>
+
                   <Button
+                    className="flex-1 rounded-xl h-12 text-sm sm:text-base shadow-sm px-2 sm:px-4"
                     variant="outline"
-                    size="lg"
-                    className="w-14 h-12 rounded-xl"
-                    onClick={handleToggleWishlist}
+                    onClick={handleBuyNow}
                   >
-                    <Heart className={`w-5 h-5 ${isInWish ? 'fill-accent text-accent' : ''}`} />
+                    Buy Now
                   </Button>
                 </div>
-                {/* Spacer for fixed bottom bar on mobile */}
-                <div className="h-20 sm:hidden"></div>
               </div>
 
               {/* Features */}

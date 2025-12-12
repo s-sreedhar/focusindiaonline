@@ -15,6 +15,22 @@ import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'fi
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { generateOrderId } from '@/lib/utils/order-id';
+import { calculateShippingCharges, INDIAN_STATES } from '@/lib/utils/shipping';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 type Step = 'address' | 'payment' | 'review' | 'verification';
 
@@ -51,7 +67,32 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
 
   const subtotal = getTotalPrice();
-  const shippingCharges = subtotal > 500 ? 0 : 50;
+
+  // Calculate total weight and shipping
+  const totalWeight = items.reduce((sum, item) => {
+    // Basic weight assumption if missing: 500g
+    // In a real scenario, we should have fetched the weight. 
+    // Assuming 'item' has weight or we might need to fetch it?
+    // The cart item type currently might not have weight.
+    // Let's check Cart Store item type. If not present, we can't calculate accurately without fetching.
+    // However, given the context, we likely need to ensure Cart Items have weight.
+    // For now, let's assume item object has it or default to 500g per book.
+    const weight = (item as any).weight || 500;
+    return sum + (weight * item.quantity);
+  }, 0);
+
+  const [shippingDetails, setShippingDetails] = useState<{ charges: number, zone: string, weightUsed: number } | null>(null);
+
+  const shippingCharges = shippingDetails ? shippingDetails.charges : 0;
+
+  useEffect(() => {
+    if (formData.state) {
+      const details = calculateShippingCharges(totalWeight, formData.state);
+      setShippingDetails(details);
+    }
+  }, [formData.state, totalWeight]);
+
+  const [openState, setOpenState] = useState(false);
 
   // Sync coupon from store
   useEffect(() => {
@@ -594,12 +635,50 @@ export default function CheckoutPage() {
                       value={formData.city}
                       onChange={handleInputChange}
                     />
-                    <Input
-                      placeholder="State"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                    />
+
+                    <Popover open={openState} onOpenChange={setOpenState}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openState}
+                          className="justify-between"
+                        >
+                          {formData.state
+                            ? formData.state
+                            : "Select State..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 h-[200px] overflow-y-auto">
+                        <Command>
+                          <CommandInput placeholder="Search state..." />
+                          <CommandList>
+                            <CommandEmpty>No state found.</CommandEmpty>
+                            <CommandGroup>
+                              {INDIAN_STATES.map((state) => (
+                                <CommandItem
+                                  key={state}
+                                  value={state}
+                                  onSelect={(currentValue) => {
+                                    setFormData(prev => ({ ...prev, state: currentValue }));
+                                    setOpenState(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      formData.state === state ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {state}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <Input
                     placeholder="ZIP Code"
@@ -738,18 +817,13 @@ export default function CheckoutPage() {
                     <span>Subtotal</span>
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
-                  {shippingCharges > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>Shipping</span>
-                      <span>₹{shippingCharges}</span>
-                    </div>
-                  )}
-                  {shippingCharges === 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Free Shipping</span>
-                      <span>₹0</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between text-sm">
+                    <span>Shipping {shippingDetails && `(${shippingDetails.weightUsed}kg - Zone ${shippingDetails.zone})`}</span>
+                    <span>₹{shippingCharges}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Delivery charges are dynamic based on your delivery location.
+                  </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Discount {appliedCoupon && `(${appliedCoupon.code})`}</span>

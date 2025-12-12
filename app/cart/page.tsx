@@ -24,7 +24,8 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState('');
 
   const subtotal = getTotalPrice();
-  const shippingCharges = subtotal > 500 ? 0 : 50;
+  // Shipping calculated at checkout
+  const shippingCharges = 0;
 
   // Calculate discount based on applied coupon
   let discount = 0;
@@ -98,11 +99,11 @@ export default function CartPage() {
       <div className="min-h-screen flex flex-col bg-gray-50/50">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-24 pb-16 flex items-center justify-center">
+        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-12 pb-16 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-6 bg-white p-12 rounded-3xl shadow-sm max-w-md w-full"
+            className="text-center space-y-6 bg-white p-6 md:p-12 rounded-3xl shadow-sm max-w-md w-full"
           >
             <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
               <ShoppingBag className="w-12 h-12 text-primary" />
@@ -124,8 +125,8 @@ export default function CartPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 pt-20 md:pt-24">
-        <div className="container mx-auto px-4 max-w-[1600px] py-6 md:py-12">
+      <main className="flex-1 pt-4 md:pt-20">
+        <div className="container mx-auto px-4 max-w-[1600px] py-4 md:py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-8 gap-4">
             <h1 className="text-3xl font-bold break-words pb-2 leading-tight">Shopping Cart</h1>
             <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={clearCart}>

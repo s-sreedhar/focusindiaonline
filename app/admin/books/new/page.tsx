@@ -37,7 +37,8 @@ export default function NewBookPage() {
         subject: '',
         subjects: [] as string[],
         language: 'English Medium',
-        stock: '100'
+        stock: '100',
+        weight: '500' // Default 500g
     });
 
     useEffect(() => {
@@ -95,6 +96,7 @@ export default function NewBookPage() {
                 subjects: formData.subjects,
                 language: formData.language,
                 stockQuantity: Number(formData.stock),
+                weight: Number(formData.weight),
                 image: imageUrl,
                 rating: 0,
                 reviews: 0,
@@ -216,6 +218,9 @@ export default function NewBookPage() {
                                 <option value="Hindi Medium">Hindi Medium</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="stock">Stock Quantity</Label>
                             <Input
@@ -226,6 +231,19 @@ export default function NewBookPage() {
                                 onChange={handleInputChange}
                                 required
                                 min="0"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="weight">Weight (in grams)</Label>
+                            <Input
+                                id="weight"
+                                name="weight"
+                                type="number"
+                                value={formData.weight}
+                                onChange={handleInputChange}
+                                required
+                                min="0"
+                                placeholder="e.g. 500"
                             />
                         </div>
                     </div>

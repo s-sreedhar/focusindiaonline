@@ -26,6 +26,7 @@ interface ProductCardProps {
   language?: string;
   subject?: string;
   isCombo?: boolean;
+  weight?: number;
 }
 
 export function ProductCard({
@@ -41,7 +42,8 @@ export function ProductCard({
   category,
   language,
   subject,
-  isCombo
+  isCombo,
+  weight
 }: ProductCardProps) {
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -61,6 +63,7 @@ export function ProductCard({
       image,
       quantity: 1,
       slug,
+      weight: weight || 500, // Default 500g if missing
     });
   };
 
@@ -86,7 +89,8 @@ export function ProductCard({
         primaryCategory: category || '',
         subCategories: [],
         description: '',
-        publisher: ''
+        publisher: '',
+        weight: weight || 500
       });
     }
   };

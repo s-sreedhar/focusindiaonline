@@ -10,6 +10,7 @@ export interface CartItem {
   image: string;
   quantity: number;
   slug: string;
+  weight?: number; // Weight in grams
 }
 
 interface CartStore {
