@@ -99,7 +99,7 @@ export default function CartPage() {
       <div className="min-h-screen flex flex-col bg-gray-50/50">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-12 pb-16 flex items-center justify-center">
+        <main className="flex-1 container mx-auto px-4 max-w-[1600px] w-full pt-24 pb-16 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -125,7 +125,7 @@ export default function CartPage() {
     <div className="min-h-screen flex flex-col bg-gray-50/50">
       <Header />
 
-      <main className="flex-1 pt-4 md:pt-20">
+      <main className="flex-1 pt-20 md:pt-24">
         <div className="container mx-auto px-4 max-w-[1600px] py-4 md:py-12">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-8 gap-4">
             <h1 className="text-3xl font-bold break-words pb-2 leading-tight">Shopping Cart</h1>
