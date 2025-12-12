@@ -90,11 +90,23 @@ export function PhoneLogin() {
     }, [step, timeLeft, canResend]);
 
     const checkUserExists = async (phone: string) => {
-        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-        // Query users collection for this phone number
-        // Note: This assumes phone numbers are unique
+        // Prepare multiple formats to check against
+        const digits = phone.replace(/\D/g, ''); // Ensure only digits
+        const last10 = digits.slice(-10);
+
+        const candidates = [
+            `+91${last10}`, // Format: +919876543210
+            last10,         // Format: 9876543210
+            digits,         // Format: whatever full digits user has
+            phone           // Original input just in case
+        ];
+
+        // Remove duplicates
+        const uniqueCandidates = Array.from(new Set(candidates));
+
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('phone', '==', formattedPhone));
+        // Use 'in' query to check all formats at once
+        const q = query(usersRef, where('phone', 'in', uniqueCandidates));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {

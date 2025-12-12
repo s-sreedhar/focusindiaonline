@@ -9,6 +9,8 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+import { NotificationsBell } from '@/components/admin/notifications-bell';
+
 export default function AdminLayout({
   children,
 }: {
@@ -70,26 +72,37 @@ export default function AdminLayout({
 
       <div className="flex-1 md:ml-64 min-h-screen bg-[#f5f5f7] flex flex-col transition-all duration-300">
         {/* Mobile Header */}
-        <header className="md:hidden border-b bg-white p-4 flex items-center gap-4 sticky top-0 z-40">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-6 h-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <div className="h-full bg-sidebar text-sidebar-foreground flex flex-col">
-                <div className="p-6 border-b border-sidebar-border/50">
-                  <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</SheetTitle>
-                  <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
-                </div>
-                <nav className="flex-1 flex flex-col px-4 py-4 min-h-0">
-                  <MobileNavItems />
-                </nav>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <h1 className="font-bold text-lg">Admin Dashboard</h1>
+        {/* Responsive Header */}
+        <header className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur-md p-4 flex items-center justify-between transition-all">
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-64">
+                  <div className="h-full bg-sidebar text-sidebar-foreground flex flex-col">
+                    <div className="p-6 border-b border-sidebar-border/50">
+                      <SheetTitle className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Focus India</SheetTitle>
+                      <p className="text-xs text-muted-foreground font-medium tracking-wide uppercase mt-1">Admin Portal</p>
+                    </div>
+                    <nav className="flex-1 flex flex-col px-4 py-4 min-h-0">
+                      <MobileNavItems />
+                    </nav>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <h1 className="font-bold text-lg md:hidden">Admin Dashboard</h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <NotificationsBell />
+          </div>
         </header>
         <main className="flex-1 p-4 md:p-8">
           {children}

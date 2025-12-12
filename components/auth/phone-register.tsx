@@ -13,6 +13,7 @@ import { Phone, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { handleFirebaseError } from '@/lib/error-utils';
 import { hashPassword } from '@/lib/crypto';
+import { createNotification } from '@/lib/services/notifications';
 
 export function PhoneRegister() {
     const [name, setName] = useState('');
@@ -235,6 +236,14 @@ export function PhoneRegister() {
             console.log('[PhoneRegister] Writing user document to Firestore...');
             await setDoc(userDocRef, newUserData, { merge: true });
             console.log('[PhoneRegister] User document created successfully');
+
+            // Notify Admin of New Customer
+            await createNotification(
+                'new_customer',
+                'New Customer Joined',
+                `${name.trim()} registered with ${email.trim()}.`,
+                user.uid
+            );
 
             setUser({
                 id: user.uid,

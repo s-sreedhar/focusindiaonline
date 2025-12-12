@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createNotification } from '@/lib/services/notifications';
 import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 import { Button } from '@/components/ui/button';
@@ -250,6 +251,7 @@ export default function CheckoutPage() {
     setCurrentStep(step);
   };
 
+  /*
   // Initialize Recaptcha when entering verification step
   useEffect(() => {
     if (currentStep === 'verification' && !window.recaptchaVerifier) {
@@ -273,12 +275,12 @@ export default function CheckoutPage() {
           setAuthError("Failed to initialize security check. Please refresh.");
         }
       };
-
+  
       // Small delay to allow React to render the container
       setTimeout(initRecaptcha, 100);
     }
   }, [currentStep]);
-
+  
   const setupRecaptcha = () => {
     // Kept for manual retry if needed, but useEffect handles primary init
     if (!window.recaptchaVerifier && document.getElementById('recaptcha-container')) {
@@ -287,32 +289,27 @@ export default function CheckoutPage() {
       });
     }
   };
+  */
 
-  const handlePlaceOrder = async () => {
-    if (isAuthenticated) {
-      await initiatePayment(user!.id);
-    } else {
-      // Start Phone Verification - logical flow triggers useEffect
-      setCurrentStep('verification');
-    }
-  };
 
+
+  /*
   const sendOtp = async () => {
     setLoading(true);
     setAuthError('');
     try {
       const formattedPhone = formData.phone.startsWith('+91') ? formData.phone : `+91${formData.phone}`;
-
+  
       if (!window.recaptchaVerifier) {
         setupRecaptcha(); // Try one last time
         if (!window.recaptchaVerifier) throw new Error("Recaptcha not initialized");
       }
-
+  
       const appVerifier = window.recaptchaVerifier;
       const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(confirmation);
       toast.success("OTP sent successfully!");
-
+  
     } catch (err: any) {
       console.error('Error sending OTP:', err);
       // Reset recaptcha if it fails, so it can be re-rendered
@@ -325,6 +322,77 @@ export default function CheckoutPage() {
       setAuthError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+  */
+
+  // Modified handlePlaceOrder to bypass OTP
+  const handlePlaceOrder = async () => {
+    if (isAuthenticated && user?.id) {
+      await initiatePayment(user.id);
+    } else {
+      // COMMENTED OUT OTP VERIFICATION FLOW
+      /*
+      // Start Phone Verification - logical flow triggers useEffect
+      setCurrentStep('verification');
+      */
+
+      // BYPASS LOGIC: Create a temporary guest user and proceed
+      setLoading(true);
+      try {
+        // Validate before creating guest
+        if (!validateAddress()) {
+          setLoading(false);
+          return;
+        }
+
+        // Generate a guest ID
+        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+        // Create user document for the guest
+        const userDocRef = doc(db, 'users', guestId);
+        await setDoc(userDocRef, {
+          uid: guestId,
+          email: formData.email,
+          displayName: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          role: 'guest',
+          createdAt: serverTimestamp(),
+          address: {
+            street: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+          }
+        });
+
+        // Notify Admin of Guest User
+        await createNotification(
+          'new_customer',
+          'New Guest Customer',
+          `${formData.firstName} ${formData.lastName} joined as a guest.`,
+          guestId
+        );
+
+        // Update local auth state to reflect "guest login"
+        setUser({
+          id: guestId,
+          email: formData.email,
+          username: formData.phone,
+          displayName: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          createdAt: new Date().toISOString(),
+          role: 'guest'
+        });
+
+        // Proceed to payment
+        await initiatePayment(guestId);
+
+      } catch (error) {
+        console.error("Guest Checkout Error:", error);
+        toast.error("Failed to process guest checkout");
+        setLoading(false);
+      }
     }
   };
 
@@ -462,6 +530,14 @@ export default function CheckoutPage() {
           updatedAt: serverTimestamp()
         }, { merge: true });
       });
+
+      // NOTIFY: Potential Lead (Payment Pending)
+      await createNotification(
+        'potential_lead',
+        'Potential Lead (Payment Pending)',
+        `Order #${orderId} initiated by ${formData.firstName} ${formData.lastName} for ₹${total}.`,
+        orderId
+      );
 
       // 3. Call Payment API
       const response = await fetch('/api/payment', {

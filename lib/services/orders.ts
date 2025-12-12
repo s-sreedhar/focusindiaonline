@@ -107,6 +107,11 @@ export const updateOrderStatus = async (
 /**
  * Update payment status
  */
+import { createNotification } from './notifications';
+
+/**
+ * Update payment status
+ */
 export const updatePaymentStatus = async (
     orderId: string,
     paymentStatus: Order['paymentStatus'],
@@ -124,6 +129,22 @@ export const updatePaymentStatus = async (
         }
 
         await updateDoc(orderRef, updateData);
+
+        // Notify Admin on success
+        if (paymentStatus === 'completed') {
+            const snap = await getDoc(orderRef);
+            const order = snap.data();
+            const amount = order?.totalAmount || 0;
+            const userName = order?.shippingAddress?.firstName || 'Unknown User';
+
+            await createNotification(
+                'new_order',
+                'New Order Placed',
+                `Order #${orderId} confirmed for ₹${amount} by ${userName}.`,
+                orderId
+            );
+        }
+
     } catch (error) {
         console.error('Error updating payment status:', error);
         throw new Error('Failed to update payment status');
