@@ -33,6 +33,19 @@ import {
 } from "@/components/ui/pagination";
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { User, Phone, MapPin, CreditCard, Calendar, FileText, Package as PackageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -308,102 +321,199 @@ export default function OrdersPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
           {selectedOrder && (
             <>
-              <DialogHeader>
-                <DialogTitle>Order #{selectedOrder.orderId || selectedOrder.id}</DialogTitle>
+              <DialogHeader className="p-6 pb-4 border-b">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                      Order #{selectedOrder.orderId || selectedOrder.id.slice(0, 8)}
+                      <Badge className={cn("text-sm px-3 capitalize", getStatusColor(selectedOrder.status))}>
+                        {selectedOrder.status}
+                      </Badge>
+                    </DialogTitle>
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      Placed on {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-6 py-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Shipping Address</h3>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>{selectedOrder.shippingAddress?.fullName || 'N/A'}</p>
-                    <p>{selectedOrder.shippingAddress?.street || ''}</p>
-                    <p>{selectedOrder.shippingAddress?.city || ''}, {selectedOrder.shippingAddress?.state || ''} {selectedOrder.shippingAddress?.zipCode || ''}</p>
-                    <p>Phone: {selectedOrder.shippingAddress?.phoneNumber || 'N/A'}</p>
-                    <p>Email: {selectedOrder.shippingAddress?.email || 'N/A'}</p>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Order Info</h3>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>Date: {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</p>
-                    <p>Status: <span className="capitalize font-medium text-foreground">{selectedOrder.status}</span></p>
-                    <p>Total: <span className="font-bold text-foreground">₹{selectedOrder.totalAmount}</span></p>
-                    <p>Payment Method: <span className="capitalize">{selectedOrder.paymentMethod || 'N/A'}</span></p>
-                  </div>
-                </div>
-              </div>
 
-              <div>
-                <h3 className="font-semibold mb-2">Order Items</h3>
-                <div className="border rounded-md divide-y mb-6">
-                  {selectedOrder.items?.map((item, idx) => (
-                    <div key={idx} className="p-3 flex justify-between items-center text-sm">
-                      <div>
-                        <p className="font-medium">{item.title}</p>
-                        <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                      </div>
-                      <p>₹{item.price * item.quantity}</p>
+              <ScrollArea className="flex-1 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  {/* Customer Info */}
+                  <Card className="p-4 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-2 font-semibold text-lg border-b pb-2 text-primary">
+                      <User className="w-5 h-5" />
+                      Customer & Shipping
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold">Order Notes</h3>
-
-                {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 && (
-                  <div className="space-y-3 max-h-48 overflow-y-auto pr-2 mb-4 border p-3 rounded-md bg-muted/20">
-                    {[...selectedOrder.notesHistory].reverse().map((note, idx) => (
-                      <div key={idx} className="bg-background p-3 rounded-md border shadow-sm text-sm">
-                        <p className="mb-1">{note.content}</p>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{note.adminName || 'Admin'}</span>
-                          <span>{new Date(note.createdAt).toLocaleString()}</span>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex gap-3">
+                        <Avatar className="h-10 w-10 border">
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                            {selectedOrder.shippingAddress?.fullName?.slice(0, 2).toUpperCase() || 'GU'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-base">{selectedOrder.shippingAddress?.fullName || 'Guest User'}</p>
+                          <p className="text-muted-foreground">{selectedOrder.shippingAddress?.email}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <Separator />
+                      <div className="flex gap-2 items-start text-muted-foreground">
+                        <Phone className="w-4 h-4 mt-0.5 text-foreground/70" />
+                        <span className="text-foreground">{selectedOrder.shippingAddress?.phoneNumber || 'N/A'}</span>
+                      </div>
+                      <div className="flex gap-2 items-start text-muted-foreground">
+                        <MapPin className="w-4 h-4 mt-0.5 text-foreground/70" />
+                        <div className="text-foreground">
+                          <p>{selectedOrder.shippingAddress?.street}</p>
+                          <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
 
-                {!selectedOrder.notesHistory?.length && selectedOrder.adminNotes && (
-                  <div className="bg-muted/30 p-3 rounded-md border text-sm italic text-muted-foreground mb-4">
-                    Latest Note: {selectedOrder.adminNotes}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <textarea
-                    className="flex-1 min-h-[80px] p-3 rounded-md border text-sm"
-                    placeholder="Add a new note..."
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                  />
+                  {/* Order Summary */}
+                  <Card className="p-4 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-2 font-semibold text-lg border-b pb-2 text-primary">
+                      <CreditCard className="w-5 h-5" />
+                      Payment & Summary
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Payment Method</span>
+                        <span className="font-medium capitalize badge badge-outline">{selectedOrder.paymentMethod || 'Online'}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>₹{(selectedOrder as any).subtotal || 0}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Shipping</span>
+                        <span>₹{(selectedOrder as any).shippingCharges || 0}</span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-muted-foreground">Discount</span>
+                        <span className="text-green-600 font-medium">-₹{(selectedOrder as any).discount || 0}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between py-1 font-bold text-lg text-primary">
+                        <span>Total</span>
+                        <span>₹{selectedOrder.totalAmount}</span>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveNotes} size="sm">Save Note</Button>
-                </div>
-              </div>
 
-              <div className="flex justify-end pt-4 gap-2 border-t mt-4">
-                <Select
-                  value={selectedOrder.status}
-                  onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Update Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="placed">Placed</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipped">Shipped</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="returned">Returned</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-4 mb-8">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <PackageIcon className="w-5 h-5 text-primary" />
+                    Order Items
+                  </h3>
+                  <div className="border rounded-md overflow-hidden shadow-sm">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="w-[50%]">Item Details</TableHead>
+                          <TableHead className="text-center">Price</TableHead>
+                          <TableHead className="text-center">Qty</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedOrder.items?.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <div className="font-medium">{item.title}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">ID: {item.bookId?.slice(0, 8) || 'N/A'}</div>
+                            </TableCell>
+                            <TableCell className="text-center">₹{item.price}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="secondary" className="font-mono">{item.quantity}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">₹{item.price * item.quantity}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Notes & Activity
+                  </h3>
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-4 border shadow-inner">
+                    <ScrollArea className="h-[200px] w-full pr-4">
+                      {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 ? (
+                        <div className="space-y-4">
+                          {[...selectedOrder.notesHistory].reverse().map((note, idx) => (
+                            <div key={idx} className="flex gap-3 items-start group">
+                              <Avatar className="h-8 w-8 border bg-background mt-1">
+                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                  {(note.adminName || 'AD').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-foreground/80">{note.adminName || 'Admin'}</span>
+                                  <span className="text-[10px] text-muted-foreground">{new Date(note.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div className="text-sm bg-background border p-3 rounded-md rounded-tl-none shadow-sm text-foreground/90 leading-relaxed">
+                                  {note.content}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2 py-8">
+                          <FileText className="w-8 h-8 opacity-20" />
+                          <p className="text-sm">No notes added yet.</p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                    <div className="flex gap-2 pt-2 border-t">
+                      <textarea
+                        className="flex-1 min-h-[44px] max-h-[120px] p-3 rounded-md border text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background"
+                        placeholder="Type an internal note to track progress..."
+                        value={adminNotes}
+                        onChange={(e) => setAdminNotes(e.target.value)}
+                      />
+                      <Button onClick={handleSaveNotes} size="sm" className="h-auto px-4 self-end">Post Note</Button>
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+
+              <div className="p-4 border-t bg-muted/20 flex justify-between items-center">
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  Action required? Update status below.
+                </div>
+                <div className="flex gap-3">
+                  <Select
+                    value={selectedOrder.status}
+                    onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
+                  >
+                    <SelectTrigger className="w-[200px] bg-background border-primary/20 hover:border-primary/50 transition-colors">
+                      <SelectValue placeholder="Update Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="placed">Placed</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="returned">Returned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </>
           )}
