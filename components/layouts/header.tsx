@@ -290,6 +290,22 @@ export function Header() {
         </div>
       </motion.header>
 
+      {/* Mobile Search Bar - Fixed below header */}
+      <div className={`fixed top-[68px] md:hidden left-0 right-0 z-40 bg-white px-4 py-2 border-b transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
+        <form onSubmit={handleSearch} className="flex w-full items-center rounded-full bg-muted/50 border border-transparent focus-within:bg-white focus-within:border-primary/20 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+          <Input
+            type="text"
+            placeholder="Search books..."
+            className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-l-full pl-4"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Button type="submit" size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary mr-1">
+            <Search className="w-4 h-4" />
+          </Button>
+        </form>
+      </div>
+
       {/* Mobile Menu Overlay Removed via User Request */}
     </>
   );

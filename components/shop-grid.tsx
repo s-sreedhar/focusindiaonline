@@ -15,6 +15,8 @@ import { Filter, Grid2x2, Grid3x3, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Book } from '@/lib/types';
 import { CompareBar } from '@/components/compare-bar';
+import { useSearchParams } from 'next/navigation';
+import Fuse from 'fuse.js';
 
 interface ShopGridProps {
   books: Book[];
@@ -78,8 +80,25 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
   }, [books, allCategories]);
 
 
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+
   const filteredAndSortedBooks = useMemo(() => {
-    let result = books.filter((book) => {
+    let result = books;
+
+    // 1. Fuzzy Search (First priority)
+    if (searchQuery) {
+      const fuse = new Fuse(result, {
+        keys: ['title', 'author', 'category', 'subjects', 'description', 'publisher'],
+        threshold: 0.4, // 0.0 = perfect match, 1.0 = match anything. 0.4 is good for typos
+        distance: 100,
+        includeScore: true,
+      });
+      // Map back to item and filter by score if needed, but Fuse does a good job sorting by relevance
+      result = fuse.search(searchQuery).map((res: any) => res.item);
+    }
+
+    result = result.filter((book) => {
       // Combo vs Regular Book Filter
       const isCombo = book.isCombo || book.category === 'Value Bundles';
       if (showCombos) {
