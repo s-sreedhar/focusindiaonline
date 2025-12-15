@@ -27,12 +27,14 @@ export const sendEmail = async (to: string, subject: string, htmlContent: string
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Error sending email:', errorData);
-            throw new Error('Failed to send email');
+            console.error('Error sending email:', JSON.stringify(errorData, null, 2));
+            return { success: false, error: errorData };
         }
 
         console.log('Email sent successfully');
+        return { success: true };
     } catch (error) {
         console.error('Error sending email:', error);
+        return { success: false, error };
     }
 };
