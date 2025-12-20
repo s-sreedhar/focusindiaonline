@@ -126,7 +126,24 @@ export default function ProductsPage() {
             <tbody className="divide-y">
               {paginatedProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="px-6 py-4 font-semibold">{product.title}</td>
+                  <td className="px-6 py-4">
+                    <div className="font-semibold">{product.title}</div>
+                    {product.isCombo && product.comboBookIds && product.comboBookIds.length > 0 && (
+                      <div className="text-xs text-muted-foreground mt-1.5 p-2 bg-muted/30 rounded-md">
+                        <span className="font-medium text-primary block mb-1">Bundle Contents:</span>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {product.comboBookIds.map(id => {
+                            const book = products.find(p => p.id === id);
+                            return book ? (
+                              <li key={id} className="truncate max-w-[200px]" title={book.title}>
+                                {book.title}
+                              </li>
+                            ) : null;
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-muted-foreground">{product.author}</td>
                   <td className="px-6 py-4 text-muted-foreground">{product.primaryCategory}</td>
                   <td className="px-6 py-4 font-semibold">₹{product.price}</td>

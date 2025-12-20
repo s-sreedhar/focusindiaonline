@@ -17,10 +17,13 @@ async function getProduct(slug: string): Promise<Book | null> {
 
   const docData = querySnapshot.docs[0];
   const data = docData.data();
+
   return {
     id: docData.id,
     ...data,
-    stockQuantity: data.stockQuantity ?? data.stock ?? 0
+    stockQuantity: data.stockQuantity ?? data.stock ?? 0,
+    createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+    updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
   } as Book;
 }
 
