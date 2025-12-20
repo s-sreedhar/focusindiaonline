@@ -30,6 +30,7 @@ interface Book {
   category: string;
   language?: string;
   subject?: string;
+  isCombo?: boolean;
 }
 
 interface Banner {
@@ -284,7 +285,7 @@ export default function Home() {
             </section>
 
             {/* Combos / Bundles Section */}
-            {books.filter(b => b.category === 'Value Bundles').length > 0 && (
+            {books.filter(b => (b as any).isCombo || b.category === 'Value Bundles').length > 0 && (
               <section className="py-16 bg-white">
                 <div className="container mx-auto px-4 max-w-[1600px]">
                   <div className="flex justify-between items-center mb-8">
@@ -296,12 +297,12 @@ export default function Home() {
                       <p className="text-muted-foreground">Save more with our curated book bundles</p>
                     </div>
                     <Button variant="outline" asChild className="rounded-full">
-                      <Link href="/shop?category=Value%20Bundles">View All Combos</Link>
+                      <Link href="/shop?bundles=true">View All Combos</Link>
                     </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {books.filter(b => b.category === 'Value Bundles').slice(0, 3).map((combo, i) => (
+                    {books.filter(b => (b as any).isCombo || b.category === 'Value Bundles').slice(0, 3).map((combo, i) => (
                       <motion.div
                         key={combo.id}
                         initial={{ opacity: 0, scale: 0.95 }}

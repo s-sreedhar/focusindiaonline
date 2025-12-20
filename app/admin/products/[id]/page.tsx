@@ -9,11 +9,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, query, orderBy, collection, getDocs } from 'firebase/firestore';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { SUBJECTS } from '@/lib/constants';
+import { SUBJECTS, PRIMARY_CATEGORIES } from '@/lib/constants';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -30,6 +37,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         stockQuantity: '',
         image: '',
         primaryCategory: '',
+        categories: [] as string[],
         language: 'English',
         inStock: true,
         isFeatured: false,
@@ -56,6 +64,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         stockQuantity: data.stockQuantity?.toString() || '',
                         image: data.image || '',
                         primaryCategory: data.primaryCategory || '',
+                        categories: data.subCategories && data.subCategories.length > 0 ? data.subCategories : (data.primaryCategory ? [data.primaryCategory] : []),
                         language: data.language || 'English',
                         inStock: data.inStock ?? true,
                         isFeatured: data.isFeatured ?? false,
@@ -77,6 +86,33 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         fetchProduct();
     }, [id, router]);
 
+    // Data states
+    const [dbCategories, setDbCategories] = useState<string[]>([]);
+    const [dbSubjects, setDbSubjects] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchMasterData = async () => {
+            try {
+                // Fetch Categories
+                const catQuery = query(collection(db, 'categories'), orderBy('name'));
+                const catSnapshot = await getDocs(catQuery);
+                const cats = catSnapshot.docs.map((doc: any) => doc.data().name as string);
+                setDbCategories(cats.length > 0 ? cats : PRIMARY_CATEGORIES);
+
+                // Fetch Subjects
+                const subQuery = query(collection(db, 'subjects'), orderBy('name'));
+                const subSnapshot = await getDocs(subQuery);
+                const subs = subSnapshot.docs.map((doc: any) => doc.data().name as string);
+                setDbSubjects(subs.length > 0 ? subs : SUBJECTS);
+            } catch (error) {
+                console.error('Error fetching master data:', error);
+                setDbCategories(PRIMARY_CATEGORIES);
+                setDbSubjects(SUBJECTS);
+            }
+        };
+        fetchMasterData();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -90,6 +126,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setFormData(prev => ({ ...prev, subjects: selected }));
     };
 
+    const handleCategoriesChange = (selected: string[]) => {
+        setFormData(prev => ({ ...prev, categories: selected, primaryCategory: selected[0] || '' }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -101,6 +141,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
                 stockQuantity: Number(formData.stockQuantity),
                 updatedAt: serverTimestamp(),
+                subCategories: formData.categories,
+                primaryCategory: formData.categories[0] || '',
             };
 
             await updateDoc(doc(db, 'books', id), productData);
@@ -148,8 +190,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="primaryCategory">Category</Label>
-                            <Input id="primaryCategory" name="primaryCategory" value={formData.primaryCategory} onChange={handleChange} required />
+                            <Label>Categories</Label>
+                            <MultiSelect
+                                options={dbCategories.map(c => ({ label: c, value: c }))}
+                                selected={formData.categories}
+                                onChange={handleCategoriesChange}
+                                placeholder="Select Categories"
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -169,7 +216,26 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
                         <div className="space-y-2">
                             <Label htmlFor="language">Language</Label>
-                            <Input id="language" name="language" value={formData.language} onChange={handleChange} required />
+                            <Select
+                                value={formData.language}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="English">English</SelectItem>
+                                    <SelectItem value="Hindi">Hindi</SelectItem>
+                                    <SelectItem value="Telugu">Telugu</SelectItem>
+                                    <SelectItem value="Tamil">Tamil</SelectItem>
+                                    <SelectItem value="Kannada">Kannada</SelectItem>
+                                    <SelectItem value="Malayalam">Malayalam</SelectItem>
+                                    <SelectItem value="Marathi">Marathi</SelectItem>
+                                    <SelectItem value="Bengali">Bengali</SelectItem>
+                                    <SelectItem value="Odia">Odia</SelectItem>
+                                    <SelectItem value="Urdu">Urdu</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 

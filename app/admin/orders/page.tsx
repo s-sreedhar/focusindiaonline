@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Package, MoreHorizontal, Filter } from 'lucide-react';
+import { Loader2, Package, Eye, Filter } from 'lucide-react';
 import { Order } from '@/lib/types';
 import { sendEmail } from '@/lib/brevo';
 import { getEmailTemplate } from '@/lib/email-templates';
@@ -51,6 +52,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all'); // all, today, week, month
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -161,9 +163,31 @@ export default function OrdersPage() {
     setIsDialogOpen(true);
   };
 
-  const filteredOrders = orders.filter(order =>
-    statusFilter === 'all' || order.status === statusFilter
-  );
+  const filteredOrders = orders.filter(order => {
+    // Status Filter
+    if (statusFilter !== 'all' && order.status !== statusFilter) return false;
+
+    // Date Filter
+    if (dateFilter === 'all') return true;
+
+    if (!order.createdAt || !order.createdAt.seconds) return false;
+    const orderDate = new Date(order.createdAt.seconds * 1000);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (dateFilter === 'today') {
+      return orderDate >= today;
+    } else if (dateFilter === 'week') {
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      return orderDate >= startOfWeek;
+    } else if (dateFilter === 'month') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      return orderDate >= startOfMonth;
+    }
+
+    return true;
+  });
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const paginatedOrders = filteredOrders.slice(
@@ -214,6 +238,21 @@ export default function OrdersPage() {
               <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
               <SelectItem value="returned">Returned</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={dateFilter} onValueChange={(val) => {
+            setDateFilter(val);
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Dates</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -271,7 +310,7 @@ export default function OrdersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
-                      <MoreHorizontal className="w-4 h-4" />
+                      <Eye className="w-4 h-4" />
                     </Button>
                   </td>
                 </tr>
@@ -321,194 +360,151 @@ export default function OrdersPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
           {selectedOrder && (
             <>
-              <DialogHeader className="p-6 pb-4 border-b">
+              <DialogHeader className="p-6 pb-4 border-b bg-muted/10">
                 <div className="flex justify-between items-start">
                   <div>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                    <DialogTitle className="text-xl font-bold flex items-center gap-3">
                       Order #{selectedOrder.orderId || selectedOrder.id.slice(0, 8)}
-                      <Badge className={cn("text-sm px-3 capitalize", getStatusColor(selectedOrder.status))}>
+                      <Badge className={cn("text-xs px-2.5 py-0.5 capitalize", getStatusColor(selectedOrder.status))}>
                         {selectedOrder.status}
                       </Badge>
                     </DialogTitle>
-                    <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4" />
-                      Placed on {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
                     </p>
                   </div>
                 </div>
               </DialogHeader>
 
-              <ScrollArea className="flex-1 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Customer Info */}
-                  <Card className="p-4 space-y-4 shadow-sm">
-                    <div className="flex items-center gap-2 font-semibold text-lg border-b pb-2 text-primary">
-                      <User className="w-5 h-5" />
-                      Customer & Shipping
-                    </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex gap-3">
-                        <Avatar className="h-10 w-10 border">
-                          <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                            {selectedOrder.shippingAddress?.fullName?.slice(0, 2).toUpperCase() || 'GU'}
-                          </AvatarFallback>
+              <ScrollArea className="flex-1">
+                <div className="p-6 space-y-8">
+                  {/* Top Row: Customer and Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="p-4 shadow-sm border-l-4 border-l-primary">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/10 text-primary">{selectedOrder.shippingAddress?.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-semibold text-base">{selectedOrder.shippingAddress?.fullName || 'Guest User'}</p>
-                          <p className="text-muted-foreground">{selectedOrder.shippingAddress?.email}</p>
+                        <div className="space-y-1">
+                          <p className="font-semibold text-sm">{selectedOrder.shippingAddress?.fullName}</p>
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <p>{selectedOrder.shippingAddress?.phoneNumber}</p>
+                            <p>{selectedOrder.shippingAddress?.email}</p>
+                            <p className="mt-1 text-foreground/80">{selectedOrder.shippingAddress?.street}, {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} - {selectedOrder.shippingAddress?.zipCode}</p>
+                          </div>
                         </div>
                       </div>
-                      <Separator />
-                      <div className="flex gap-2 items-start text-muted-foreground">
-                        <Phone className="w-4 h-4 mt-0.5 text-foreground/70" />
-                        <span className="text-foreground">{selectedOrder.shippingAddress?.phoneNumber || 'N/A'}</span>
-                      </div>
-                      <div className="flex gap-2 items-start text-muted-foreground">
-                        <MapPin className="w-4 h-4 mt-0.5 text-foreground/70" />
-                        <div className="text-foreground">
-                          <p>{selectedOrder.shippingAddress?.street}</p>
-                          <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}</p>
+                    </Card>
+
+                    <Card className="p-4 shadow-sm border-r-4 border-r-green-500">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span>₹{(selectedOrder as any).subtotal || 0}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Shipping</span>
+                          <span>₹{(selectedOrder as any).shippingCharges || 0}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-semibold pt-2 border-t mt-1">
+                          <span>Total Amount</span>
+                          <span className="text-lg">₹{selectedOrder.totalAmount}</span>
+                        </div>
+                        <div className="text-xs text-right text-muted-foreground">
+                          via {selectedOrder.paymentMethod || 'Online'}
                         </div>
                       </div>
-                    </div>
-                  </Card>
-
-                  {/* Order Summary */}
-                  <Card className="p-4 space-y-4 shadow-sm">
-                    <div className="flex items-center gap-2 font-semibold text-lg border-b pb-2 text-primary">
-                      <CreditCard className="w-5 h-5" />
-                      Payment & Summary
-                    </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Payment Method</span>
-                        <span className="font-medium capitalize badge badge-outline">{selectedOrder.paymentMethod || 'Online'}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span>₹{(selectedOrder as any).subtotal || 0}</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Shipping</span>
-                        <span>₹{(selectedOrder as any).shippingCharges || 0}</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-muted-foreground">Discount</span>
-                        <span className="text-green-600 font-medium">-₹{(selectedOrder as any).discount || 0}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between py-1 font-bold text-lg text-primary">
-                        <span>Total</span>
-                        <span>₹{selectedOrder.totalAmount}</span>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                <div className="space-y-4 mb-8">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <PackageIcon className="w-5 h-5 text-primary" />
-                    Order Items
-                  </h3>
-                  <div className="border rounded-md overflow-hidden shadow-sm">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="w-[50%]">Item Details</TableHead>
-                          <TableHead className="text-center">Price</TableHead>
-                          <TableHead className="text-center">Qty</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedOrder.items?.map((item, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>
-                              <div className="font-medium">{item.title}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">ID: {item.bookId?.slice(0, 8) || 'N/A'}</div>
-                            </TableCell>
-                            <TableCell className="text-center">₹{item.price}</TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="secondary" className="font-mono">{item.quantity}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">₹{item.price * item.quantity}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    </Card>
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Notes & Activity
-                  </h3>
-                  <div className="bg-muted/30 rounded-lg p-4 space-y-4 border shadow-inner">
-                    <ScrollArea className="h-[200px] w-full pr-4">
-                      {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 ? (
-                        <div className="space-y-4">
-                          {[...selectedOrder.notesHistory].reverse().map((note, idx) => (
-                            <div key={idx} className="flex gap-3 items-start group">
-                              <Avatar className="h-8 w-8 border bg-background mt-1">
-                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                                  {(note.adminName || 'AD').slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground/80">{note.adminName || 'Admin'}</span>
-                                  <span className="text-[10px] text-muted-foreground">{new Date(note.createdAt).toLocaleString()}</span>
-                                </div>
-                                <div className="text-sm bg-background border p-3 rounded-md rounded-tl-none shadow-sm text-foreground/90 leading-relaxed">
-                                  {note.content}
-                                </div>
+                  {/* Order Items */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><PackageIcon className="w-4 h-4" /> Order Items</h3>
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="py-2">Product</TableHead>
+                            <TableHead className="text-center py-2">Qty</TableHead>
+                            <TableHead className="text-right py-2">Price</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedOrder.items.map((item, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="py-3">
+                                <div className="font-medium text-sm">{item.title}</div>
+                                <div className="text-xs text-muted-foreground">ID: {item.bookId?.slice(0, 6)}...</div>
+                              </TableCell>
+                              <TableCell className="text-center py-3">{item.quantity}</TableCell>
+                              <TableCell className="text-right py-3">₹{item.price * item.quantity}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  {/* Notes Section */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Internal Notes</h3>
+                    <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
+                      {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 && (
+                        <div className="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                          {[...selectedOrder.notesHistory].reverse().map((note, i) => (
+                            <div key={i} className="text-xs bg-background p-2 rounded border shadow-sm">
+                              <div className="flex justify-between mb-1 opacity-70">
+                                <span className="font-semibold">{note.adminName || 'Admin'}</span>
+                                <span>{new Date(note.createdAt).toLocaleString()}</span>
                               </div>
+                              <p>{note.content}</p>
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2 py-8">
-                          <FileText className="w-8 h-8 opacity-20" />
-                          <p className="text-sm">No notes added yet.</p>
-                        </div>
                       )}
-                    </ScrollArea>
-                    <div className="flex gap-2 pt-2 border-t">
-                      <textarea
-                        className="flex-1 min-h-[44px] max-h-[120px] p-3 rounded-md border text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 bg-background"
-                        placeholder="Type an internal note to track progress..."
-                        value={adminNotes}
-                        onChange={(e) => setAdminNotes(e.target.value)}
-                      />
-                      <Button onClick={handleSaveNotes} size="sm" className="h-auto px-4 self-end">Post Note</Button>
+                      <div className="flex gap-2">
+                        <Input
+                          value={adminNotes}
+                          onChange={(e) => setAdminNotes(e.target.value)}
+                          placeholder="Add a private note..."
+                          className="h-9 text-sm"
+                        />
+                        <Button size="sm" onClick={handleSaveNotes} disabled={!adminNotes.trim()}>Save</Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </ScrollArea>
 
-              <div className="p-4 border-t bg-muted/20 flex justify-between items-center">
-                <div className="text-sm text-muted-foreground flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                  Action required? Update status below.
-                </div>
-                <div className="flex gap-3">
+              <div className="p-4 border-t bg-muted/10 flex justify-between items-center shrink-0">
+                <span className="text-sm font-medium text-muted-foreground">Update Status:</span>
+                <div className="flex gap-2">
+                  {['processing', 'shipped', 'delivered'].map((status) => (
+                    selectedOrder.status !== status && (
+                      <Button
+                        key={status}
+                        variant="outline"
+                        size="sm"
+                        className="capitalize h-8"
+                        onClick={() => handleStatusUpdate(selectedOrder.id, status)}
+                      >
+                        Mark {status}
+                      </Button>
+                    )
+                  ))}
                   <Select
                     value={selectedOrder.status}
                     onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
                   >
-                    <SelectTrigger className="w-[200px] bg-background border-primary/20 hover:border-primary/50 transition-colors">
-                      <SelectValue placeholder="Update Status" />
+                    <SelectTrigger className="w-[140px] h-8">
+                      <SelectValue placeholder="More..." />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="placed">Placed</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="shipped">Shipped</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                       <SelectItem value="returned">Returned</SelectItem>
                     </SelectContent>

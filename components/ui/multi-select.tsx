@@ -116,6 +116,10 @@ export function MultiSelect({
                                             setInputValue("");
                                             handleSelect(option.value);
                                         }}
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }}
                                         className="cursor-pointer"
                                     >
                                         {option.label}

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { PRIMARY_CATEGORIES } from '@/lib/constants';
+import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface FilterSidebarProps {
   filters: {
@@ -13,10 +15,11 @@ interface FilterSidebarProps {
     selectedSubjects: string[];
     selectedLanguages: string[];
     inStockOnly: boolean;
+    showBundles: boolean; // New filter
   };
   onFiltersChange: (filters: any) => void;
   availableSubjects?: string[];
-  availableCategories?: string[]; // New prop
+  availableCategories?: string[]; // Keep for prop compatibility if passed from parent, though we fetch internally too
 }
 
 export function FilterSidebar({ filters, onFiltersChange, availableSubjects = [], availableCategories = [] }: FilterSidebarProps) {
@@ -25,8 +28,38 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
     selectedCategories,
     selectedSubjects,
     selectedLanguages,
-    inStockOnly
+    inStockOnly,
+    showBundles
   } = filters;
+
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
+  const [dbSubjects, setDbSubjects] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Categories
+        const catQuery = query(collection(db, 'categories'), orderBy('name'));
+        const catSnapshot = await getDocs(catQuery);
+        const cats = catSnapshot.docs.map((doc: any) => doc.data().name as string);
+        setDbCategories(cats.length > 0 ? cats : PRIMARY_CATEGORIES);
+
+        // Fetch Subjects
+        const subQuery = query(collection(db, 'subjects'), orderBy('name'));
+        const subSnapshot = await getDocs(subQuery);
+        const subs = subSnapshot.docs.map((doc: any) => doc.data().name as string);
+        setDbSubjects(subs.length > 0 ? subs : SUBJECTS);
+      } catch (error) {
+        console.error("Error fetching filters", error);
+        setDbCategories(PRIMARY_CATEGORIES);
+        setDbSubjects(SUBJECTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handlePriceChange = (value: [number, number]) => {
     onFiltersChange({ ...filters, priceRange: value });
@@ -57,18 +90,24 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
     onFiltersChange({ ...filters, inStockOnly: !inStockOnly });
   };
 
+  const handleBundlesToggle = () => {
+    onFiltersChange({ ...filters, showBundles: !showBundles });
+  };
+
   const handleReset = () => {
     onFiltersChange({
       priceRange: [0, 2000],
       selectedCategories: [],
       selectedSubjects: [],
       selectedLanguages: [],
-      inStockOnly: false
+      inStockOnly: false,
+      showBundles: false
     });
   };
 
-  // Use dynamic categories if provided, otherwise fallback to constants
-  const categoriesToDisplay = availableCategories.length > 0 ? availableCategories : PRIMARY_CATEGORIES;
+  // Use dynamic categories if fetched, otherwise fallback to props or constants
+  const categoriesToDisplay = dbCategories.length > 0 ? dbCategories : (availableCategories.length > 0 ? availableCategories : PRIMARY_CATEGORIES);
+  const subjectsToDisplay = dbSubjects.length > 0 ? dbSubjects : (availableSubjects.length > 0 ? availableSubjects : SUBJECTS);
 
   return (
     <div className="w-full md:w-64 space-y-6">
@@ -86,6 +125,19 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
         <div className="flex justify-between text-sm text-muted-foreground">
           <span>₹{priceRange[0]}</span>
           <span>₹{priceRange[1]}</span>
+        </div>
+      </div>
+
+      {/* Combos Filter - NEW SECTION */}
+      <div>
+        <h3 className="font-bold mb-3">Combos</h3>
+        <div className="flex items-center">
+          <Checkbox
+            id="bundles"
+            checked={showBundles}
+            onCheckedChange={handleBundlesToggle}
+          />
+          <label htmlFor="bundles" className="ml-2 text-sm cursor-pointer">Bundles</label>
         </div>
       </div>
 
@@ -110,20 +162,16 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
       <div>
         <h3 className="font-bold mb-3">Subjects</h3>
         <div className="space-y-2 max-h-48 overflow-y-auto">
-          {availableSubjects.length > 0 ? (
-            availableSubjects.map((subject) => (
-              <div key={subject} className="flex items-center">
-                <Checkbox
-                  id={subject}
-                  checked={selectedSubjects.includes(subject)}
-                  onCheckedChange={() => handleSubjectToggle(subject)}
-                />
-                <label htmlFor={subject} className="ml-2 text-sm cursor-pointer">{subject}</label>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No subjects available</p>
-          )}
+          {subjectsToDisplay.map((subject) => (
+            <div key={subject} className="flex items-center">
+              <Checkbox
+                id={subject}
+                checked={selectedSubjects.includes(subject)}
+                onCheckedChange={() => handleSubjectToggle(subject)}
+              />
+              <label htmlFor={subject} className="ml-2 text-sm cursor-pointer">{subject}</label>
+            </div>
+          ))}
         </div>
       </div>
 

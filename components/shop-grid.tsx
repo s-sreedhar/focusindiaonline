@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { FilterSidebar } from '@/components/filter-sidebar';
 import {
@@ -15,7 +15,7 @@ import { Filter, Grid2x2, Grid3x3, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Book } from '@/lib/types';
 import { CompareBar } from '@/components/compare-bar';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Fuse from 'fuse.js';
 
 interface ShopGridProps {
@@ -29,6 +29,11 @@ interface ShopGridProps {
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest' | 'bestselling' | 'rating';
 
 export function ShopGrid({ books, activeCategory, showCombos = false, allSubjects = [], allCategories = [] }: ShopGridProps) {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  const urlCategory = searchParams.get('category');
+  const urlShowBundles = searchParams.get('bundles') === 'true';
+
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(3);
   const [itemsPerPage, setItemsPerPage] = useState(12);
@@ -38,13 +43,34 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     selectedSubjects: string[];
     selectedLanguages: string[];
     inStockOnly: boolean;
+    showBundles: boolean;
   }>({
     priceRange: [0, 2000],
-    selectedCategories: activeCategory ? [activeCategory] : [],
+    selectedCategories: activeCategory ? [activeCategory] : (urlCategory ? [urlCategory] : []),
     selectedSubjects: [],
     selectedLanguages: [],
     inStockOnly: false,
+    showBundles: urlShowBundles,
   });
+
+  const router = useRouter(); // Import useRouter from next/navigation
+
+  // Sync state with URL only for Category
+  useEffect(() => {
+    if (filters.selectedCategories.length === 1) {
+      const cat = filters.selectedCategories[0];
+      if (cat !== urlCategory) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('category', cat);
+        router.push(`/shop?${params.toString()}`, { scroll: false });
+      }
+    } else if (filters.selectedCategories.length === 0 && urlCategory) {
+      // Clear category if removed
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('category');
+      router.push(`/shop?${params.toString()}`, { scroll: false });
+    }
+  }, [filters.selectedCategories, urlCategory, router, searchParams]);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -79,9 +105,8 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     return Array.from(categories).sort();
   }, [books, allCategories]);
 
-
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
+  // const searchParams = useSearchParams(); // Moved up
+  // const searchQuery = searchParams.get('search') || ''; // Moved up
 
   const filteredAndSortedBooks = useMemo(() => {
     let result = books;
@@ -100,12 +125,19 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
 
     result = result.filter((book) => {
       // Combo vs Regular Book Filter
-      const isCombo = book.isCombo || book.category === 'Value Bundles';
-      if (showCombos) {
+      const isCombo = (book as any).isCombo || book.category === 'Value Bundles';
+
+      // If "Bundles" filter is ON, show ONLY combos
+      if (filters.showBundles) {
         if (!isCombo) return false;
-      } else {
-        if (isCombo) return false;
+      } else if (showCombos) {
+        // If prop passed (e.g. from combos page), also show only combos 
+        if (!isCombo) return false;
       }
+
+      // Note: We are NO LONGER hiding combos by default. 
+      // If Bundles filter is OFF, and we are not in Combos page, we show EVERYTHING (regular + combos) unless filtered by other means.
+      // This is standard e-commerce behavior (search all).
 
       // Price filter
       if (book.price < filters.priceRange[0] || book.price > filters.priceRange[1]) {
@@ -345,10 +377,10 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
                     }}
                     disabled={typeof page !== 'number'}
                     className={`min-w-[40px] h-10 rounded-md flex items-center justify-center text-sm ${page === currentPage
-                        ? 'bg-primary text-primary-foreground font-medium'
-                        : typeof page === 'number'
-                          ? 'border hover:bg-gray-50'
-                          : 'cursor-default'
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : typeof page === 'number'
+                        ? 'border hover:bg-gray-50'
+                        : 'cursor-default'
                       }`}
                   >
                     {page}
@@ -372,7 +404,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No products found matching your criteria.</p>
             <button
-              onClick={() => setFilters({ priceRange: [0, 1000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false })}
+              onClick={() => setFilters({ priceRange: [0, 2000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false, showBundles: false })}
               className="text-primary hover:underline"
             >
               Clear filters and try again
