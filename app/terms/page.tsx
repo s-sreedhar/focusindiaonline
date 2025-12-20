@@ -9,7 +9,7 @@ export default function TermsPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full pt-20 md:pt-24">
         {/* Hero Section */}
         <div className="bg-primary text-primary-foreground py-16">
           <div className="container mx-auto px-4 max-w-7xl text-center">

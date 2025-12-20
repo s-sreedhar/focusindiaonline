@@ -10,13 +10,17 @@ export default function RefundPolicyPage() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1 w-full">
-        <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Refund Policy</h1>
-            <p className="text-muted-foreground">FocusIndiaOnline.com</p>
+      <main className="flex-1 w-full pt-20 md:pt-24">
+        <div className="bg-primary text-primary-foreground py-16">
+          <div className="container mx-auto px-4 max-w-7xl text-center">
+            <h1 className="text-4xl font-bold mb-4">Refund Policy</h1>
+            <p className="text-primary-foreground/80 max-w-2xl mx-auto text-lg">
+              Transparent and quick refunds for our valued customers.
+            </p>
           </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
 
           <div className="prose max-w-none space-y-8">
             {/* Intro */}

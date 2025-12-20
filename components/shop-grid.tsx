@@ -184,6 +184,30 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     currentPage * itemsPerPage
   );
 
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-6">
       {/* Sidebar - Desktop */}
@@ -298,30 +322,46 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-12">
+              <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => {
+                    setCurrentPage(p => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50"
+                  className="px-3 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50 text-sm"
                 >
                   Previous
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+
+                {getPageNumbers().map((page, index) => (
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-md flex items-center justify-center ${currentPage === page
-                      ? 'bg-primary text-primary-foreground'
-                      : 'border hover:bg-gray-50'
+                    key={index}
+                    onClick={() => {
+                      if (typeof page === 'number') {
+                        setCurrentPage(page);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
+                    disabled={typeof page !== 'number'}
+                    className={`min-w-[40px] h-10 rounded-md flex items-center justify-center text-sm ${page === currentPage
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : typeof page === 'number'
+                          ? 'border hover:bg-gray-50'
+                          : 'cursor-default'
                       }`}
                   >
                     {page}
                   </button>
                 ))}
+
                 <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() => {
+                    setCurrentPage(p => Math.min(totalPages, p + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50"
+                  className="px-3 py-2 border rounded-md disabled:opacity-50 hover:bg-gray-50 text-sm"
                 >
                   Next
                 </button>

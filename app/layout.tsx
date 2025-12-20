@@ -95,6 +95,18 @@ export default function RootLayout({
     ],
   };
 
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Focus India Online',
+    url: 'https://focusindiaonline.com',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://focusindiaonline.com/shop?search={search_term_string}',
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
     <html lang="en">
       <head>
@@ -102,7 +114,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationSchema, websiteSchema]) }}
         />
       </head>
       <body className={`${outfit.variable} font-sans antialiased`}>

@@ -20,7 +20,7 @@ export function Footer() {
                 className="object-contain h-24 w-auto"
               />
               <div className="font-bold text-lg leading-none text-primary">
-                Imam's Focus India
+                Focus India
                 <span className="block text-[10px] font-medium text-muted-foreground tracking-wider">ONLINE</span>
               </div>
             </Link>

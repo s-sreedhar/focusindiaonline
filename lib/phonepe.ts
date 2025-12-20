@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
-export const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || 'PGTESTPAYUAT';
-export const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || process.env.PHONEPE_API_KEY || '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399';
+export const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
+export const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY || process.env.PHONEPE_API_KEY;
 export const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX || '1';
 export const PHONEPE_ENV = process.env.NEXT_PUBLIC_PHONEPE_ENV || 'sandbox';
 
@@ -39,6 +39,10 @@ export const checkPaymentStatus = async (merchantTransactionId: string) => {
     const stringToSign = endpoint + PHONEPE_SALT_KEY;
     const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
     const checksum = `${sha256}###${PHONEPE_SALT_INDEX}`;
+
+    if (!merchantId) {
+        throw new Error('PHONEPE_MERCHANT_ID is not defined');
+    }
 
     try {
         const response = await fetch(`${PHONEPE_BASE_URL}${endpoint}`, {
