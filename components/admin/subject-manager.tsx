@@ -70,7 +70,7 @@ export function SubjectManager() {
 
             if (fetchedSubjects.length === 0) {
                 // Seed initial subjects if empty
-                console.log('Seeding initial subjects...');
+                // console.log('Seeding initial subjects...');
                 const seeded: Subject[] = [];
                 for (const name of INITIAL_SUBJECTS) {
                     const docRef = await addDoc(collection(db, 'subjects'), {

@@ -53,10 +53,10 @@ export function PhoneRegister() {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 size: 'invisible',
                 callback: () => {
-                    console.log('[PhoneRegister] reCAPTCHA solved');
+                    // console.log('[PhoneRegister] reCAPTCHA solved');
                 },
                 'expired-callback': () => {
-                    console.log('[PhoneRegister] reCAPTCHA expired');
+                    // console.log('[PhoneRegister] reCAPTCHA expired');
                     setError('reCAPTCHA expired. Please try again.');
                 }
             });
@@ -117,12 +117,12 @@ export function PhoneRegister() {
 
         try {
             const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-            console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
+            // console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
 
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
 
-            console.log('[PhoneRegister] OTP sent successfully');
+            // console.log('[PhoneRegister] OTP sent successfully');
             setConfirmationResult(confirmation);
             setStep('otp');
             setTimeLeft(15);
@@ -134,7 +134,7 @@ export function PhoneRegister() {
 
             // If it's an invalid-app-credential error, try to reset reCAPTCHA
             if (err.code === 'auth/invalid-app-credential') {
-                console.log('[PhoneRegister] Resetting reCAPTCHA due to invalid-app-credential');
+                // console.log('[PhoneRegister] Resetting reCAPTCHA due to invalid-app-credential');
                 setupRecaptcha();
             } else {
                 // Reset reCAPTCHA on other errors too, just in case
@@ -166,10 +166,10 @@ export function PhoneRegister() {
                 return;
             }
 
-            console.log('[PhoneRegister] Verifying OTP...');
+            // console.log('[PhoneRegister] Verifying OTP...');
             const result = await confirmationResult.confirm(otp);
             // OTP Verified successfully
-            console.log('[PhoneRegister] OTP verified');
+            // console.log('[PhoneRegister] OTP verified');
 
             // Move to password step
             setStep('password');
@@ -207,20 +207,20 @@ export function PhoneRegister() {
 
 
             // Hash password
-            console.log('[PhoneRegister] Starting password hashing...');
+            // console.log('[PhoneRegister] Starting password hashing...');
             const hashedPassword = await hashPassword(password);
-            console.log('[PhoneRegister] Password hashing complete.');
+            // console.log('[PhoneRegister] Password hashing complete.');
 
             // Create user document in Firestore
             const userDocRef = doc(db, 'users', user.uid);
 
-            console.log('[PhoneRegister] Checking if user exists...');
+            // console.log('[PhoneRegister] Checking if user exists...');
             // Check if user already exists (edge case)
             const userDoc = await getDoc(userDocRef);
-            console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
+            // console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
 
             if (userDoc.exists()) {
-                console.log('[PhoneRegister] User already exists, updating...');
+                // console.log('[PhoneRegister] User already exists, updating...');
             }
 
             const newUserData = {
@@ -233,9 +233,9 @@ export function PhoneRegister() {
                 createdAt: serverTimestamp(),
             };
 
-            console.log('[PhoneRegister] Writing user document to Firestore...');
+            // console.log('[PhoneRegister] Writing user document to Firestore...');
             await setDoc(userDocRef, newUserData, { merge: true });
-            console.log('[PhoneRegister] User document created successfully');
+            // console.log('[PhoneRegister] User document created successfully');
 
             // Notify Admin of New Customer
             await createNotification(
@@ -256,7 +256,7 @@ export function PhoneRegister() {
                 authMethod: 'firebase'
             });
 
-            console.log('[PhoneRegister] Registration complete, redirecting...');
+            // console.log('[PhoneRegister] Registration complete, redirecting...');
             router.push('/');
 
         } catch (err: any) {

@@ -9,8 +9,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const merchantId = formData.get('merchantId');
         const transactionId = formData.get('transactionId') as string;
 
-        if (!transactionId) {
+        if (!transactionId || typeof transactionId !== 'string') {
             return NextResponse.redirect(new URL('/checkout/failure?reason=missing_transaction_id', request.url), 303);
+        }
+
+        // Basic sanity check for merchantId if needed, though strictly not required for logic flow
+        if (merchantId && typeof merchantId !== 'string') {
+            // Just ignore if invalid type, but good to check
         }
 
         // 1. Verify Payment Status with PhonePe API

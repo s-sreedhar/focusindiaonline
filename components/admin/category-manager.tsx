@@ -70,7 +70,7 @@ export function CategoryManager() {
 
             if (fetchedCategories.length === 0) {
                 // Seed initial categories if empty
-                console.log('Seeding initial categories...');
+                // console.log('Seeding initial categories...');
                 const seeded: Category[] = [];
                 for (const name of PRIMARY_CATEGORIES) {
                     const docRef = await addDoc(collection(db, 'categories'), {

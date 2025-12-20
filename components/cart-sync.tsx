@@ -14,7 +14,7 @@ const debouncedWriteCart = debounce(async (userId: string, items: { bookId: stri
         const userRef = doc(db, 'users', userId);
         // We overwrite the entire cart array for simplicity and consistency
         await setDoc(userRef, { cart: items }, { merge: true });
-        console.log('Cart synced to Firestore');
+        // console.log('Cart synced to Firestore');
     } catch (error) {
         console.error('Error syncing cart to Firestore:', error);
     }

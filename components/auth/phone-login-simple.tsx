@@ -28,10 +28,10 @@ export function PhoneLoginSimple() {
                 window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                     size: 'invisible',
                     callback: () => {
-                        console.log('[PhoneLogin] reCAPTCHA solved');
+                        // console.log('[PhoneLogin] reCAPTCHA solved');
                     },
                     'expired-callback': () => {
-                        console.log('[PhoneLogin] reCAPTCHA expired');
+                        // console.log('[PhoneLogin] reCAPTCHA expired');
                         setError('reCAPTCHA expired. Please try again.');
                     }
                 });
@@ -60,12 +60,12 @@ export function PhoneLoginSimple() {
 
         try {
             const formattedPhone = `+91${phoneNumber}`;
-            console.log('[PhoneLogin] Sending OTP to:', formattedPhone);
+            // console.log('[PhoneLogin] Sending OTP to:', formattedPhone);
 
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
 
-            console.log('[PhoneLogin] OTP sent successfully');
+            // console.log('[PhoneLogin] OTP sent successfully');
             setConfirmationResult(confirmation);
             setStep('otp');
         } catch (err: any) {
@@ -107,11 +107,11 @@ export function PhoneLoginSimple() {
                 return;
             }
 
-            console.log('[PhoneLogin] Verifying OTP...');
+            // console.log('[PhoneLogin] Verifying OTP...');
             const result = await confirmationResult.confirm(otp);
             const firebaseUser = result.user;
 
-            console.log('[PhoneLogin] OTP verified, fetching user data...');
+            // console.log('[PhoneLogin] OTP verified, fetching user data...');
 
             // Fetch user data from Firestore
             const { doc, getDoc } = await import('firebase/firestore');
@@ -122,7 +122,7 @@ export function PhoneLoginSimple() {
 
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                console.log('[PhoneLogin] User data loaded, role:', userData.role);
+                // console.log('[PhoneLogin] User data loaded, role:', userData.role);
 
                 setUser({
                     id: firebaseUser.uid,
@@ -136,15 +136,15 @@ export function PhoneLoginSimple() {
 
                 // Redirect based on role
                 if (userData.role === 'superadmin') {
-                    console.log('[PhoneLogin] Redirecting to admin panel');
+                    // console.log('[PhoneLogin] Redirecting to admin panel');
                     router.push('/admin');
                 } else {
-                    console.log('[PhoneLogin] Redirecting to home');
+                    // console.log('[PhoneLogin] Redirecting to home');
                     router.push('/');
                 }
             } else {
                 // User doesn't exist - redirect to registration
-                console.log('[PhoneLogin] User not found, redirecting to registration');
+                // console.log('[PhoneLogin] User not found, redirecting to registration');
                 setError('Account not found. Please register first.');
                 setTimeout(() => {
                     router.push('/register');

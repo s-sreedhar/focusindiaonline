@@ -175,7 +175,7 @@ export function PhoneLogin() {
             setError(message);
 
             if (err.code === 'auth/invalid-app-credential') {
-                console.log('[PhoneLogin] Resetting reCAPTCHA due to invalid-app-credential');
+                // console.log('[PhoneLogin] Resetting reCAPTCHA due to invalid-app-credential');
                 setupRecaptcha();
             } else {
                 if (window.recaptchaVerifier) {

@@ -56,8 +56,10 @@ export const checkPaymentStatus = async (merchantTransactionId: string) => {
 
         const data = await response.json();
         return data; // Returns the full response object
-    } catch (error) {
-        console.error('PhonePe Status Check Error:', error);
+    } catch (error: any) {
+        // Redact any sensitive information if present in error object before logging
+        // Use error.message to avoid printing full HTTP response objects that might contain headers
+        console.error('PhonePe Status Check Error:', error instanceof Error ? error.message : 'Unknown error');
         return null;
     }
 };

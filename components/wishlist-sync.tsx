@@ -81,7 +81,7 @@ export function WishlistSync() {
                 const { setDoc, doc } = await import('firebase/firestore');
                 const userRef = doc(db, 'users', userId);
                 await setDoc(userRef, { wishlist: wishlistIds }, { merge: true });
-                console.log('Wishlist synced to Firestore');
+                // console.log('Wishlist synced to Firestore');
             } catch (error) {
                 console.error('Error syncing wishlist to Firestore:', error);
             }

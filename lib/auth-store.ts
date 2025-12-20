@@ -39,13 +39,13 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       loading: true,
       logout: async () => {
-        console.log('[AuthStore] Logging out...');
+        // console.log('[AuthStore] Logging out...');
         await signOut(auth);
         set({ user: null, isAuthenticated: false });
-        console.log('[AuthStore] Logged out successfully');
+        // console.log('[AuthStore] Logged out successfully');
       },
       setUser: (user: User | null) => {
-        console.log('[AuthStore] Setting user:', user ? { id: user.id, role: user.role } : null);
+        // console.log('[AuthStore] Setting user:', user ? { id: user.id, role: user.role } : null);
         set({ user, isAuthenticated: !!user });
       },
       updateProfile: async (data: Partial<User>) => {
@@ -63,14 +63,14 @@ export const useAuthStore = create<AuthStore>()(
             user: state.user ? { ...state.user, ...data } : null
           }));
 
-          console.log('[AuthStore] Profile updated successfully');
+          // console.log('[AuthStore] Profile updated successfully');
         } catch (error) {
           console.error('[AuthStore] Error updating profile:', error);
           throw error;
         }
       },
       initialize: () => {
-        console.log('[AuthStore] Initializing auth listener...');
+        // console.log('[AuthStore] Initializing auth listener...');
 
         // Check if auth is properly initialized
         if (!auth) {
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         return onAuthStateChanged(auth, async (firebaseUser) => {
-          console.log('[AuthStore] Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+          // console.log('[AuthStore] Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
 
           if (firebaseUser) {
             try {
@@ -90,11 +90,11 @@ export const useAuthStore = create<AuthStore>()(
 
               if (userDoc.exists()) {
                 const userData = userDoc.data();
-                console.log('[AuthStore] User document found:', {
-                  uid: firebaseUser.uid,
-                  role: userData.role,
-                  displayName: userData.displayName
-                });
+                // console.log('[AuthStore] User document found:', {
+                //   uid: firebaseUser.uid,
+                //   role: userData.role,
+                //   displayName: userData.displayName
+                // });
 
                 const user: User = {
                   id: firebaseUser.uid,
@@ -109,7 +109,7 @@ export const useAuthStore = create<AuthStore>()(
                 };
 
                 set({ user, isAuthenticated: true, loading: false });
-                console.log('[AuthStore] User state updated successfully');
+                // console.log('[AuthStore] User state updated successfully');
               } else {
                 // Fallback if user doc doesn't exist yet
                 console.warn('[AuthStore] User document not found in Firestore, using Firebase Auth data');
@@ -148,10 +148,10 @@ export const useAuthStore = create<AuthStore>()(
             // Check if we are using custom auth (password login)
             const currentUser = get().user;
             if (currentUser?.authMethod === 'custom') {
-              console.log('[AuthStore] Custom auth session active, ignoring Firebase logout');
+              // console.log('[AuthStore] Custom auth session active, ignoring Firebase logout');
               set({ loading: false });
             } else {
-              console.log('[AuthStore] No user, setting state to unauthenticated');
+              // console.log('[AuthStore] No user, setting state to unauthenticated');
               set({ user: null, isAuthenticated: false, loading: false });
             }
           }

@@ -20,17 +20,17 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    console.log('[Admin Layout] Auth state:', { user, loading, role: user?.role });
+    // console.log('[Admin Layout] Auth state:', { user, loading, role: user?.role });
 
     if (!loading) {
       if (!user) {
-        console.log('[Admin Layout] No user found, redirecting to home');
+        // console.log('[Admin Layout] No user found, redirecting to home');
         router.push('/');
       } else if (user.role !== 'superadmin') {
-        console.log('[Admin Layout] User role is not superadmin:', user.role);
+        // console.log('[Admin Layout] User role is not superadmin:', user.role);
         router.push('/');
       } else {
-        console.log('[Admin Layout] Access granted for superadmin');
+        // console.log('[Admin Layout] Access granted for superadmin');
       }
     }
   }, [user, loading, router]);

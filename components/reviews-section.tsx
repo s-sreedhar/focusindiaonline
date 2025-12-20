@@ -80,7 +80,7 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
 
         // Check if stats need update (allow small float difference for rating)
         if (realCount !== totalReviews || Math.abs(realAverage - averageRating) > 0.1) {
-          console.log("Syncing book stats...", { realCount, totalReviews, realAverage, averageRating });
+          // console.log("Syncing book stats...", { realCount, totalReviews, realAverage, averageRating });
           const bookRef = doc(db, 'books', bookId);
           await updateDoc(bookRef, {
             reviewCount: realCount,
