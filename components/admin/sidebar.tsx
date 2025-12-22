@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package, MessageSquare, FolderIcon } from 'lucide-react';
+import { BarChart3, BookOpen, ShoppingCart, Users, Settings, LogOut, Image, Award, Tag, Megaphone, Package, MessageSquare, FolderIcon, Shield, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/auth-store';
 
@@ -31,6 +31,11 @@ export const adminMenuItems = [
     label: 'Orders',
     href: '/admin/orders',
     icon: ShoppingCart,
+  },
+  {
+    label: 'Admins',
+    href: '/admin/admins',
+    icon: Shield,
   },
   {
     label: 'Users',
@@ -120,6 +125,15 @@ export function AdminSidebar() {
           <LogOut className="w-4 h-4" />
           Logout
         </Button>
+        <Link href="/">
+          <Button
+            variant="outline"
+            className="w-full gap-2 justify-start bg-white/50 border-gray-200 mt-2 hover:bg-gray-100 transition-all duration-300"
+          >
+            <Home className="w-4 h-4" />
+            Back to Home
+          </Button>
+        </Link>
       </div>
     </aside>
   );

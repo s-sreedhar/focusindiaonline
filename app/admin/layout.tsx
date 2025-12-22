@@ -26,11 +26,11 @@ export default function AdminLayout({
       if (!user) {
         // console.log('[Admin Layout] No user found, redirecting to home');
         router.push('/');
-      } else if (user.role !== 'superadmin') {
-        // console.log('[Admin Layout] User role is not superadmin:', user.role);
+      } else if (user.role !== 'superadmin' && user.role !== 'admin') {
+        // console.log('[Admin Layout] User role is not superadmin/admin:', user.role);
         router.push('/');
       } else {
-        // console.log('[Admin Layout] Access granted for superadmin');
+        // console.log('[Admin Layout] Access granted for admin/superadmin');
       }
     }
   }, [user, loading, router]);
@@ -46,7 +46,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user || user.role !== 'superadmin') {
+  if (!user || (user.role !== 'superadmin' && user.role !== 'admin')) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md p-8">

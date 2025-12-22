@@ -114,17 +114,23 @@ export function Header() {
             {/* Search Bar (Desktop) */}
             <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl relative group items-center">
               <div className="flex w-full items-center rounded-full bg-muted/50 border border-transparent focus-within:bg-white focus-within:border-primary/20 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-                <Select value={searchCategory} onValueChange={setSearchCategory}>
-                  <SelectTrigger className="w-[140px] border-none bg-transparent h-10 rounded-l-full pl-4 focus:ring-0 text-muted-foreground font-medium">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Categories</SelectItem>
-                    {PRIMARY_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {mounted ? (
+                  <Select value={searchCategory} onValueChange={setSearchCategory}>
+                    <SelectTrigger className="w-[140px] border-none bg-transparent h-10 rounded-l-full pl-4 focus:ring-0 text-muted-foreground font-medium">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Categories</SelectItem>
+                      {PRIMARY_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="w-[140px] h-10 rounded-l-full pl-4 flex items-center text-muted-foreground font-medium">
+                    All Categories
+                  </div>
+                )}
                 <div className="w-px h-6 bg-gray-300 mx-2" />
                 <Input
                   type="text"
@@ -154,90 +160,97 @@ export function Header() {
               </Button>
 
               {/* Compare Button - Hide on very small screens */}
-              <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 flex">
-                    <ArrowRightLeft className="w-4 h-4" />
-                    {mounted && compareCount > 0 && (
-                      <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
-                        {compareCount}
-                      </span>
-                    )}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="text-2xl font-bold">Compare Books</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    {compareCount > 0 ? (
-                      <div className="grid grid-cols-[150px_repeat(4,1fr)] gap-4 min-w-[800px]">
-                        {/* Header Row - Images */}
-                        <div className="font-bold text-muted-foreground pt-10">Product</div>
-                        {comparedBooks.map((book) => (
-                          <div key={book.id} className="flex flex-col items-center text-center">
-                            <div className="relative w-32 h-44 mb-4 rounded-lg overflow-hidden shadow-md">
-                              <Image src={book.image} alt={book.title} fill className="object-cover" />
+              {mounted && (
+                <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 flex">
+                      <ArrowRightLeft className="w-4 h-4" />
+                      {compareCount > 0 && (
+                        <span className="absolute top-0 right-0 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full ring-2 ring-white">
+                          {compareCount}
+                        </span>
+                      )}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle className="text-2xl font-bold">Compare Books</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6">
+                      {compareCount > 0 ? (
+                        <div className="grid grid-cols-[150px_repeat(4,1fr)] gap-4 min-w-[800px]">
+                          {/* Header Row - Images */}
+                          <div className="font-bold text-muted-foreground pt-10">Product</div>
+                          {comparedBooks.map((book) => (
+                            <div key={book.id} className="flex flex-col items-center text-center">
+                              <div className="relative w-32 h-44 mb-4 rounded-lg overflow-hidden shadow-md">
+                                <Image src={book.image} alt={book.title} fill className="object-cover" />
+                              </div>
+                              <h3 className="font-bold text-sm line-clamp-2 min-h-[40px]">{book.title}</h3>
+                              <Button variant="outline" size="sm" className="mt-2" onClick={() => removeFromCompare(book.id)}>Remove</Button>
                             </div>
-                            <h3 className="font-bold text-sm line-clamp-2 min-h-[40px]">{book.title}</h3>
-                            <Button variant="outline" size="sm" className="mt-2" onClick={() => removeFromCompare(book.id)}>Remove</Button>
-                          </div>
-                        ))}
-                        {/* Fill empty columns if less than 4 */}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => (
-                          <div key={`empty-${i}`} className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-50/50">
-                            <div className="text-muted-foreground text-sm">Empty Slot</div>
-                          </div>
-                        ))}
+                          ))}
+                          {/* Fill empty columns if less than 4 */}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => (
+                            <div key={`empty-${i}`} className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-50/50">
+                              <div className="text-muted-foreground text-sm">Empty Slot</div>
+                            </div>
+                          ))}
 
-                        {/* Price */}
-                        <div className="font-semibold text-muted-foreground border-t pt-4">Price</div>
-                        {comparedBooks.map(book => (
-                          <div key={book.id} className="border-t pt-4 text-center font-bold text-primary">₹{book.price}</div>
-                        ))}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                          {/* Price */}
+                          <div className="font-semibold text-muted-foreground border-t pt-4">Price</div>
+                          {comparedBooks.map(book => (
+                            <div key={book.id} className="border-t pt-4 text-center font-bold text-primary">₹{book.price}</div>
+                          ))}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                        {/* Category */}
-                        <div className="font-semibold text-muted-foreground border-t pt-4">Category</div>
-                        {comparedBooks.map(book => (
-                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.category}</div>
-                        ))}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                          {/* Category */}
+                          <div className="font-semibold text-muted-foreground border-t pt-4">Category</div>
+                          {comparedBooks.map(book => (
+                            <div key={book.id} className="border-t pt-4 text-center text-sm">{book.category}</div>
+                          ))}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                        {/* Subject */}
-                        <div className="font-semibold text-muted-foreground border-t pt-4">Subject</div>
-                        {comparedBooks.map(book => (
-                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.subjects?.join(', ') || '-'}</div>
-                        ))}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                          {/* Subject */}
+                          <div className="font-semibold text-muted-foreground border-t pt-4">Subject</div>
+                          {comparedBooks.map(book => (
+                            <div key={book.id} className="border-t pt-4 text-center text-sm">{book.subjects?.join(', ') || '-'}</div>
+                          ))}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                        {/* Author */}
-                        <div className="font-semibold text-muted-foreground border-t pt-4">Author</div>
-                        {comparedBooks.map(book => (
-                          <div key={book.id} className="border-t pt-4 text-center text-sm">{book.author}</div>
-                        ))}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                          {/* Author */}
+                          <div className="font-semibold text-muted-foreground border-t pt-4">Author</div>
+                          {comparedBooks.map(book => (
+                            <div key={book.id} className="border-t pt-4 text-center text-sm">{book.author}</div>
+                          ))}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                        {/* Pages */}
-                        <div className="font-semibold text-muted-foreground border-t pt-4">Action</div>
-                        {comparedBooks.map(book => (
-                          <div key={book.id} className="border-t pt-4 text-center">
-                            <Button size="sm" asChild>
-                              <Link href={`/product/${book.slug}`}>View Details</Link>
-                            </Button>
-                          </div>
-                        ))}
-                        {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
-                      </div>
-                    ) : (
-                      <div className="text-center py-10">
-                        <p className="text-muted-foreground mb-4">No books selected for comparison.</p>
-                        <Button onClick={() => setIsCompareOpen(false)}>Continue Shopping</Button>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                          {/* Pages */}
+                          <div className="font-semibold text-muted-foreground border-t pt-4">Action</div>
+                          {comparedBooks.map(book => (
+                            <div key={book.id} className="border-t pt-4 text-center">
+                              <Button size="sm" asChild>
+                                <Link href={`/product/${book.slug}`}>View Details</Link>
+                              </Button>
+                            </div>
+                          ))}
+                          {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <p className="text-muted-foreground mb-4">No books selected for comparison.</p>
+                          <Button onClick={() => setIsCompareOpen(false)}>Continue Shopping</Button>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {!mounted && (
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 hover:text-accent transition-colors relative h-8 w-8 md:h-9 md:w-9 flex">
+                  <ArrowRightLeft className="w-4 h-4" />
+                </Button>
+              )}
 
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative h-8 w-8 md:h-9 md:w-9" asChild>
                 <Link href="/cart">

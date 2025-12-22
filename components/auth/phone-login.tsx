@@ -117,7 +117,8 @@ export function PhoneLogin() {
     };
 
     const handleContinue = async () => {
-        if (!phoneNumber || phoneNumber.length < 10) {
+        const cleanedPhone = phoneNumber.replace(/\D/g, '');
+        if (!cleanedPhone || cleanedPhone.length < 10) {
             setError('Please enter a valid phone number');
             return;
         }
@@ -223,7 +224,7 @@ export function PhoneLogin() {
                 authMethod: 'custom'
             });
 
-            if (userData.role === 'superadmin') {
+            if (userData.role === 'superadmin' || userData.role === 'admin') {
                 router.push('/admin');
             } else {
                 router.push('/');
@@ -264,7 +265,7 @@ export function PhoneLogin() {
                     authMethod: 'firebase'
                 });
 
-                if (userData?.role === 'superadmin') {
+                if (userData?.role === 'superadmin' || userData?.role === 'admin') {
                     router.push('/admin');
                 } else {
                     router.push('/');
@@ -314,7 +315,7 @@ export function PhoneLogin() {
                                 placeholder="Mobile Number"
                                 className="pl-10"
                                 value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
                             />
                         </div>
 

@@ -10,6 +10,8 @@ import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { ChangePasswordDialog } from '@/components/auth/change-password-dialog';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -25,8 +27,6 @@ export default function SettingsPage() {
 
   const [profileForm, setProfileForm] = useState({
     displayName: '',
-    password: '',
-    confirmPassword: '',
   });
   const [loading, setLoading] = useState(true);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
@@ -86,16 +86,6 @@ export default function SettingsPage() {
   const handleProfileUpdate = async () => {
     if (!user || !auth.currentUser) return;
 
-    if (profileForm.password && profileForm.password !== profileForm.confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
-    }
-
-    if (profileForm.password && profileForm.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
     setIsUpdatingProfile(true);
     try {
       const updates: any = {};
@@ -110,12 +100,6 @@ export default function SettingsPage() {
         profileUpdated = true;
       }
 
-      // Update Password
-      if (profileForm.password) {
-        await updatePassword(auth.currentUser, profileForm.password);
-        profileUpdated = true;
-      }
-
       // Update Firestore if needed
       if (Object.keys(updates).length > 0) {
         await updateDoc(doc(db, 'users', user.id), updates);
@@ -123,7 +107,7 @@ export default function SettingsPage() {
 
       if (profileUpdated) {
         toast.success('Profile updated successfully');
-        setProfileForm(prev => ({ ...prev, password: '', confirmPassword: '' }));
+        toast.success('Profile updated successfully');
       } else {
         toast.info('No changes to update');
       }
@@ -171,27 +155,9 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">New Password</label>
-                <Input
-                  type="password"
-                  name="password"
-                  value={profileForm.password}
-                  onChange={handleProfileChange}
-                  placeholder="Leave blank to keep current"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Confirm Password</label>
-                <Input
-                  type="password"
-                  name="confirmPassword"
-                  value={profileForm.confirmPassword}
-                  onChange={handleProfileChange}
-                  placeholder="Confirm new password"
-                />
-              </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Password</Label>
+              <ChangePasswordDialog trigger={<Button variant="outline">Change Password</Button>} />
             </div>
 
             <Button onClick={handleProfileUpdate} disabled={isUpdatingProfile}>

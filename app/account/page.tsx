@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useWishlistStore } from '@/lib/wishlist-store';
+import { ChangePasswordDialog } from '@/components/auth/change-password-dialog';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -121,6 +122,7 @@ export default function AccountPage() {
                 <h1 className="text-4xl font-bold mb-2">My Account</h1>
                 <p className="text-muted-foreground">Welcome back, {user.displayName}!</p>
               </div>
+              <ChangePasswordDialog />
               <Button variant="outline" onClick={handleLogout} className="gap-2">
                 <LogOut className="w-4 h-4" />
                 Logout

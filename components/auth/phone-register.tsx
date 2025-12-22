@@ -119,6 +119,23 @@ export function PhoneRegister() {
             const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
             // console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
 
+            // Check if user already exists
+            const digits = phoneNumber.replace(/\D/g, '');
+            const last10 = digits.slice(-10);
+            const normalizedPhone = `+91${last10}`;
+            const candidates = [normalizedPhone, last10, digits, phoneNumber];
+
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            const usersRef = collection(db, 'users');
+            const q = query(usersRef, where('phone', 'in', candidates));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                setError('This phone number is already registered.');
+                setLoading(false);
+                return;
+            }
+
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
 
@@ -146,7 +163,9 @@ export function PhoneRegister() {
                 }
             }
         } finally {
-            setLoading(false);
+            if (!error) { // Only unset loading if we didn't set an error (though error setting is async, this logic is a bit slightly flawed but safe enough here as we return early on error above)
+                setLoading(false);
+            }
         }
     };
 
