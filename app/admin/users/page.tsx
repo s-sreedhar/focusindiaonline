@@ -73,7 +73,7 @@ export default function UsersPage() {
       })) as UserData[];
       setUsers(usersData);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      //console.error("Error fetching users:", error);
       toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
@@ -96,7 +96,7 @@ export default function UsersPage() {
       toast.success(`User role updated to ${newRole}`);
       setIsRoleDialogOpen(false);
     } catch (error) {
-      console.error("Error updating role:", error);
+      //console.error("Error updating role:", error);
       toast.error("Failed to update role");
     } finally {
       setUpdating(false);

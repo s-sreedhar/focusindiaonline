@@ -44,7 +44,7 @@ export default function OrdersPage() {
         })) as Order[];
         setOrders(ordersData);
       } catch (error) {
-        console.error("Error fetching orders:", error);
+        //console.error("Error fetching orders:", error);
         toast.error("Failed to load orders");
       } finally {
         setLoading(false);
@@ -68,7 +68,7 @@ export default function OrdersPage() {
 
       toast.success('Order cancelled successfully');
     } catch (error) {
-      console.error("Error cancelling order:", error);
+      //console.error("Error cancelling order:", error);
       toast.error('Failed to cancel order');
     }
   };

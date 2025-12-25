@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 
 export const handleFirebaseError = (error: any) => {
-    console.error("Firebase Error:", error);
+    //console.error("Firebase Error:", error);
 
     let message = "An unexpected error occurred. Please try again.";
 

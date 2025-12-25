@@ -121,25 +121,7 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="absolute bottom-6 left-4 right-4">
-        <Button
-          variant="outline"
-          className="w-full gap-2 justify-start bg-white/50 border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all duration-300"
-          onClick={() => useAuthStore.getState().logout()}
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </Button>
-        <Link href="/">
-          <Button
-            variant="outline"
-            className="w-full gap-2 justify-start bg-white/50 border-gray-200 mt-2 hover:bg-gray-100 transition-all duration-300"
-          >
-            <Home className="w-4 h-4" />
-            Back to Home
-          </Button>
-        </Link>
-      </div>
+
     </aside>
   );
 }

@@ -82,7 +82,7 @@ export default function CartPage() {
       setCouponCode('');
       toast.success('Coupon applied successfully');
     } catch (error) {
-      console.error('Error applying coupon:', error);
+      //console.error('Error applying coupon:', error);
       setCouponError('Failed to apply coupon');
     } finally {
       setCouponLoading(false);

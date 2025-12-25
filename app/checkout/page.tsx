@@ -70,14 +70,10 @@ export default function CheckoutPage() {
   const subtotal = getTotalPrice();
 
   // Calculate total weight and shipping
+  // Test Series type should have weight 0 or be excluded.
   const totalWeight = items.reduce((sum, item) => {
-    // Basic weight assumption if missing: 500g
-    // In a real scenario, we should have fetched the weight. 
-    // Assuming 'item' has weight or we might need to fetch it?
-    // The cart item type currently might not have weight.
-    // Let's check Cart Store item type. If not present, we can't calculate accurately without fetching.
-    // However, given the context, we likely need to ensure Cart Items have weight.
-    // For now, let's assume item object has it or default to 500g per book.
+    // If it's a test series, weight should be 0.
+    if (item.type === 'test_series') return sum;
     const weight = (item as any).weight || 500;
     return sum + (weight * item.quantity);
   }, 0);
@@ -86,10 +82,16 @@ export default function CheckoutPage() {
 
   const shippingCharges = shippingDetails ? shippingDetails.charges : 0;
 
+  const hasDigitalItems = items.some(item => item.type === 'test_series');
+
   useEffect(() => {
-    if (formData.state) {
+    // If cart has only digital items, shipping is 0.
+    // If mixed, calculate based on physical weight.
+    if (totalWeight > 0 && formData.state) {
       const details = calculateShippingCharges(totalWeight, formData.state);
       setShippingDetails(details);
+    } else {
+      setShippingDetails({ charges: 0, zone: 'A', weightUsed: 0 });
     }
   }, [formData.state, totalWeight]);
 
@@ -196,7 +198,7 @@ export default function CheckoutPage() {
       toast.success('Coupon applied successfully!');
 
     } catch (error) {
-      console.error('Error applying coupon:', error);
+      //console.error('Error applying coupon:', error);
       setCouponError('Failed to apply coupon');
     } finally {
       setCouponLoading(false);
@@ -259,7 +261,7 @@ export default function CheckoutPage() {
       const initRecaptcha = async () => {
         try {
           if (!document.getElementById('recaptcha-container')) {
-            console.error("Recaptcha container not found");
+            //console.error("Recaptcha container not found");
             return;
           }
           window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -271,7 +273,7 @@ export default function CheckoutPage() {
           // Auto-send OTP once recaptcha is ready
           await sendOtp();
         } catch (err) {
-          console.error("Recaptcha init error:", err);
+          //console.error("Recaptcha init error:", err);
           setAuthError("Failed to initialize security check. Please refresh.");
         }
       };
@@ -311,13 +313,13 @@ export default function CheckoutPage() {
       toast.success("OTP sent successfully!");
   
     } catch (err: any) {
-      console.error('Error sending OTP:', err);
+      //console.error('Error sending OTP:', err);
       // Reset recaptcha if it fails, so it can be re-rendered
       if (window.recaptchaVerifier) {
         try {
           window.recaptchaVerifier.clear();
           window.recaptchaVerifier = undefined;
-        } catch (clearErr) { console.error("Failed to clear recaptcha", clearErr); }
+        } catch (clearErr) { //console.error("Failed to clear recaptcha", clearErr); }
       }
       setAuthError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -338,6 +340,13 @@ export default function CheckoutPage() {
       */
 
       // BYPASS LOGIC: Create a temporary guest user and proceed
+
+      if (hasDigitalItems) {
+        toast.error("Please login to purchase Test Series / Digital Items.");
+        // router.push('/login'); // Optional redirect
+        return;
+      }
+
       setLoading(true);
       try {
         // Validate before creating guest
@@ -392,7 +401,7 @@ export default function CheckoutPage() {
         await initiatePayment(guestId);
 
       } catch (error) {
-        console.error("Guest Checkout Error:", error);
+        //console.error("Guest Checkout Error:", error);
         toast.error("Failed to process guest checkout");
         setLoading(false);
       }
@@ -440,7 +449,7 @@ export default function CheckoutPage() {
         await initiatePayment(firebaseUser.uid);
       }
     } catch (err: any) {
-      console.error('Error verifying OTP:', err);
+      //console.error('Error verifying OTP:', err);
       setAuthError('Invalid OTP. Please try again.');
       setLoading(false);
     }
@@ -455,6 +464,7 @@ export default function CheckoutPage() {
         // 1. READS: Check stock for all items FIRST
         const bookReads: { ref: any, item: typeof items[0] }[] = [];
         for (const item of items) {
+          if (item.type === 'test_series') continue; // Skip stock check for digital items
           const bookRef = doc(db, 'books', item.bookId);
           bookReads.push({ ref: bookRef, item });
         }
@@ -565,8 +575,8 @@ export default function CheckoutPage() {
       }
 
     } catch (error: any) {
-      console.error("Error initiating payment:", error);
-      alert(error.message || 'Failed to initiate payment. Please try again.');
+      //console.error("Error initiating payment:", error);
+      toast.error(error.message || 'Failed to initiate payment. Please try again.');
       setLoading(false);
     }
   };

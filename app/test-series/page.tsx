@@ -11,6 +11,7 @@ import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, serverTimesta
 import { useAuthStore } from '@/lib/auth-store';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface TestSeries {
     id: string;
@@ -26,6 +27,7 @@ export default function TestSeriesPublicPage() {
     const [loading, setLoading] = useState(true);
     const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
     const { user } = useAuthStore();
+    const [searchQuery, setSearchQuery] = useState('');
     const router = useRouter();
 
     useEffect(() => {
@@ -45,7 +47,7 @@ export default function TestSeriesPublicPage() {
             })) as TestSeries[];
             setSeries(data);
         } catch (error) {
-            console.error("Error fetching series:", error);
+            //console.error("Error fetching series:", error);
         } finally {
             setLoading(false);
         }
@@ -59,7 +61,7 @@ export default function TestSeriesPublicPage() {
             const ids = querySnapshot.docs.map(doc => doc.data().itemId);
             setPurchasedIds(ids);
         } catch (error) {
-            console.error("Error fetching purchases:", error);
+            //console.error("Error fetching purchases:", error);
         }
     };
 
@@ -91,26 +93,44 @@ export default function TestSeriesPublicPage() {
                 // Also create an Order record for admin visibility?
                 // For simplicity, we stick to user purchase record for access.
             } catch (error) {
-                console.error("Purchase error:", error);
+                //console.error("Purchase error:", error);
                 toast.error("Purchase failed");
             }
         }
     };
 
+    const filteredSeries = series.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
             <Header />
             <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl pt-24">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Test Series & Study Materials</h1>
-                    <p className="text-muted-foreground">Premium downloadable content for your preparation.</p>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Test Series & Study Materials</h1>
+                        <p className="text-muted-foreground">Premium downloadable content for your preparation.</p>
+                    </div>
+                    <div className="relative w-full md:w-72">
+                        <div className="absolute left-2.5 top-2.5 text-muted-foreground">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search test series..."
+                            className="w-full pl-9 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {loading ? (
                     <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin" /></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {series.map((item) => {
+                        {filteredSeries.map((item) => {
                             const isPurchased = purchasedIds.includes(item.id);
                             return (
                                 <Card key={item.id} className="flex flex-col h-full hover:shadow-lg transition-shadow">
@@ -139,17 +159,19 @@ export default function TestSeriesPublicPage() {
                                                 </a>
                                             </Button>
                                         ) : (
-                                            <Button className="w-full" onClick={() => handleBuy(item)}>
-                                                {item.price === 0 ? 'Download Free' : 'Buy Now'}
+                                            <Button className="w-full" asChild>
+                                                <Link href={`/product/ts-${item.id}`}>
+                                                    {item.price === 0 ? 'Get Free' : 'View Details'}
+                                                </Link>
                                             </Button>
                                         )}
                                     </div>
                                 </Card>
                             );
                         })}
-                        {series.length === 0 && (
+                        {filteredSeries.length === 0 && (
                             <div className="col-span-full text-center py-12 text-muted-foreground">
-                                No test series available at the moment.
+                                No test series found matching your search.
                             </div>
                         )}
                     </div>

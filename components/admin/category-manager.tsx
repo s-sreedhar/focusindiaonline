@@ -84,7 +84,7 @@ export function CategoryManager() {
 
             setCategories(fetchedCategories);
         } catch (error) {
-            console.error('Error fetching categories:', error);
+            //console.error('Error fetching categories:', error);
             toast.error('Failed to load categories');
         } finally {
             setLoading(false);
@@ -112,7 +112,7 @@ export function CategoryManager() {
             setNewCategory('');
             toast.success('Category added');
         } catch (error) {
-            console.error('Error adding category:', error);
+            //console.error('Error adding category:', error);
             toast.error('Failed to add category');
         } finally {
             setAdding(false);
@@ -147,7 +147,7 @@ export function CategoryManager() {
                 await performDelete(currentCategory.id);
             }
         } catch (error) {
-            console.error("Error checking dependencies:", error);
+            //console.error("Error checking dependencies:", error);
             toast.error("Failed to check dependencies");
         } finally {
             setCheckingDependencies(false);
@@ -160,7 +160,7 @@ export function CategoryManager() {
             setCategories(categories.filter(c => c.id !== id));
             toast.success('Category deleted successfully');
         } catch (error) {
-            console.error('Error deleting category:', error);
+            //console.error('Error deleting category:', error);
             toast.error('Failed to delete category');
         }
     };

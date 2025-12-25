@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
             fileUrl: `${bucketUrl}/${key}`
         });
     } catch (error) {
-        console.error('Error generating signed URL:', error);
+        //console.error('Error generating signed URL:', error);
         return NextResponse.json({ error: 'Failed to generate upload URL' }, { status: 500 });
     }
 }

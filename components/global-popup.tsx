@@ -51,7 +51,7 @@ export function GlobalPopup() {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching popup settings:', error);
+                //console.error('Error fetching popup settings:', error);
             }
         };
 

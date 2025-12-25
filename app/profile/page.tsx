@@ -94,7 +94,7 @@ export default function ProfilePage() {
             toast.success('Profile updated successfully');
             setIsEditing(false);
         } catch (error) {
-            console.error('Error updating profile:', error);
+            //console.error('Error updating profile:', error);
             toast.error('Failed to update profile');
         } finally {
             setSaving(false);

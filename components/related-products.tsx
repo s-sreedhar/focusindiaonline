@@ -39,7 +39,7 @@ export function RelatedProducts({ currentBookId, category }: RelatedProductsProp
 
         setProducts(booksData);
       } catch (error) {
-        console.error("Error fetching related products:", error);
+        //console.error("Error fetching related products:", error);
       } finally {
         setLoading(false);
       }

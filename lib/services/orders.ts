@@ -29,7 +29,7 @@ export const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'u
         });
         return docRef.id;
     } catch (error) {
-        console.error('Error creating order:', error);
+        //console.error('Error creating order:', error);
         throw new Error('Failed to create order');
     }
 };
@@ -51,7 +51,7 @@ export const getOrder = async (orderId: string): Promise<Order | null> => {
             ...orderSnap.data(),
         } as Order;
     } catch (error) {
-        console.error('Error fetching order:', error);
+        //console.error('Error fetching order:', error);
         throw new Error('Failed to fetch order');
     }
 };
@@ -80,7 +80,7 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
 
         return orders;
     } catch (error) {
-        console.error('Error fetching user orders:', error);
+        //console.error('Error fetching user orders:', error);
         throw new Error('Failed to fetch user orders');
     }
 };
@@ -99,7 +99,7 @@ export const updateOrderStatus = async (
             updatedAt: serverTimestamp(),
         });
     } catch (error) {
-        console.error('Error updating order status:', error);
+        //console.error('Error updating order status:', error);
         throw new Error('Failed to update order status');
     }
 };
@@ -146,7 +146,7 @@ export const updatePaymentStatus = async (
         }
 
     } catch (error) {
-        console.error('Error updating payment status:', error);
+        //console.error('Error updating payment status:', error);
         throw new Error('Failed to update payment status');
     }
 };
@@ -171,7 +171,7 @@ export const getAllOrders = async (): Promise<Order[]> => {
 
         return orders;
     } catch (error) {
-        console.error('Error fetching all orders:', error);
+        //console.error('Error fetching all orders:', error);
         throw new Error('Failed to fetch all orders');
     }
 };

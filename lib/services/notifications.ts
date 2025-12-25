@@ -50,7 +50,7 @@ export async function createNotification(
             metadata
         });
     } catch (error) {
-        console.error("Error creating notification:", error);
+        //console.error("Error creating notification:", error);
     }
 }
 
@@ -65,7 +65,7 @@ export async function markAsRead(notificationId: string) {
             updatedAt: serverTimestamp()
         });
     } catch (error) {
-        console.error("Error marking notification as read:", error);
+        //console.error("Error marking notification as read:", error);
     }
 }
 
@@ -84,7 +84,7 @@ export async function markAllAsRead() {
         );
         await Promise.all(batchPromises);
     } catch (error) {
-        console.error("Error marking all notifications as read:", error);
+        //console.error("Error marking all notifications as read:", error);
     }
 }
 

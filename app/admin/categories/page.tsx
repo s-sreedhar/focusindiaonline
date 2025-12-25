@@ -68,7 +68,7 @@ export default function CategoriesPage() {
             setSubjects(subData);
             setLoading(false); // Set loading false after both (approx)
         }, (error) => {
-            console.error("Error fetching subjects:", error);
+            //console.error("Error fetching subjects:", error);
             setLoading(false);
         });
 
@@ -88,7 +88,7 @@ export default function CategoriesPage() {
             await dialogConfig.action();
             setDialogOpen(false);
         } catch (error) {
-            console.error(error);
+            //console.error(error);
         }
     };
 
@@ -116,7 +116,7 @@ export default function CategoriesPage() {
 
         } catch (error) {
             toast.error('Failed to add category');
-            console.error(error);
+            //console.error(error);
         } finally {
             setAdding(false);
             setUploading(false);
@@ -193,7 +193,7 @@ export default function CategoriesPage() {
             toast.success('Category updated');
             setEditingCategory(null);
         } catch (error) {
-            console.error(error);
+            //console.error(error);
             toast.error('Failed to update category');
         } finally {
             setUploading(false);
@@ -232,7 +232,7 @@ export default function CategoriesPage() {
                     await Promise.all([...catPromises, ...subPromises]);
                     toast.success('Data seeded successfully');
                 } catch (error) {
-                    console.error(error);
+                    //console.error(error);
                     toast.error('Failed to seed data');
                 } finally {
                     setLoading(false);

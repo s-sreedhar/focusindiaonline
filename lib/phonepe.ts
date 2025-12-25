@@ -59,7 +59,7 @@ export const checkPaymentStatus = async (merchantTransactionId: string) => {
     } catch (error: any) {
         // Redact any sensitive information if present in error object before logging
         // Use error.message to avoid printing full HTTP response objects that might contain headers
-        console.error('PhonePe Status Check Error:', error instanceof Error ? error.message : 'Unknown error');
+        //console.error('PhonePe Status Check Error:', error instanceof Error ? error.message : 'Unknown error');
         return null;
     }
 };

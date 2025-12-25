@@ -60,7 +60,7 @@ export function TestimonialsSection() {
 
             setTestimonials(data);
         } catch (error) {
-            console.error("Error fetching testimonials:", error);
+            //console.error("Error fetching testimonials:", error);
         } finally {
             setLoading(false);
         }
@@ -108,7 +108,7 @@ export function TestimonialsSection() {
             setFormData({ name: '', content: '', rating: 5 });
             fetchTestimonials(); // Refresh list to show new review if it's in top 10
         } catch (error) {
-            console.error("Error submitting review:", error);
+            //console.error("Error submitting review:", error);
             toast.error("Failed to submit review. Please try again.");
         } finally {
             setSubmitting(false);

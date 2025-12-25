@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function ShopPage() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [testSeries, setTestSeries] = useState<any[]>([]); // Add test series state
   const [allSubjects, setAllSubjects] = useState<string[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,23 @@ export default function ShopPage() {
         }) as Book[];
         setBooks(booksData);
 
+        // Fetch Test Series
+        const tsSnapshot = await getDocs(collection(db, 'test_series'));
+        const tsData = tsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            image: data.imageUrl,
+            slug: `ts-${doc.id}`, // Use prefix for product page routing
+            category: 'Test Series', // Normalize for filtering
+            isTestSeries: true
+          };
+        });
+        setTestSeries(tsData);
+
+        // Fetch Subjects
+
         // Fetch Subjects
         const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
         const subjectsSnapshot = await getDocs(subjectsQuery);
@@ -49,7 +67,7 @@ export default function ShopPage() {
         setAllCategories(categoriesData);
 
       } catch (error) {
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -92,7 +110,7 @@ export default function ShopPage() {
         {/* Shop Grid */}
         <section className="max-w-7xl mx-auto px-4 py-4 md:py-12">
           {/* We pass all fetched subjects and categories to ShopGrid so filters can show them all */}
-          <ShopGrid books={books} allSubjects={allSubjects} allCategories={allCategories} />
+          <ShopGrid books={books} testSeries={testSeries} allSubjects={allSubjects} allCategories={allCategories} />
         </section>
       </main>
 

@@ -121,7 +121,7 @@ export default function AdminsPage() {
 
             setUsers(usersData);
         } catch (error) {
-            console.error("Error fetching admins:", error);
+            //console.error("Error fetching admins:", error);
             toast.error("Failed to fetch admins");
         } finally {
             setLoading(false);
@@ -198,7 +198,7 @@ export default function AdminsPage() {
             fetchAdmins();
 
         } catch (error) {
-            console.error("Error creating admin:", error);
+            //console.error("Error creating admin:", error);
             toast.error("Failed to create admin");
         } finally {
             setProcessing(false);
@@ -266,7 +266,7 @@ export default function AdminsPage() {
             setIsEditDialogOpen(false);
             fetchAdmins();
         } catch (error) {
-            console.error("Error updating admin:", error);
+            //console.error("Error updating admin:", error);
             toast.error("Failed to update admin");
         } finally {
             setProcessing(false);

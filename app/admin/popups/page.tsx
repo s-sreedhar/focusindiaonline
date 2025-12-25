@@ -52,7 +52,7 @@ export default function PopupSettingsPage() {
                     } as PopupSettings);
                 }
             } catch (error) {
-                console.error('Error fetching popup settings:', error);
+                //console.error('Error fetching popup settings:', error);
                 toast.error('Failed to load settings');
             } finally {
                 setLoading(false);
@@ -77,7 +77,7 @@ export default function PopupSettingsPage() {
             });
             toast.success('Popup settings saved successfully');
         } catch (error) {
-            console.error('Error saving popup settings:', error);
+            //console.error('Error saving popup settings:', error);
             toast.error('Failed to save settings');
         } finally {
             setSaving(false);
@@ -94,7 +94,7 @@ export default function PopupSettingsPage() {
             setSettings({ ...settings, imageUrl: uploadedUrl });
             toast.success('Image uploaded successfully');
         } catch (error) {
-            console.error('Error uploading image:', error);
+            //console.error('Error uploading image:', error);
             toast.error('Failed to upload image');
         } finally {
             setImageUploading(false);

@@ -39,7 +39,7 @@ export function PhoneLogin() {
             try {
                 window.recaptchaVerifier.clear();
             } catch (e) {
-                console.error(e);
+                //console.error(e);
             }
             window.recaptchaVerifier = undefined;
         }
@@ -57,7 +57,7 @@ export function PhoneLogin() {
                 }
             });
         } catch (err) {
-            console.error('Error initializing reCAPTCHA:', err);
+            //console.error('Error initializing reCAPTCHA:', err);
         }
     };
 
@@ -70,7 +70,7 @@ export function PhoneLogin() {
                 try {
                     window.recaptchaVerifier.clear();
                 } catch (e) {
-                    console.error(e);
+                    //console.error(e);
                 }
                 window.recaptchaVerifier = undefined;
             }
@@ -152,7 +152,7 @@ export function PhoneLogin() {
             }
 
         } catch (err: any) {
-            console.error('Error checking user:', err);
+            //console.error('Error checking user:', err);
             setError('Failed to verify user. Please try again.');
         } finally {
             setLoading(false);
@@ -171,7 +171,7 @@ export function PhoneLogin() {
             setTimeLeft(15);
             setCanResend(false);
         } catch (err: any) {
-            console.error('Error sending OTP:', err);
+            //console.error('Error sending OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
 
@@ -231,7 +231,7 @@ export function PhoneLogin() {
             }
 
         } catch (err: any) {
-            console.error('Error logging in:', err);
+            //console.error('Error logging in:', err);
             setError('Login failed. Please try again.');
         } finally {
             setLoading(false);
@@ -272,7 +272,7 @@ export function PhoneLogin() {
                 }
             }
         } catch (err: any) {
-            console.error('Error verifying OTP:', err);
+            //console.error('Error verifying OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
         } finally {

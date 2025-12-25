@@ -44,7 +44,7 @@ export function EnquirySection() {
                 message: ''
             });
         } catch (error) {
-            console.error('Error submitting enquiry:', error);
+            //console.error('Error submitting enquiry:', error);
             toast.error('Failed to send message. Please try again.');
         } finally {
             setLoading(false);

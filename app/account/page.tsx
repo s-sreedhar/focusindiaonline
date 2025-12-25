@@ -52,7 +52,7 @@ export default function AccountPage() {
           wishlistCount: getItemCount()
         });
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        //console.error("Error fetching stats:", error);
       } finally {
         setLoading(false);
       }

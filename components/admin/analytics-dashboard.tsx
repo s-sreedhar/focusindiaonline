@@ -98,7 +98,7 @@ export function AnalyticsDashboard() {
             setBooks(booksData);
 
         } catch (error) {
-            console.error("Error fetching analytics data:", error);
+            //console.error("Error fetching analytics data:", error);
         } finally {
             setLoading(false);
         }

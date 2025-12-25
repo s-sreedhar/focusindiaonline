@@ -42,7 +42,7 @@ export function PhoneRegister() {
             try {
                 window.recaptchaVerifier.clear();
             } catch (e) {
-                console.error(e);
+                //console.error(e);
             }
             window.recaptchaVerifier = undefined;
         }
@@ -61,7 +61,7 @@ export function PhoneRegister() {
                 }
             });
         } catch (err) {
-            console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
+            //console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
         }
     };
 
@@ -75,7 +75,7 @@ export function PhoneRegister() {
                 try {
                     window.recaptchaVerifier.clear();
                 } catch (e) {
-                    console.error('Error clearing recaptcha:', e);
+                    //console.error('Error clearing recaptcha:', e);
                 }
                 window.recaptchaVerifier = undefined;
             }
@@ -146,7 +146,7 @@ export function PhoneRegister() {
             setTimeLeft(15);
             setCanResend(false);
         } catch (err: any) {
-            console.error('[PhoneRegister] Error sending OTP:', err);
+            //console.error('[PhoneRegister] Error sending OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
 
@@ -194,7 +194,7 @@ export function PhoneRegister() {
             // Move to password step
             setStep('password');
         } catch (err: any) {
-            console.error('[PhoneRegister] Error verifying OTP:', err);
+            //console.error('[PhoneRegister] Error verifying OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
         } finally {
@@ -294,7 +294,7 @@ export function PhoneRegister() {
             router.push('/');
 
         } catch (err: any) {
-            console.error('[PhoneRegister] Error creating account:', err);
+            //console.error('[PhoneRegister] Error creating account:', err);
             const message = handleFirebaseError(err);
             setError(message);
         } finally {
@@ -316,7 +316,7 @@ export function PhoneRegister() {
             setTimeLeft(15);
             setCanResend(false);
         } catch (err: any) {
-            console.error('Error resending OTP:', err);
+            //console.error('Error resending OTP:', err);
             const message = handleFirebaseError(err);
             setError(message);
         } finally {

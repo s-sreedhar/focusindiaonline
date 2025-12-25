@@ -25,7 +25,7 @@ export const uploadToCloudinary = async (file: File, folder: string = 'focusindi
 
     if (!response.ok) {
         const error = await response.json();
-        console.error('Cloudinary Upload Error:', error);
+        //console.error('Cloudinary Upload Error:', error);
         throw new Error(error.error?.message || error.message || 'Image upload failed');
     }
 
@@ -33,27 +33,59 @@ export const uploadToCloudinary = async (file: File, folder: string = 'focusindi
     return data.secure_url;
 };
 
-export const deleteFromCloudinary = async (url: string, resourceType: 'image' | 'raw' | 'video' = 'image') => {
-    if (!url) return;
+export const extractPublicId = (url: string): string | null => {
+    try {
+        // Handle Cloudinary URLs
+        // Format: https://res.cloudinary.com/[cloud_name]/[resource_type]/[type]/[version]/[public_id].[format]
+        if (url.includes('cloudinary.com')) {
+            const parts = url.split('/');
+            const filenameWithExtension = parts[parts.length - 1];
+            const publicId = filenameWithExtension.split('.')[0];
 
-    // Extract public_id from URL
-    // Format: https://res.cloudinary.com/[cloud_name]/[resource_type]/upload/v[version]/[folder]/[id].[ext]
-    // We need [folder]/[id]
+            // If there are folders, we might need to handle them. 
+            // A safer way is to regex but let's stick to simple split for now if we use flat structure.
+            // Cloudinary standard: .../upload/v12345678/folder/public_id.jpg
+
+            // Better regex approach for Cloudinary
+            const regex = /\/v\d+\/(.+)\.[a-z]+$/;
+            const match = url.match(regex);
+            if (match && match[1]) {
+                return match[1];
+            }
+
+            // Fallback for no versioning or simple structure
+            return publicId;
+        }
+        return url; // Assume it is already a public ID if not a URL
+    } catch (e) {
+        return null;
+    }
+};
+
+export const deleteFromCloudinary = async (publicIdOrUrl: string, resourceType: string = 'image') => {
+    const publicId = extractPublicId(publicIdOrUrl);
+
+    if (!publicId) {
+        //console.error('Invalid public ID or URL for deletion');
+        return;
+    }
 
     try {
-        const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
-        const match = url.match(regex);
+        const response = await fetch('/api/cloudinary/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ publicId, resourceType }),
+        });
 
-        if (match && match[1]) {
-            const publicId = match[1]; // This captures 'folder/filename'
-
-            await fetch('/api/cloudinary/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publicId, resourceType }),
-            });
+        if (!response.ok) {
+            throw new Error('Failed to delete from Cloudinary');
         }
+
+        return await response.json();
     } catch (error) {
-        console.error("Error deleting from Cloudinary:", error);
+        //console.error('Error deleting from Cloudinary:', error);
+        throw error;
     }
 };

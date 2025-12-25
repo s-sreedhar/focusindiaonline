@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { toast } from 'sonner';
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -73,11 +74,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         subjects: data.subjects || [],
                     });
                 } else {
-                    alert('Product not found');
+                    toast.error('Product not found');
                     router.push('/admin/products');
                 }
             } catch (error) {
-                console.error("Error fetching product:", error);
+                //console.error("Error fetching product:", error);
+                toast.error("Failed to fetch product");
             } finally {
                 setLoading(false);
             }
@@ -105,7 +107,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 const subs = subSnapshot.docs.map((doc: any) => doc.data().name as string);
                 setDbSubjects(subs.length > 0 ? subs : SUBJECTS);
             } catch (error) {
-                console.error('Error fetching master data:', error);
+                //console.error('Error fetching master data:', error);
                 setDbCategories(PRIMARY_CATEGORIES);
                 setDbSubjects(SUBJECTS);
             }
@@ -148,8 +150,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             await updateDoc(doc(db, 'books', id), productData);
             router.push('/admin/products');
         } catch (error) {
-            console.error("Error updating product:", error);
-            alert('Failed to update product');
+            //console.error("Error updating product:", error);
+            toast.error('Failed to update product');
         } finally {
             setSaving(false);
         }

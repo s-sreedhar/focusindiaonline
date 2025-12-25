@@ -59,7 +59,7 @@ export default function TestimonialsPage() {
 
             setTestimonials(data);
         } catch (error) {
-            console.error("Error fetching testimonials:", error);
+            //console.error("Error fetching testimonials:", error);
             toast.error("Failed to load reviews");
         } finally {
             setLoading(false);
@@ -112,7 +112,7 @@ export default function TestimonialsPage() {
 
             fetchTestimonials();
         } catch (error) {
-            console.error("Error adding testimonial:", error);
+            //console.error("Error adding testimonial:", error);
             toast.error("Failed to add review");
         } finally {
             setUploading(false);
@@ -143,7 +143,7 @@ export default function TestimonialsPage() {
             toast.success("Review deleted successfully");
             setTestimonials(prev => prev.filter(t => t.id !== deleteId));
         } catch (error) {
-            console.error("Error deleting testimonial:", error);
+            //console.error("Error deleting testimonial:", error);
             toast.error("Failed to delete review");
         } finally {
             setDeleteId(null);
@@ -175,7 +175,7 @@ export default function TestimonialsPage() {
             await batch.commit();
             toast.success("Order updated");
         } catch (error) {
-            console.error("Error updating order:", error);
+            //console.error("Error updating order:", error);
             toast.error("Failed to update order");
             fetchTestimonials();
         }

@@ -82,7 +82,7 @@ export const sendOrderConfirmationEmail = async (order: OrderDetails) => {
     // console.log('Email sent successfully. Returned data: ' + JSON.stringify(data));
     return { success: true, data };
   } catch (error) {
-    console.error('Error sending email:', error);
+    //console.error('Error sending email:', error);
     return { success: false, error };
   }
 };

@@ -45,7 +45,7 @@ export default function DownloadsPage() {
             })) as Purchase[];
             setPurchases(data);
         } catch (error) {
-            console.error("Error fetching downloads:", error);
+            //console.error("Error fetching downloads:", error);
         } finally {
             setLoading(false);
         }

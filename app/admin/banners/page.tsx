@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Loader2, Upload, Trash2, Image as ImageIcon, ExternalLink, ArrowUp, ArrowDown } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { deleteFromCloudinary, uploadToCloudinary } from '@/lib/cloudinary';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -54,7 +54,7 @@ export default function BannersPage() {
 
             setBanners(bannersData);
         } catch (error) {
-            console.error("Error fetching banners:", error);
+            //console.error("Error fetching banners:", error);
             toast.error("Failed to load banners");
         } finally {
             setLoading(false);
@@ -104,7 +104,7 @@ export default function BannersPage() {
 
             fetchBanners();
         } catch (error) {
-            console.error("Error adding banner:", error);
+            //console.error("Error adding banner:", error);
             toast.error("Failed to add banner");
         } finally {
             setUploading(false);
@@ -138,7 +138,7 @@ export default function BannersPage() {
             toast.success("Banner deleted successfully");
             setBanners(prev => prev.filter(banner => banner.id !== deleteId));
         } catch (error) {
-            console.error("Error deleting banner:", error);
+            //console.error("Error deleting banner:", error);
             toast.error("Failed to delete banner");
         } finally {
             setDeleteId(null);
@@ -175,7 +175,7 @@ export default function BannersPage() {
             await batch.commit();
             toast.success("Order updated");
         } catch (error) {
-            console.error("Error updating order:", error);
+            //console.error("Error updating order:", error);
             toast.error("Failed to update order");
             fetchBanners(); // Revert on error
         }

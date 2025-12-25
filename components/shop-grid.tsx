@@ -20,6 +20,7 @@ import Fuse from 'fuse.js';
 
 interface ShopGridProps {
   books: Book[];
+  testSeries?: any[]; // Add testSeries prop
   activeCategory?: string;
   showCombos?: boolean;
   allSubjects?: string[];
@@ -28,7 +29,7 @@ interface ShopGridProps {
 
 type SortOption = 'featured' | 'price-low' | 'price-high' | 'newest' | 'bestselling' | 'rating';
 
-export function ShopGrid({ books, activeCategory, showCombos = false, allSubjects = [], allCategories = [] }: ShopGridProps) {
+export function ShopGrid({ books, testSeries = [], activeCategory, showCombos = false, allSubjects = [], allCategories = [] }: ShopGridProps) {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const urlCategory = searchParams.get('category');
@@ -44,6 +45,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     selectedLanguages: string[];
     inStockOnly: boolean;
     showBundles: boolean;
+    showTestSeries: boolean;
   }>({
     priceRange: [0, 2000],
     selectedCategories: activeCategory ? [activeCategory] : (urlCategory ? [urlCategory] : []),
@@ -51,6 +53,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     selectedLanguages: [],
     inStockOnly: false,
     showBundles: urlShowBundles,
+    showTestSeries: false,
   });
 
   const router = useRouter(); // Import useRouter from next/navigation
@@ -109,7 +112,42 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
   // const searchQuery = searchParams.get('search') || ''; // Moved up
 
   const filteredAndSortedBooks = useMemo(() => {
-    let result = books;
+    // Merge books and test series if needed or just switch source
+    let result: any[] = [...books];
+
+    if (filters.showTestSeries) {
+      // If Test Series filter is ON, we might want to show ONLY test series or mix them?
+      // "Add test series like a differnt atribute in filtets" -> implies mix or filter.
+      // Usually filters narrow down. If I check "Test Series", I expect to see them.
+      // Since they are distinct from books, maybe we append them?
+      // Or if "Test Series" is checked, we ONLY show test series?
+      // Let's Append them to the result set initially, then filter.
+      // ACTUALLY: The user said "like Combos". Combos are a type of book/product.
+      // So let's include Test Series in the pool of items to filter.
+
+      // HOWEVER, if Test Series is checked, we probably ONLY want to see Test Series.
+      // Similar to "Bundles" filter logic I implemented: "If Bundles is ON, show ONLY combos".
+
+      result = testSeries;
+    } else {
+      // If Test Series is OFF, should we hide them?
+      // Yes, default behavior for "Types" filters usually.
+      // But wait, "Bundles" filter logic was: if ON, show ONLY combos. If OFF, show everything (combos are part of books).
+      // Test Series are NOT part of books array passed in.
+      // So if Test Series filter is OFF, we just show books.
+      // If Test Series filter is ON, we show Test Series.
+      // This acts like a toggle between Books and Test Series?
+      // Or should they be mixed? 
+      // "Show test series just like other items"
+      // Let's support mixing if we want, but typically:
+      // Case 1: All unchecked -> Show Books (Test Series are special).
+      // Case 2: Test Series checked -> Show ONLY Test Series.
+
+      // Let's go with: If Test Series checked, show Test Series. If not, show Books.
+      // AND handle Bundles within Books.
+
+      result = books;
+    }
 
     // 1. Fuzzy Search (First priority)
     if (searchQuery) {
@@ -123,63 +161,74 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
       result = fuse.search(searchQuery).map((res: any) => res.item);
     }
 
-    result = result.filter((book) => {
-      // Combo vs Regular Book Filter
-      const isCombo = (book as any).isCombo || book.category === 'Value Bundles';
+    result = result.filter((item) => {
+      // Test Series don't have all book fields, so be careful.
+      const isTestSeries = (item as any).isTestSeries;
 
-      // If "Bundles" filter is ON, show ONLY combos
-      if (filters.showBundles) {
-        if (!isCombo) return false;
-      } else if (showCombos) {
-        // If prop passed (e.g. from combos page), also show only combos 
-        if (!isCombo) return false;
+      if (filters.showTestSeries) {
+        // If we are showing test series, we are iterating over testSeries array (set above).
+        // We might still want to apply Price filter?
+        // Yes.
+      } else {
+        // We are iterating books.
+        // Combo vs Regular Book Filter
+        const isCombo = (item as any).isCombo || item.category === 'Value Bundles';
+
+        // If "Bundles" filter is ON, show ONLY combos
+        if (filters.showBundles) {
+          if (!isCombo) return false;
+        } else if (showCombos) {
+          // If prop passed (e.g. from combos page), also show only combos 
+          if (!isCombo) return false;
+        }
       }
 
-      // Note: We are NO LONGER hiding combos by default. 
-      // If Bundles filter is OFF, and we are not in Combos page, we show EVERYTHING (regular + combos) unless filtered by other means.
-      // This is standard e-commerce behavior (search all).
-
-      // Price filter
-      if (book.price < filters.priceRange[0] || book.price > filters.priceRange[1]) {
+      // Price filter (Test Series also have price)
+      if (item.price < filters.priceRange[0] || item.price > filters.priceRange[1]) {
         return false;
       }
 
-      // Category filter
-      if (filters.selectedCategories.length > 0) {
-        const bookCategory = (book.primaryCategory || book.category || '').toLowerCase().trim();
-        const moves = filters.selectedCategories.some(selected =>
-          selected.toLowerCase().trim() === bookCategory
-        );
-        if (!moves) return false;
-      }
+      // Category filter (Test Series have category='Test Series')
+      // If categories selected, does it apply to Test Series? 
+      // Probably not useful for Test Series unless they have categories.
+      // If user filters by "History", should Test Series show up?
+      // Our Test Series data might not have subjects yet.
+      // Let's apply Category/Subject filters only if not Test Series OR if Test Series has matching fields.
+      if (!filters.showTestSeries) {
+        if (filters.selectedCategories.length > 0) {
+          const bookCategory = (item.primaryCategory || item.category || '').toLowerCase().trim();
+          const moves = filters.selectedCategories.some(selected =>
+            selected.toLowerCase().trim() === bookCategory
+          );
+          if (!moves) return false;
+        }
 
-      // Subject filter
-      if (filters.selectedSubjects.length > 0) {
-        const hasSubject = filters.selectedSubjects.some(subject => {
-          // Check array
-          const inArray = book.subjects?.some(s => s && subject && s.toLowerCase().trim() === subject.toLowerCase().trim());
-          // Check legacy string
-          const inString = book.subject && book.subject.toLowerCase().trim() === subject.toLowerCase().trim();
-          return inArray || inString;
-        });
-        if (!hasSubject) return false;
-      }
+        // Subject filter
+        if (filters.selectedSubjects.length > 0) {
+          const hasSubject = filters.selectedSubjects.some(subject => {
+            // Check array
+            const inArray = item.subjects?.some((s: string) => s && subject && s.toLowerCase().trim() === subject.toLowerCase().trim());
+            // Check legacy string
+            const inString = item.subject && item.subject.toLowerCase().trim() === subject.toLowerCase().trim();
+            return inArray || inString;
+          });
+          if (!hasSubject) return false;
+        }
 
-      // Language filter
-      if (filters.selectedLanguages.length > 0) {
-        const hasLanguage = filters.selectedLanguages.some(lang =>
-          book.language?.toLowerCase().includes(lang.toLowerCase())
-        );
-        if (!hasLanguage) return false;
-      }
+        // Language filter
+        if (filters.selectedLanguages.length > 0) {
+          const hasLanguage = filters.selectedLanguages.some(lang =>
+            item.language?.toLowerCase().includes(lang.toLowerCase())
+          );
+          if (!hasLanguage) return false;
+        }
 
-      // Stock filter
-      if (filters.inStockOnly) {
-        // Check both inStock boolean (if present) and stockQuantity
-        const isOutOfStock = (book.inStock === false) || (book.stockQuantity !== undefined && book.stockQuantity <= 0);
-        // If we don't know (both undefined), assume in stock? No, let's assume out if we are strict, or in if we are lenient.
-        // Given the user issue, let's treat any indication of 0 stock as OOS.
-        if (isOutOfStock) return false;
+        // Stock filter
+        if (filters.inStockOnly) {
+          // Check both inStock boolean (if present) and stockQuantity
+          const isOutOfStock = (item.inStock === false) || (item.stockQuantity !== undefined && item.stockQuantity <= 0);
+          if (isOutOfStock) return false;
+        }
       }
 
       return true;
@@ -208,7 +257,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
     }
 
     return result;
-  }, [books, filters, sortBy, showCombos]);
+  }, [books, testSeries, filters, sortBy, showCombos]);
 
   const totalPages = Math.ceil(filteredAndSortedBooks.length / itemsPerPage);
   const currentBooks = filteredAndSortedBooks.slice(
@@ -404,7 +453,7 @@ export function ShopGrid({ books, activeCategory, showCombos = false, allSubject
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No products found matching your criteria.</p>
             <button
-              onClick={() => setFilters({ priceRange: [0, 2000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false, showBundles: false })}
+              onClick={() => setFilters({ priceRange: [0, 2000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false, showBundles: false, showTestSeries: false })}
               className="text-primary hover:underline"
             >
               Clear filters and try again

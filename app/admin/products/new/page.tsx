@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { toast } from 'sonner';
 
 export default function NewProductPage() {
     const router = useRouter();
@@ -63,7 +64,7 @@ export default function NewProductPage() {
                 const subs = subSnapshot.docs.map((doc: any) => doc.data().name as string);
                 setDbSubjects(subs.length > 0 ? subs : SUBJECTS);
             } catch (error) {
-                console.error('Error fetching master data:', error);
+                //console.error('Error fetching master data:', error);
                 // Fallback to constants
                 setDbCategories(PRIMARY_CATEGORIES);
                 setDbSubjects(SUBJECTS);
@@ -115,8 +116,8 @@ export default function NewProductPage() {
             await addDoc(collection(db, 'books'), productData);
             router.push('/admin/products');
         } catch (error) {
-            console.error("Error creating product:", error);
-            alert('Failed to create product');
+            //console.error("Error creating product:", error);
+            toast.error('Failed to create product');
         } finally {
             setLoading(false);
         }

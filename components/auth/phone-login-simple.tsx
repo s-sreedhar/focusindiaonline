@@ -36,7 +36,7 @@ export function PhoneLoginSimple() {
                     }
                 });
             } catch (err) {
-                console.error('[PhoneLogin] Error initializing reCAPTCHA:', err);
+                //console.error('[PhoneLogin] Error initializing reCAPTCHA:', err);
             }
         }
 
@@ -69,7 +69,7 @@ export function PhoneLoginSimple() {
             setConfirmationResult(confirmation);
             setStep('otp');
         } catch (err: any) {
-            console.error('[PhoneLogin] Error sending OTP:', err);
+            //console.error('[PhoneLogin] Error sending OTP:', err);
 
             if (err.code === 'auth/invalid-phone-number') {
                 setError('Invalid phone number format');
@@ -151,7 +151,7 @@ export function PhoneLoginSimple() {
                 }, 2000);
             }
         } catch (err: any) {
-            console.error('[PhoneLogin] Error verifying OTP:', err);
+            //console.error('[PhoneLogin] Error verifying OTP:', err);
 
             if (err.code === 'auth/invalid-verification-code') {
                 setError('Invalid OTP. Please check and try again.');

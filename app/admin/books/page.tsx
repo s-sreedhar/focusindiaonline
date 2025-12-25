@@ -80,7 +80,7 @@ export default function BooksPage() {
                 setCategories(categoriesData);
 
             } catch (error) {
-                console.error("Error fetching data:", error);
+                //console.error("Error fetching data:", error);
             } finally {
                 setLoading(false);
             }
@@ -110,7 +110,7 @@ export default function BooksPage() {
             setBooks(books.filter(book => book.id !== itemToDelete));
             toast.success('Book deleted successfully');
         } catch (error) {
-            console.error("Error deleting book:", error);
+            //console.error("Error deleting book:", error);
             toast.error('Failed to delete book');
         } finally {
             setConfirmOpen(false);

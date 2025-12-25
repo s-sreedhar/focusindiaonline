@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthStore>()(
 
           // console.log('[AuthStore] Profile updated successfully');
         } catch (error) {
-          console.error('[AuthStore] Error updating profile:', error);
+          //console.error('[AuthStore] Error updating profile:', error);
           throw error;
         }
       },
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthStore>()(
                 set({ user, isAuthenticated: true, loading: false });
               }
             } catch (error) {
-              console.error('[AuthStore] Error fetching user details:', error);
+              //console.error('[AuthStore] Error fetching user details:', error);
 
               // Fallback on error
               const user: User = {

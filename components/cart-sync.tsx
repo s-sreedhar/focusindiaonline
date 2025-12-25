@@ -16,7 +16,7 @@ const debouncedWriteCart = debounce(async (userId: string, items: { bookId: stri
         await setDoc(userRef, { cart: items }, { merge: true });
         // console.log('Cart synced to Firestore');
     } catch (error) {
-        console.error('Error syncing cart to Firestore:', error);
+        //console.error('Error syncing cart to Firestore:', error);
     }
 }, 2000); // 2 second debounce
 
@@ -71,13 +71,13 @@ export function CartSync() {
                                     });
                                 }
                             } catch (err) {
-                                console.error(`Failed to fetch book ${cartItem.bookId}`, err);
+                                //console.error(`Failed to fetch book ${cartItem.bookId}`, err);
                             }
                         }
                     }
                 }
             } catch (error) {
-                console.error('Error fetching cart from Firestore:', error);
+                //console.error('Error fetching cart from Firestore:', error);
             } finally {
                 isFetchingRef.current = false;
             }

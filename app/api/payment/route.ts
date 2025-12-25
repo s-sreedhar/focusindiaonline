@@ -73,7 +73,7 @@ export async function POST(request: Request) {
                 merchantTransactionId: data.data.merchantTransactionId
             });
         } else {
-            console.error('PhonePe Error:', data);
+            //console.error('PhonePe Error:', data);
             return NextResponse.json(
                 { success: false, error: data.message || 'Payment initiation failed' },
                 { status: 400 }
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         }
 
     } catch (error: any) {
-        console.error('Payment API Error:', error);
+        //console.error('Payment API Error:', error);
         return NextResponse.json(
             { success: false, error: error.message || 'Internal server error' },
             { status: 500 }

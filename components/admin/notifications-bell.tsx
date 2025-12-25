@@ -51,23 +51,13 @@ export function NotificationsBell() {
 
             if (notification.entityId) {
                 if (notification.type === 'new_order' || notification.type === 'potential_lead') {
-                    // Navigate to order details
-                    // Assuming /admin/orders is the path. If detail view exists: /admin/orders/[id]
-                    // If not, just /admin/orders
-                    // I will guess /admin/orders/ for now, if it fails user can adjust.
-                    // Actually, usually it's /admin/orders/[id] or just /admin/orders.
-                    // I'll assume /admin/orders because I haven't seen the route structure.
-                    // But typically one wants to see the specific item.
-                    // Let's use /admin/orders generally or assume a search filter using ID.
-                    // For now, I'll send to /admin/orders?highlight={id} if possible or just /admin/orders.
-                    // Let's stick to /admin/orders for safety unless I check routes.
                     router.push(`/admin/orders`);
                 } else if (notification.type === 'new_customer') {
                     router.push(`/admin/users`);
                 }
             }
         } catch (error) {
-            console.error("Error handling notification click:", error);
+            //console.error("Error handling notification click:", error);
         }
     };
 
@@ -75,7 +65,7 @@ export function NotificationsBell() {
         try {
             await markAllAsRead();
         } catch (error) {
-            console.error("Error marking all as read:", error);
+            //console.error("Error marking all as read:", error);
         }
     };
 
@@ -84,10 +74,10 @@ export function NotificationsBell() {
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full">
-                    <Bell className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="relative h-12 w-12 rounded-full">
+                    <Bell className="h-6 w-6" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white animate-pulse" />
+                        <span className="absolute top-2.5 right-2.5 h-3 w-3 rounded-full bg-red-600 ring-2 ring-white animate-pulse" />
                     )}
                 </Button>
             </PopoverTrigger>

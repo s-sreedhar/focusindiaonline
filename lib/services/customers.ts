@@ -28,7 +28,7 @@ export const createCustomer = async (
             createdAt: serverTimestamp(),
         });
     } catch (error) {
-        console.error('Error creating customer:', error);
+        //console.error('Error creating customer:', error);
         throw new Error('Failed to create customer profile');
     }
 };
@@ -50,7 +50,7 @@ export const getCustomer = async (uid: string): Promise<Customer | null> => {
             ...customerSnap.data(),
         } as Customer;
     } catch (error) {
-        console.error('Error fetching customer:', error);
+        //console.error('Error fetching customer:', error);
         throw new Error('Failed to fetch customer profile');
     }
 };
@@ -66,7 +66,7 @@ export const updateCustomer = async (
         const customerRef = doc(db, CUSTOMERS_COLLECTION, uid);
         await updateDoc(customerRef, updates);
     } catch (error) {
-        console.error('Error updating customer:', error);
+        //console.error('Error updating customer:', error);
         throw new Error('Failed to update customer profile');
     }
 };
@@ -81,7 +81,7 @@ export const addToWishlist = async (uid: string, bookId: string): Promise<void> 
             wishlist: arrayUnion(bookId),
         });
     } catch (error) {
-        console.error('Error adding to wishlist:', error);
+        //console.error('Error adding to wishlist:', error);
         throw new Error('Failed to add to wishlist');
     }
 };
@@ -96,7 +96,7 @@ export const removeFromWishlist = async (uid: string, bookId: string): Promise<v
             wishlist: arrayRemove(bookId),
         });
     } catch (error) {
-        console.error('Error removing from wishlist:', error);
+        //console.error('Error removing from wishlist:', error);
         throw new Error('Failed to remove from wishlist');
     }
 };
@@ -111,7 +111,7 @@ export const addOrderToCustomer = async (uid: string, orderId: string): Promise<
             orders: arrayUnion(orderId),
         });
     } catch (error) {
-        console.error('Error adding order to customer:', error);
+        //console.error('Error adding order to customer:', error);
         throw new Error('Failed to add order to customer');
     }
 };

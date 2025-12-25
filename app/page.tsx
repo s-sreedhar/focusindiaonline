@@ -94,7 +94,7 @@ export default function Home() {
         setBanners(bannersData);
 
       } catch (error) {
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -271,6 +271,64 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        {/* Featured Test Series Section */}
+        {testSeries.length > 0 && !loading && (
+          <section className="py-12 bg-white">
+            <div className="container mx-auto px-4 max-w-[1600px]">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">Featured Test Series</h2>
+                  <p className="text-muted-foreground text-sm md:text-base">Ace your exams with our premium test series</p>
+                </div>
+                <Button variant="outline" asChild className="rounded-full text-xs md:text-sm h-8 md:h-10">
+                  <Link href="/test-series">View All</Link>
+                </Button>
+              </div>
+
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-4">
+                  {testSeries.map((series, i) => (
+                    <CarouselItem key={series.id} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/5">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                        className="flex flex-col h-full border rounded-xl overflow-hidden hover:shadow-lg transition-all"
+                      >
+                        <div className="aspect-video bg-muted relative flex items-center justify-center overflow-hidden">
+                          {series.imageUrl ? (
+                            <img src={series.imageUrl} alt={series.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-3xl text-muted-foreground/30 font-bold">PDF</div>
+                          )}
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                          <h3 className="font-bold text-base line-clamp-2 mb-2">{series.title}</h3>
+                          <div className="mt-auto flex items-center justify-between">
+                            <span className="font-bold text-primary">₹{series.price}</span>
+                            <Button size="sm" variant="secondary" asChild className="h-8">
+                              <Link href="/test-series">View</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden md:flex" />
+                <CarouselNext className="hidden md:flex" />
+              </Carousel>
+            </div>
+          </section>
+        )}
 
         {loading ? (
           <div className="py-20 flex justify-center">

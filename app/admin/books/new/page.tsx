@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { toast } from 'sonner';
 
 interface Item {
     id: string;
@@ -56,7 +57,7 @@ export default function NewBookPage() {
                 const fetchedCategories = categoriesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
                 setCategoriesList(fetchedCategories);
             } catch (error) {
-                console.error("Error fetching data", error);
+                //console.error("Error fetching data", error);
             }
         };
         fetchData();
@@ -106,8 +107,8 @@ export default function NewBookPage() {
 
             router.push('/admin/books');
         } catch (error) {
-            console.error("Error adding book:", error);
-            alert('Failed to add book');
+            //console.error("Error adding book:", error);
+            toast.error('Failed to add book');
         } finally {
             setLoading(false);
         }

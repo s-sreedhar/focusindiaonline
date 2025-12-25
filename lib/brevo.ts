@@ -2,7 +2,7 @@ export const sendEmail = async (to: string, subject: string, htmlContent: string
     const apiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY;
 
     if (!apiKey) {
-        console.error('Brevo API Key not found');
+        //console.error('Brevo API Key not found');
         return;
     }
 
@@ -27,14 +27,14 @@ export const sendEmail = async (to: string, subject: string, htmlContent: string
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Error sending email:', JSON.stringify(errorData, null, 2));
+            //console.error('Error sending email:', JSON.stringify(errorData, null, 2));
             return { success: false, error: errorData };
         }
 
         // console.log('Email sent successfully');
         return { success: true };
     } catch (error) {
-        console.error('Error sending email:', error);
+        //console.error('Error sending email:', error);
         return { success: false, error };
     }
 };

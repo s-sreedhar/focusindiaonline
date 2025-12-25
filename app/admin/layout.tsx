@@ -4,7 +4,7 @@ import { AdminSidebar, adminMenuItems } from '@/components/admin/sidebar';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { Loader2, ShieldAlert, Menu, LogOut } from 'lucide-react';
+import { Loader2, ShieldAlert, Menu, LogOut, Home } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -101,6 +101,20 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <Link href="/" title="Back to Home">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+                <Home className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-red-600"
+              onClick={() => useAuthStore.getState().logout()}
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
             <NotificationsBell />
           </div>
         </header>

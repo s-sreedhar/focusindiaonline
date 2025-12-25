@@ -103,7 +103,7 @@ export default function CombosPage() {
             setBooks(booksData);
 
         } catch (error) {
-            console.error('Error fetching data:', error);
+            //console.error('Error fetching data:', error);
             toast.error('Failed to load data');
         } finally {
             setLoading(false);
@@ -178,7 +178,7 @@ export default function CombosPage() {
             setIsDialogOpen(false);
             fetchData();
         } catch (error) {
-            console.error('Error saving combo:', error);
+            //console.error('Error saving combo:', error);
             toast.error('Failed to save combo');
         } finally {
             setUploading(false);
@@ -218,7 +218,7 @@ export default function CombosPage() {
             toast.success('Combo deleted successfully');
             fetchData();
         } catch (error) {
-            console.error('Error deleting combo:', error);
+            //console.error('Error deleting combo:', error);
             toast.error('Failed to delete combo');
         } finally {
             setDeleteId(null);

@@ -73,7 +73,7 @@ export default function OrdersPage() {
       })) as Order[];
       setOrders(ordersData);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      //console.error("Error fetching orders:", error);
       toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
@@ -113,7 +113,7 @@ export default function OrdersPage() {
 
       toast.success(`Order status updated to ${newStatus}`);
     } catch (error) {
-      console.error("Error updating status:", error);
+      //console.error("Error updating status:", error);
       toast.error('Failed to update status');
     }
   };
@@ -152,7 +152,7 @@ export default function OrdersPage() {
 
       toast.success("Note saved successfully");
     } catch (error) {
-      console.error("Error saving notes:", error);
+      //console.error("Error saving notes:", error);
       toast.error("Failed to save notes");
     }
   };

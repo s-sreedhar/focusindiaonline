@@ -124,7 +124,7 @@ export function ChangePasswordDialog({ children, trigger }: ChangePasswordDialog
             resetForm();
 
         } catch (error) {
-            console.error('Error changing password:', error);
+            //console.error('Error changing password:', error);
             toast.error('Failed to change password');
         } finally {
             setLoading(false);

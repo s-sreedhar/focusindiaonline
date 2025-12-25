@@ -53,7 +53,7 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
         const snapshot = await getDocs(q);
         setHasReviewed(!snapshot.empty);
       } catch (error) {
-        console.error("Error checking user review:", error);
+        //console.error("Error checking user review:", error);
       }
     };
 
@@ -88,7 +88,7 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
           });
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error);
+        //console.error("Error fetching reviews:", error);
       } finally {
         setLoading(false);
       }
@@ -153,7 +153,7 @@ export function ReviewsSection({ bookId, averageRating, totalReviews }: ReviewsS
       });
 
     } catch (error) {
-      console.error("Error submitting review:", error);
+      //console.error("Error submitting review:", error);
       toast.error('Failed to submit review');
     } finally {
       setSubmitting(false);

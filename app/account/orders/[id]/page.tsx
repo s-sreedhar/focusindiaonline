@@ -42,7 +42,7 @@ export default function OrderDetailsPage() {
                     setOrder(orderData);
                 }
             } catch (error) {
-                console.error("Error fetching order:", error);
+                //console.error("Error fetching order:", error);
             } finally {
                 setLoading(false);
             }

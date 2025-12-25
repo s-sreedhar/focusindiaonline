@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         const isValid = verifyChecksum(response, checksum);
 
         if (!isValid) {
-            console.error('Invalid checksum in callback');
+            //console.error('Invalid checksum in callback');
             return NextResponse.json(
                 { error: 'Invalid checksum' },
                 { status: 400 }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
                     });
                 }
             } catch (emailError) {
-                console.error("Failed to send confirmation email:", emailError);
+                //console.error("Failed to send confirmation email:", emailError);
                 // We don't fail the request if email fails, just log it
             }
         } else {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true });
 
     } catch (error: any) {
-        console.error('Callback API Error:', error);
+        //console.error('Callback API Error:', error);
         return NextResponse.json(
             { success: false, error: error.message },
             { status: 500 }

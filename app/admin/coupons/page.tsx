@@ -50,7 +50,7 @@ export default function CouponsPage() {
             })) as Coupon[];
             setCoupons(data);
         } catch (error) {
-            console.error('Error fetching coupons:', error);
+            //console.error('Error fetching coupons:', error);
             toast.error('Failed to load coupons');
         } finally {
             setLoading(false);
@@ -104,7 +104,7 @@ export default function CouponsPage() {
             setIsDialogOpen(false);
             fetchCoupons();
         } catch (error) {
-            console.error('Error saving coupon:', error);
+            //console.error('Error saving coupon:', error);
             toast.error('Failed to save coupon');
         } finally {
             setLoading(false);
@@ -139,7 +139,7 @@ export default function CouponsPage() {
             toast.success('Coupon deleted successfully');
             fetchCoupons();
         } catch (error) {
-            console.error('Error deleting coupon:', error);
+            //console.error('Error deleting coupon:', error);
             toast.error('Failed to delete coupon');
         } finally {
             setDeleteId(null);

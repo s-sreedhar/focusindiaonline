@@ -72,7 +72,7 @@ export default function TestSeriesPage() {
             })) as TestSeries[];
             setSeries(data);
         } catch (error) {
-            console.error("Error fetching test series:", error);
+            //console.error("Error fetching test series:", error);
             toast.error("Failed to fetch test series");
         } finally {
             setLoading(false);
@@ -108,7 +108,7 @@ export default function TestSeriesPage() {
 
             if (formData.file) {
                 // R2 Upload Logic
-                console.log("[R2 Debug] Requesting upload URL...");
+                // console.log("[R2 Debug] Requesting upload URL...");
                 const response = await fetch('/api/upload/r2', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -121,10 +121,10 @@ export default function TestSeriesPage() {
                 if (!response.ok) throw new Error('Failed to get upload URL');
 
                 const { uploadUrl, fileUrl: r2FileUrl } = await response.json();
-                console.log("[R2 Debug] Got upload URL:", uploadUrl);
+                // console.log("[R2 Debug] Got upload URL:", uploadUrl);
 
                 // Upload to R2
-                console.log("[R2 Debug] Starting PUT upload...");
+                // console.log("[R2 Debug] Starting PUT upload...");
                 try {
                     const uploadRes = await fetch(uploadUrl, {
                         method: 'PUT',
@@ -133,13 +133,27 @@ export default function TestSeriesPage() {
                     });
 
                     if (!uploadRes.ok) {
-                        console.error("[R2 Debug] Upload failed with status:", uploadRes.status);
+                        //console.error("[R2 Debug] Upload failed with status:", uploadRes.status);
                         throw new Error(`R2 Upload failed: ${uploadRes.statusText}`);
                     }
-                    console.log("[R2 Debug] Upload successful");
+                    // console.log("[R2 Debug] Upload successful");
                 } catch (r2Error) {
-                    console.error("[R2 Debug] Fetch error during PUT:", r2Error);
+                    //console.error("[R2 Debug] Fetch error during PUT:", r2Error);
                     throw new Error("Failed to upload file to R2 (Likely CORS or Network issue)");
+                }
+
+                // If updating and new file uploaded, delete old file from R2
+                if (editingSeries?.fileUrl) {
+                    try {
+                        await fetch('/api/upload/r2/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ fileUrl: editingSeries.fileUrl }),
+                        });
+                        // console.log("Old file deleted from R2");
+                    } catch (err) {
+                        //console.error("Failed to delete old R2 file:", err);
+                    }
                 }
 
                 fileUrl = r2FileUrl;
@@ -159,6 +173,11 @@ export default function TestSeriesPage() {
             };
 
             if (editingSeries) {
+                // Delete old image if new one is uploaded
+                if (formData.image && editingSeries.imageUrl) {
+                    await deleteFromCloudinary(editingSeries.imageUrl);
+                }
+
                 await updateDoc(doc(db, 'test_series', editingSeries.id), seriesData);
                 toast.success("Test Series updated successfully");
             } else {
@@ -173,7 +192,7 @@ export default function TestSeriesPage() {
             resetForm();
             fetchSeries();
         } catch (error) {
-            console.error("Error saving test series:", error);
+            //console.error("Error saving test series:", error);
             toast.error("Failed to save test series");
         } finally {
             setUploading(false);
@@ -210,7 +229,7 @@ export default function TestSeriesPage() {
                         body: JSON.stringify({ fileUrl: seriesToDelete.fileUrl }),
                     });
                 } catch (err) {
-                    console.error("Failed to delete R2 file:", err);
+                    //console.error("Failed to delete R2 file:", err);
                 }
             }
 
@@ -222,7 +241,7 @@ export default function TestSeriesPage() {
             toast.success("Test Series deleted");
             fetchSeries();
         } catch (error) {
-            console.error("Error deleting series:", error);
+            //console.error("Error deleting series:", error);
             toast.error("Failed to delete test series");
         } finally {
             setDeleteId(null);

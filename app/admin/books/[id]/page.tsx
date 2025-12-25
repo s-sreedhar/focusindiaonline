@@ -88,7 +88,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                     router.push('/admin/books');
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                //console.error("Error fetching data:", error);
                 toast.error('Failed to fetch data');
             } finally {
                 setLoading(false);
@@ -140,7 +140,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
             toast.success('Book updated successfully');
             router.push('/admin/books');
         } catch (error) {
-            console.error("Error updating book:", error);
+            //console.error("Error updating book:", error);
             toast.error('Failed to update book');
         } finally {
             setSaving(false);

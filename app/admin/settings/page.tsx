@@ -56,7 +56,7 @@ export default function SettingsPage() {
         }));
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      //console.error('Error fetching settings:', error);
       toast.error('Failed to load settings');
     } finally {
       setLoading(false);
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       await setDoc(doc(db, 'settings', 'general'), settings);
       toast.success('Site settings saved successfully!');
     } catch (error) {
-      console.error('Error saving settings:', error);
+      //console.error('Error saving settings:', error);
       toast.error('Failed to save settings');
     }
   };
@@ -112,7 +112,7 @@ export default function SettingsPage() {
         toast.info('No changes to update');
       }
     } catch (error: any) {
-      console.error('Error updating profile:', error);
+      //console.error('Error updating profile:', error);
       if (error.code === 'auth/requires-recent-login') {
         toast.error('Please log out and log in again to update your password');
       } else {

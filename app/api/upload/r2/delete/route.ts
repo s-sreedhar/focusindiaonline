@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
             // So pathname is `/${key}`. We need to strip the leading slash.
             key = urlObj.pathname.substring(1);
         } catch (e) {
-            console.error("Error parsing URL:", e);
+            //console.error("Error parsing URL:", e);
             // If it's not a valid URL, maybe it's just the key?
             key = fileUrl;
         }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: 'File deleted successfully' });
     } catch (error) {
-        console.error('Error deleting file from R2:', error);
+        //console.error('Error deleting file from R2:', error);
         return NextResponse.json({ error: 'Failed to delete file' }, { status: 500 });
     }
 }

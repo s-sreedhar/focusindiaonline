@@ -15,7 +15,8 @@ interface FilterSidebarProps {
     selectedSubjects: string[];
     selectedLanguages: string[];
     inStockOnly: boolean;
-    showBundles: boolean; // New filter
+    showBundles: boolean;
+    showTestSeries: boolean;
   };
   onFiltersChange: (filters: any) => void;
   availableSubjects?: string[];
@@ -51,7 +52,7 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
         const subs = subSnapshot.docs.map((doc: any) => doc.data().name as string);
         setDbSubjects(subs.length > 0 ? subs : SUBJECTS);
       } catch (error) {
-        console.error("Error fetching filters", error);
+        //console.error("Error fetching filters", error);
         setDbCategories(PRIMARY_CATEGORIES);
         setDbSubjects(SUBJECTS);
       } finally {
@@ -101,7 +102,8 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
       selectedSubjects: [],
       selectedLanguages: [],
       inStockOnly: false,
-      showBundles: false
+      showBundles: false,
+      showTestSeries: false
     });
   };
 
@@ -128,16 +130,26 @@ export function FilterSidebar({ filters, onFiltersChange, availableSubjects = []
         </div>
       </div>
 
-      {/* Combos Filter - NEW SECTION */}
+      {/* Combos & Test Series Filter */}
       <div>
-        <h3 className="font-bold mb-3">Combos</h3>
-        <div className="flex items-center">
-          <Checkbox
-            id="bundles"
-            checked={showBundles}
-            onCheckedChange={handleBundlesToggle}
-          />
-          <label htmlFor="bundles" className="ml-2 text-sm cursor-pointer">Bundles</label>
+        <h3 className="font-bold mb-3">Types</h3>
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <Checkbox
+              id="bundles"
+              checked={showBundles}
+              onCheckedChange={handleBundlesToggle}
+            />
+            <label htmlFor="bundles" className="ml-2 text-sm cursor-pointer">Bundles</label>
+          </div>
+          <div className="flex items-center">
+            <Checkbox
+              id="testSeries"
+              checked={filters.showTestSeries}
+              onCheckedChange={() => onFiltersChange({ ...filters, showTestSeries: !filters.showTestSeries })}
+            />
+            <label htmlFor="testSeries" className="ml-2 text-sm cursor-pointer">Test Series</label>
+          </div>
         </div>
       </div>
 

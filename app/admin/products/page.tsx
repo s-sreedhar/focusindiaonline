@@ -41,7 +41,7 @@ export default function ProductsPage() {
       })) as Book[];
       setProducts(productsData);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      //console.error("Error fetching products:", error);
       toast.error("Failed to fetch products");
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ export default function ProductsPage() {
       setProducts(products.filter(p => p.id !== deleteId));
       toast.success("Product deleted successfully");
     } catch (error) {
-      console.error("Error deleting product:", error);
+      //console.error("Error deleting product:", error);
       toast.error('Failed to delete product');
     } finally {
       setDeleteId(null);

@@ -56,7 +56,7 @@ export default function EnquiriesPage() {
             });
             setEnquiries(data);
         } catch (error) {
-            console.error("Error fetching enquiries:", error);
+            //console.error("Error fetching enquiries:", error);
             toast.error("Failed to load enquiries");
         } finally {
             setLoading(false);
@@ -77,7 +77,7 @@ export default function EnquiriesPage() {
             setEnquiries(prev => prev.filter(e => e.id !== deleteId));
             toast.success('Enquiry deleted');
         } catch (error) {
-            console.error("Error deleting enquiry:", error);
+            //console.error("Error deleting enquiry:", error);
             toast.error("Failed to delete enquiry");
         } finally {
             setDeleteId(null);
@@ -90,7 +90,8 @@ export default function EnquiriesPage() {
             await updateDoc(doc(db, 'enquiries', enquiry.id), { status: 'read' });
             setEnquiries(prev => prev.map(e => e.id === enquiry.id ? { ...e, status: 'read' } : e));
         } catch (error) {
-            console.error("Error updating status:", error);
+            toast.error("Failed to update enquiry status");
+            //console.error("Error updating status:", error);
         }
     };
 

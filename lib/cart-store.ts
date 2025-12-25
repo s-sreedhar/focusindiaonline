@@ -11,6 +11,7 @@ export interface CartItem {
   quantity: number;
   slug: string;
   weight?: number; // Weight in grams
+  type?: 'book' | 'test_series';
 }
 
 interface CartStore {

@@ -29,7 +29,7 @@ export function CategoryContent({ categoryName }: CategoryContentProps) {
                 })) as Book[];
                 setBooks(booksData);
             } catch (error) {
-                console.error("Error fetching books:", error);
+                //console.error("Error fetching books:", error);
             } finally {
                 setLoading(false);
             }

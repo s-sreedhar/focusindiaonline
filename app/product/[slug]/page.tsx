@@ -2,12 +2,47 @@ import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 import { ProductDetails } from '@/components/product-details';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import type { Metadata } from 'next';
 import { Book } from '@/lib/types';
 import { notFound } from 'next/navigation';
 
 async function getProduct(slug: string): Promise<Book | null> {
+  // Check for Test Series (prefixed with 'ts-')
+  if (slug.startsWith('ts-')) {
+    const id = slug.replace('ts-', '');
+    try {
+      const docRef = doc(db, 'test_series', id);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) return null;
+
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        image: data.imageUrl,
+        slug: `ts-${id}`,
+        author: 'Focus India', // Default author
+        publisher: 'Focus India',
+        language: 'English', // Default
+        stockQuantity: 999, // Always in stock (digital)
+        inStock: true,
+        weight: 0, // Digital item
+        primaryCategory: 'Test Series',
+        subCategories: [],
+        subjects: [],
+        isTestSeries: true,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+      } as Book;
+    } catch (e) {
+      //console.error("Error fetching test series:", e);
+      return null;
+    }
+  }
+
   const q = query(collection(db, 'books'), where('slug', '==', slug));
   const querySnapshot = await getDocs(q);
 

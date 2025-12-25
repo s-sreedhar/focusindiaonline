@@ -25,7 +25,7 @@ if (firebaseConfig.apiKey) {
       localCache: memoryLocalCache()
     }, "focusindia");
   } catch (error) {
-    console.error("Firebase initialization error:", error);
+    //console.error("Firebase initialization error:", error);
   }
 } else {
   console.warn("Firebase API key missing. Firebase not initialized.");

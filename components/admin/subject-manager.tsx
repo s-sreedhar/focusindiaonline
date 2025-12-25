@@ -84,7 +84,7 @@ export function SubjectManager() {
 
             setSubjects(fetchedSubjects);
         } catch (error) {
-            console.error('Error fetching subjects:', error);
+            //console.error('Error fetching subjects:', error);
             toast.error('Failed to load subjects');
         } finally {
             setLoading(false);
@@ -112,7 +112,7 @@ export function SubjectManager() {
             setNewSubject('');
             toast.success('Subject added');
         } catch (error) {
-            console.error('Error adding subject:', error);
+            //console.error('Error adding subject:', error);
             toast.error('Failed to add subject');
         } finally {
             setAdding(false);
@@ -147,7 +147,7 @@ export function SubjectManager() {
                 await performDelete(currentSubject.id);
             }
         } catch (error) {
-            console.error("Error checking dependencies:", error);
+            //console.error("Error checking dependencies:", error);
             toast.error("Failed to check dependencies");
         } finally {
             setCheckingDependencies(false);
@@ -160,7 +160,7 @@ export function SubjectManager() {
             setSubjects(subjects.filter(s => s.id !== id));
             toast.success('Subject deleted successfully');
         } catch (error) {
-            console.error('Error deleting subject:', error);
+            //console.error('Error deleting subject:', error);
             toast.error('Failed to delete subject');
         }
     };

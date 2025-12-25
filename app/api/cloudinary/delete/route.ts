@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: true, result });
     } catch (error: any) {
-        console.error('Cloudinary Delete Error:', error);
+        //console.error('Cloudinary Delete Error:', error);
         return NextResponse.json({ error: error.message || 'Deletion failed' }, { status: 500 });
     }
 }

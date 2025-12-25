@@ -48,7 +48,7 @@ export function WishlistSync() {
                                     });
                                 }
                             } catch (err) {
-                                console.error(`Failed to fetch book ${bookId}`, err);
+                                //console.error(`Failed to fetch book ${bookId}`, err);
                             }
                         }
 
@@ -58,7 +58,7 @@ export function WishlistSync() {
                     }
                 }
             } catch (error) {
-                console.error('Error syncing wishlist from Firestore:', error);
+                //console.error('Error syncing wishlist from Firestore:', error);
                 handleFirebaseError(error);
             } finally {
                 isFetching.current = false;
@@ -83,7 +83,7 @@ export function WishlistSync() {
                 await setDoc(userRef, { wishlist: wishlistIds }, { merge: true });
                 // console.log('Wishlist synced to Firestore');
             } catch (error) {
-                console.error('Error syncing wishlist to Firestore:', error);
+                //console.error('Error syncing wishlist to Firestore:', error);
             }
         };
 

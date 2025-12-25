@@ -49,7 +49,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                     }
                     setComboBooks(allBooks);
                 } catch (e) {
-                    console.error("Error fetching combo books", e);
+                    //console.error("Error fetching combo books", e);
                 }
             }
         };
@@ -73,6 +73,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             quantity: 1,
             slug: product.slug,
             weight: product.weight || 500,
+            type: (product as any).isTestSeries ? 'test_series' : 'book'
         });
         setCartAdded(true);
         setTimeout(() => setCartAdded(false), 2000);
@@ -90,6 +91,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             quantity: 1,
             slug: product.slug,
             weight: product.weight || 500,
+            type: (product as any).isTestSeries ? 'test_series' : 'book'
         });
         router.push('/checkout');
     };
@@ -132,7 +134,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 });
             }
         } catch (error) {
-            console.error('Error syncing wishlist:', error);
+            //console.error('Error syncing wishlist:', error);
         }
     };
 

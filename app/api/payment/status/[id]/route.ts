@@ -58,7 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         }
 
     } catch (error) {
-        console.error('Status Redirect Error:', error);
+        //console.error('Status Redirect Error:', error);
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
         return NextResponse.redirect(`${baseUrl}/checkout/failure?reason=internal_error`, 303);
     }

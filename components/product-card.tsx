@@ -136,7 +136,7 @@ export function ProductCard({
           });
         }
       } catch (error) {
-        console.error('Error syncing wishlist:', error);
+        //console.error('Error syncing wishlist:', error);
         // Revert on error? For now, we'll just log it.
         // Ideally, we should show a toast.
         const { handleFirebaseError } = await import('@/lib/error-utils');
