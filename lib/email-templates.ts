@@ -8,12 +8,16 @@ export const getEmailTemplate = (status: string, order: Order) => {
     // Status color mapping for visual feedback
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
-            'placed': '#9333ea', // purple
+            'payment_pending': '#64748b', // slate
+            'received': '#9333ea', // purple
+            'placed': '#9333ea', // purple (legacy)
+            'confirmed': '#0ea5e9', // sky blue
             'processing': '#eab308', // yellow
             'shipped': '#3b82f6', // blue
             'delivered': '#22c55e', // green
             'cancelled': '#ef4444', // red
             'returned': '#f97316', // orange
+            'failed': '#dc2626', // red
         };
         return colors[status.toLowerCase()] || '#6b7280';
     };
@@ -56,10 +60,15 @@ export const getEmailTemplate = (status: string, order: Order) => {
 
     const getStatusMessage = (status: string) => {
         switch (status.toLowerCase()) {
+            case 'payment_pending':
+                return 'Your order has been initiated. We are waiting for payment confirmation.';
+            case 'received':
             case 'placed':
-                return 'Thank you for your order! We have received it and will begin processing it soon.';
+                return 'Thank you for your order! We have received your payment and will begin processing it soon.';
+            case 'confirmed':
+                return 'Your order has been confirmed by our team. You can no longer modify or cancel it.';
             case 'processing':
-                return 'Your order is currently being processed and prepared for shipment.';
+                return 'Your order is currently being packed and prepared for shipment.';
             case 'shipped':
                 return 'Great news! Your order has been shipped and is on its way to you.';
             case 'delivered':
@@ -68,6 +77,8 @@ export const getEmailTemplate = (status: string, order: Order) => {
                 return 'Your order has been cancelled.';
             case 'returned':
                 return 'Your return request has been processed.';
+            case 'failed':
+                return 'Your payment has failed. If money was deducted, it will be refunded automatically.';
             default:
                 return `Your order status has been updated to ${status}.`;
         }

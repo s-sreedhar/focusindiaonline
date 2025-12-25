@@ -23,6 +23,7 @@ import {
     DialogTrigger,
     DialogDescription
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Enquiry {
     id: string;
@@ -62,15 +63,24 @@ export default function EnquiriesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this enquiry?')) return;
+    // Confirm Dialog
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
         try {
-            await deleteDoc(doc(db, 'enquiries', id));
-            setEnquiries(prev => prev.filter(e => e.id !== id));
+            await deleteDoc(doc(db, 'enquiries', deleteId));
+            setEnquiries(prev => prev.filter(e => e.id !== deleteId));
             toast.success('Enquiry deleted');
         } catch (error) {
             console.error("Error deleting enquiry:", error);
             toast.error("Failed to delete enquiry");
+        } finally {
+            setDeleteId(null);
         }
     };
 
@@ -98,6 +108,14 @@ export default function EnquiriesPage() {
 
     return (
         <div className="space-y-6">
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Enquiry"
+                description="Are you sure you want to delete this enquiry? This action cannot be undone."
+                variant="destructive"
+            />
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold">Enquiries</h1>
@@ -154,7 +172,7 @@ export default function EnquiriesPage() {
                                     </TableCell>
                                     <TableCell>
                                         <span className={`px-2 py-1 rounded-full text-xs ${enquiry.status === 'new' ? 'bg-blue-100 text-blue-700' :
-                                                enquiry.status === 'read' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'
+                                            enquiry.status === 'read' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'
                                             }`}>
                                             {enquiry.status.toUpperCase()}
                                         </span>
@@ -229,7 +247,7 @@ export default function EnquiriesPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                onClick={() => handleDelete(enquiry.id)}
+                                                onClick={() => handleDeleteClick(enquiry.id)}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>

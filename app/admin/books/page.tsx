@@ -11,6 +11,9 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/fi
 import Image from 'next/image';
 import { SubjectManager } from '@/components/admin/subject-manager';
 import { CategoryManager } from '@/components/admin/category-manager';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { deleteFromCloudinary } from '@/lib/cloudinary';
+import { toast } from 'sonner';
 import {
     Pagination,
     PaginationContent,
@@ -86,15 +89,32 @@ export default function BooksPage() {
         fetchData();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this book?')) return;
+    // Confirm Dialog State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setItemToDelete(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!itemToDelete) return;
 
         try {
-            await deleteDoc(doc(db, 'books', id));
-            setBooks(books.filter(book => book.id !== id));
+            const bookToDelete = books.find(b => b.id === itemToDelete);
+            if (bookToDelete?.image) {
+                await deleteFromCloudinary(bookToDelete.image);
+            }
+            await deleteDoc(doc(db, 'books', itemToDelete));
+            setBooks(books.filter(book => book.id !== itemToDelete));
+            toast.success('Book deleted successfully');
         } catch (error) {
             console.error("Error deleting book:", error);
-            alert('Failed to delete book');
+            toast.error('Failed to delete book');
+        } finally {
+            setConfirmOpen(false);
+            setItemToDelete(null);
         }
     };
 
@@ -118,6 +138,14 @@ export default function BooksPage() {
 
     return (
         <div className="p-8">
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Book"
+                description="Are you sure you want to delete this book? This action cannot be undone."
+                variant="destructive"
+            />
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Books</h1>
@@ -230,7 +258,7 @@ export default function BooksPage() {
                                                         <Pencil className="w-4 h-4" />
                                                     </Link>
                                                 </Button>
-                                                <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(book.id)}>
+                                                <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteClick(book.id)}>
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>

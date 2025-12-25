@@ -47,6 +47,8 @@ export interface User {
 }
 
 export interface Address {
+  firstName?: string;
+  lastName?: string;
   street: string;
   city: string;
   state: string;
@@ -78,7 +80,7 @@ export interface Order {
   shippingCharges?: number;
   discount?: number;
   appliedCoupon?: string | null;
-  status: 'placed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+  status: 'payment_pending' | 'received' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned' | 'failed';
   shippingAddress: Address & {
     fullName: string;
     phoneNumber: string;

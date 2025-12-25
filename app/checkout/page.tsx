@@ -223,7 +223,7 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (phone.length < 10 || !/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+    if (phone.length !== 10 || !/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
       toast.error("Please enter a valid 10-digit phone number");
       return false;
     }
@@ -349,13 +349,16 @@ export default function CheckoutPage() {
         // Generate a guest ID
         const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+        // Clean phone number: remove non-digits, take last 10
+        const cleanPhone = formData.phone.replace(/\D/g, '').slice(-10);
+
         // Create user document for the guest
         const userDocRef = doc(db, 'users', guestId);
         await setDoc(userDocRef, {
           uid: guestId,
           email: formData.email,
           displayName: `${formData.firstName} ${formData.lastName}`,
-          phone: formData.phone,
+          phone: cleanPhone,
           role: 'guest',
           createdAt: serverTimestamp(),
           address: {
@@ -497,7 +500,7 @@ export default function CheckoutPage() {
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
-            phone: formData.phone,
+            phoneNumber: formData.phone.replace(/\D/g, '').slice(-10),
             address: formData.address,
             city: formData.city,
             state: formData.state,
@@ -509,7 +512,7 @@ export default function CheckoutPage() {
           discount,
           appliedCoupon: appliedCoupon ? appliedCoupon.code : null, // Store used coupon
           totalAmount: total,
-          status: 'pending_payment',
+          status: 'payment_pending',
           paymentStatus: 'pending',
           createdAt: serverTimestamp(),
         });
@@ -518,7 +521,7 @@ export default function CheckoutPage() {
         const userRef = doc(db, 'users', userId);
         transaction.set(userRef, {
           email: formData.email,
-          phone: formData.phone,
+          phone: formData.phone.replace(/\D/g, '').slice(-10),
           displayName: `${formData.firstName} ${formData.lastName}`,
           address: {
             street: formData.address,
@@ -798,6 +801,9 @@ export default function CheckoutPage() {
               {/* Order Review */}
               {currentStep === 'review' && (
                 <Card className="p-6 space-y-6">
+                  <div className="bg-blue-50 text-blue-700 p-4 rounded-lg text-sm mb-4">
+                    <strong>Expected delivery time:</strong> 3 to 5 days
+                  </div>
                   <h2 className="text-xl font-bold">Order Review</h2>
 
                   {/* Address Summary */}

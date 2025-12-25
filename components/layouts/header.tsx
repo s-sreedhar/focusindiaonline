@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart, User, Search, LogOut, Menu, X, ArrowRightLeft, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Heart, User, Search, LogOut, Menu, X, ArrowRightLeft, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/lib/cart-store';
@@ -263,6 +263,14 @@ export function Header() {
                 </Link>
               </Button>
 
+              {isAuthenticated && user && (user.role === 'admin' || user.role === 'superadmin') && (
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors relative h-8 w-8 md:h-9 md:w-9" asChild title="Admin Dashboard">
+                  <Link href="/admin">
+                    <LayoutDashboard className="w-4 h-4" />
+                  </Link>
+                </Button>
+              )}
+
               {isAuthenticated && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -275,12 +283,16 @@ export function Header() {
                       <div className="text-sm font-semibold">{user.displayName || 'User'}</div>
                       <div className="text-xs text-muted-foreground truncate">{user.email}</div>
                     </div>
-                    <DropdownMenuItem asChild className="cursor-pointer rounded-md">
-                      <Link href="/account">My Account</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="cursor-pointer rounded-md">
-                      <Link href="/account/orders">My Orders</Link>
-                    </DropdownMenuItem>
+                    {user.role !== 'admin' && user.role !== 'superadmin' && (
+                      <>
+                        <DropdownMenuItem asChild className="cursor-pointer rounded-md">
+                          <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild className="cursor-pointer rounded-md">
+                          <Link href="/account/orders">My Orders</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     {user.role === 'superadmin' && (
                       <DropdownMenuItem asChild className="cursor-pointer rounded-md">
                         <Link href="/admin">Admin Dashboard</Link>

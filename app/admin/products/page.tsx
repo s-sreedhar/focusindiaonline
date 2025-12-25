@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { Edit2, Trash2, Plus, Search, Loader2 } from 'lucide-react';
@@ -47,16 +48,25 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  // Confirm Dialog
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
 
     try {
-      await deleteDoc(doc(db, 'books', id));
-      setProducts(products.filter(p => p.id !== id));
+      await deleteDoc(doc(db, 'books', deleteId));
+      setProducts(products.filter(p => p.id !== deleteId));
       toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error('Failed to delete product');
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -77,6 +87,14 @@ export default function ProductsPage() {
 
   return (
     <div className="p-8">
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        variant="destructive"
+      />
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">Products</h1>
@@ -174,7 +192,7 @@ export default function ProductsPage() {
                         size="icon"
                         variant="ghost"
                         className="h-8 w-8 text-destructive"
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDeleteClick(product.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

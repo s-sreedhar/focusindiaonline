@@ -66,7 +66,7 @@ export function Footer() {
               <li><Link href="/shop/UPSC" className="text-muted-foreground hover:text-primary transition-colors">UPSC</Link></li>
               <li><Link href="/shop/APPSC" className="text-muted-foreground hover:text-primary transition-colors">APPSC</Link></li>
               <li><Link href="/shop/TGPSC" className="text-muted-foreground hover:text-primary transition-colors">TGPSC</Link></li>
-              <li><Link href="/shop/BANKING" className="text-muted-foreground hover:text-primary transition-colors">Banking</Link></li>
+              <li><Link href="/shop/BANKING" className="text-muted-foreground hover:text-primary transition-colors">BANKING</Link></li>
               <li><Link href="/shop/SSC" className="text-muted-foreground hover:text-primary transition-colors">SSC</Link></li>
             </ul>
           </div>

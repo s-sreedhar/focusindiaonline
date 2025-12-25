@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Loader2, Upload, Trash2, Image as ImageIcon, ExternalLink, ArrowUp, ArrowDown } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
@@ -110,16 +111,37 @@ export default function BannersPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this banner?")) return;
+    // Confirm Dialog
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
 
         try {
-            await deleteDoc(doc(db, 'banners', id));
+            await deleteDoc(doc(db, 'banners', deleteId));
+
+            // Delete associated image from Cloudinary if needed
+            // The banner object might not be readily available if we just have ID, 
+            // but we can find it in 'banners' state
+            const bannerToDelete = banners.find(b => b.id === deleteId);
+            if (bannerToDelete?.imageUrl) {
+                // If we imported deleteFromCloudinary, we could use it. 
+                // The current file imports it! Line 11.
+                // It's good practice to cleanup.
+                await deleteFromCloudinary(bannerToDelete.imageUrl);
+            }
+
             toast.success("Banner deleted successfully");
-            setBanners(prev => prev.filter(banner => banner.id !== id));
+            setBanners(prev => prev.filter(banner => banner.id !== deleteId));
         } catch (error) {
             console.error("Error deleting banner:", error);
             toast.error("Failed to delete banner");
+        } finally {
+            setDeleteId(null);
         }
     };
 
@@ -173,6 +195,15 @@ export default function BannersPage() {
                 <h1 className="text-3xl font-bold">Banner Management</h1>
                 <p className="text-muted-foreground">Manage the hero slider images on the home page</p>
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Banner"
+                description="Are you sure you want to delete this banner? This action cannot be undone."
+                variant="destructive"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Upload Form */}
@@ -291,7 +322,7 @@ export default function BannersPage() {
                                         <Button
                                             variant="destructive"
                                             size="icon"
-                                            onClick={() => handleDelete(banner.id)}
+                                            onClick={() => handleDeleteClick(banner.id)}
                                             className="shrink-0"
                                         >
                                             <Trash2 className="w-4 h-4" />

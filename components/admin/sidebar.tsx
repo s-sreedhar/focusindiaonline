@@ -28,6 +28,11 @@ export const adminMenuItems = [
     icon: Package,
   },
   {
+    label: 'Test Series',
+    href: '/admin/test-series',
+    icon: BookOpen,
+  },
+  {
     label: 'Orders',
     href: '/admin/orders',
     icon: ShoppingCart,
@@ -58,7 +63,7 @@ export const adminMenuItems = [
     icon: Megaphone,
   },
   {
-    label: 'Testimonials',
+    label: 'Reviews',
     href: '/admin/testimonials',
     icon: Award,
   },
@@ -81,7 +86,7 @@ export function AdminSidebar() {
   const filteredItems = adminMenuItems.filter((item) => {
     // If user role is 'admin', show only specific items
     if (user?.role === 'admin') {
-      const allowedItems = ['Dashboard', 'Categories', 'Books', 'Combos', 'Orders', 'Users', 'Enquiries'];
+      const allowedItems = ['Dashboard', 'Categories', 'Books', 'Combos', 'Orders', 'Users', 'Enquiries', 'Banners', 'Reviews', 'Test Series'];
       return allowedItems.includes(item.label);
     }
     // For 'super-admin' or other roles, show all

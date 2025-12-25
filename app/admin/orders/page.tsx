@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
-import { Loader2, Package, Eye, Filter } from 'lucide-react';
+import { Loader2, Package, Eye, Filter, Mail } from 'lucide-react';
 import { Order } from '@/lib/types';
 import { sendEmail } from '@/lib/brevo';
 import { getEmailTemplate } from '@/lib/email-templates';
@@ -200,9 +200,13 @@ export default function OrdersPage() {
       case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'shipped': return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
       case 'processing': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+      case 'confirmed': return 'bg-sky-100 text-sky-800 hover:bg-sky-100';
+      case 'received':
       case 'placed': return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
+      case 'payment_pending': return 'bg-slate-100 text-slate-800 hover:bg-slate-100';
       case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-100';
       case 'returned': return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
+      case 'failed': return 'bg-red-100 text-red-800 hover:bg-red-100';
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
@@ -232,12 +236,16 @@ export default function OrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Orders</SelectItem>
-              <SelectItem value="placed">Placed</SelectItem>
+              <SelectItem value="payment_pending">Payment Pending</SelectItem>
+              <SelectItem value="received">Received</SelectItem>
+              <SelectItem value="placed">Placed (Legacy)</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
               <SelectItem value="shipped">Shipped</SelectItem>
               <SelectItem value="delivered">Delivered</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
               <SelectItem value="returned">Returned</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
             </SelectContent>
           </Select>
 
@@ -278,8 +286,24 @@ export default function OrdersPage() {
                 <tr key={order.id} className="hover:bg-secondary/50 transition-colors">
                   <td className="px-6 py-4 font-medium">#{order.orderId || order.id.slice(0, 8)}</td>
                   <td className="px-6 py-4">
-                    <div className="font-medium">{order.shippingAddress?.fullName || 'Guest'}</div>
-                    <div className="text-xs text-muted-foreground">{order.shippingAddress?.phoneNumber || 'N/A'}</div>
+                    <div className="font-medium">
+                      {order.shippingAddress?.fullName ||
+                        (order.shippingAddress?.firstName && order.shippingAddress?.lastName
+                          ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`
+                          : 'Guest')}
+                    </div>
+                    {order.shippingAddress?.email && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Mail className="w-3 h-3" />
+                        {order.shippingAddress.email}
+                      </div>
+                    )}
+                    {(order.shippingAddress?.phoneNumber || (order.shippingAddress as any)?.phone) && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />
+                        {order.shippingAddress.phoneNumber || (order.shippingAddress as any)?.phone}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     {/* Calculate total weight from items if not in order object, but here we can just sum if not persisted or show if persisted */}
@@ -364,18 +388,42 @@ export default function OrdersPage() {
           {selectedOrder && (
             <>
               <DialogHeader className="p-6 pb-4 border-b bg-muted/10">
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div>
                     <DialogTitle className="text-xl font-bold flex items-center gap-3">
                       Order #{selectedOrder.orderId || selectedOrder.id.slice(0, 8)}
-                      <Badge className={cn("text-xs px-2.5 py-0.5 capitalize", getStatusColor(selectedOrder.status))}>
-                        {selectedOrder.status}
-                      </Badge>
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5" />
                       {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
                     </p>
+                  </div>
+
+                  {/* Status Actions moved to header for visibility */}
+                  <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border">
+                    <span className="text-sm font-medium mr-2">Status:</span>
+                    <Badge className={cn("text-xs px-2.5 py-1 capitalize mr-2", getStatusColor(selectedOrder.status))}>
+                      {selectedOrder.status}
+                    </Badge>
+                    <Select
+                      value={selectedOrder.status}
+                      onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
+                    >
+                      <SelectTrigger className="w-[140px] h-8 text-xs">
+                        <SelectValue placeholder="Update Status" />
+                      </SelectTrigger>
+                      <SelectContent position="popper" align="end">
+                        <SelectItem value="payment_pending">Payment Pending</SelectItem>
+                        <SelectItem value="received">Received</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="shipped">In Transit (Shipped)</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="returned">Returned</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </DialogHeader>
@@ -480,36 +528,8 @@ export default function OrdersPage() {
                 </div>
               </ScrollArea>
 
-              <div className="p-4 border-t bg-muted/10 flex justify-between items-center shrink-0">
-                <span className="text-sm font-medium text-muted-foreground">Update Status:</span>
-                <div className="flex gap-2">
-                  {['processing', 'shipped', 'delivered'].map((status) => (
-                    selectedOrder.status !== status && (
-                      <Button
-                        key={status}
-                        variant="outline"
-                        size="sm"
-                        className="capitalize h-8"
-                        onClick={() => handleStatusUpdate(selectedOrder.id, status)}
-                      >
-                        Mark {status}
-                      </Button>
-                    )
-                  ))}
-                  <Select
-                    value={selectedOrder.status}
-                    onValueChange={(val) => handleStatusUpdate(selectedOrder.id, val)}
-                  >
-                    <SelectTrigger className="w-[140px] h-8">
-                      <SelectValue placeholder="More..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="placed">Placed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="returned">Returned</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="p-4 border-t bg-muted/10 flex justify-end items-center shrink-0">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Close</Button>
               </div>
             </>
           )}

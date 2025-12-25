@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Loader2, Package, Upload, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -198,16 +199,29 @@ export default function CombosPage() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this combo?')) return;
+    // Confirm Dialog
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
 
         try {
-            await deleteDoc(doc(db, 'books', id));
+            await deleteDoc(doc(db, 'books', deleteId));
+
+            // Delete associated image if needed (combos might have unique images)
+            // But let's stick to scope for now.
+
             toast.success('Combo deleted successfully');
             fetchData();
         } catch (error) {
             console.error('Error deleting combo:', error);
             toast.error('Failed to delete combo');
+        } finally {
+            setDeleteId(null);
         }
     };
 
@@ -224,6 +238,14 @@ export default function CombosPage() {
 
     return (
         <div className="space-y-6">
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Combo"
+                description="Are you sure you want to delete this combo? This action cannot be undone."
+                variant="destructive"
+            />
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Product Combos</h1>
@@ -428,7 +450,7 @@ export default function CombosPage() {
                                         <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => handleEdit(combo)}>
                                             <Edit2 className="w-4 h-4" />
                                         </Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDelete(combo.id)}>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDeleteClick(combo.id)}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>

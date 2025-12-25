@@ -9,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Carousel } from '@/components/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { TestimonialsSection } from '@/components/testimonials-section';
+import { EnquirySection } from '@/components/enquiry-section';
 
 interface Book {
   id: string;
@@ -47,6 +48,8 @@ export default function Home() {
   const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [testSeries, setTestSeries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,8 +65,6 @@ export default function Home() {
         setBooks(booksData);
 
         // Fetch banners
-        // We fetch by createdAt first to ensure we get them, then sort by order in memory
-        // This prevents issues where old banners without 'order' field disappear
         const bannersQuery = query(collection(db, 'banners'));
         const bannersSnapshot = await getDocs(bannersQuery);
         const bannersData = bannersSnapshot.docs.map(doc => ({
@@ -71,7 +72,19 @@ export default function Home() {
           ...doc.data()
         })) as Banner[];
 
-        // Sort by order (if exists) or fallback to createdAt
+        // Fetch Categories
+        const catQuery = query(collection(db, 'categories'), orderBy('name'));
+        const catSnapshot = await getDocs(catQuery);
+        const catData = catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setCategories(catData);
+
+        // Fetch Test Series
+        const tsQuery = query(collection(db, 'test_series'), orderBy('createdAt', 'desc'), limit(10));
+        const tsSnapshot = await getDocs(tsQuery);
+        const tsData = tsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTestSeries(tsData);
+
+        // Sort banners
         bannersData.sort((a, b) => {
           const orderA = a.order ?? 999;
           const orderB = b.order ?? 999;
@@ -212,6 +225,53 @@ export default function Home() {
           </section>
         )}
 
+        {/* Categories Section */}
+        <section className="py-8 bg-secondary/30">
+          <div className="container mx-auto px-4 max-w-[1600px]">
+            <h2 className="text-2xl font-bold mb-6 text-center md:text-left">Shop by Category</h2>
+
+            <div className="px-1 md:px-4">
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-4">
+                  {categories.map((cat) => (
+                    <CarouselItem key={cat.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/6">
+                      <Link
+                        href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                        className="flex flex-col items-center gap-3 p-2 rounded-xl bg-background border hover:shadow-lg transition-all hover:border-primary/50 group h-full"
+                      >
+                        <div className="w-full aspect-[4/3] rounded-lg bg-muted flex items-center justify-center overflow-hidden group-hover:scale-[1.02] transition-transform shrink-0 relative">
+                          {cat.image ? (
+                            <img src={cat.image} alt={cat.name} className="w-full h-full object-contain p-2" />
+                          ) : (
+                            <div className="text-2xl font-bold text-muted-foreground/50">
+                              {cat.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium text-sm text-center group-hover:text-primary transition-colors line-clamp-2 w-full px-2 pb-2">
+                          {cat.name}
+                        </span>
+                      </Link>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="hidden md:flex" />
+                <CarouselNext className="hidden md:flex" />
+              </Carousel>
+            </div>
+
+            {categories.length === 0 && !loading && (
+              <p className="text-center text-muted-foreground py-8">No categories found.</p>
+            )}
+          </div>
+        </section>
+
         {loading ? (
           <div className="py-20 flex justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -229,18 +289,25 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <Carousel>
-                    {Array.from({ length: Math.ceil(trendingBooks.length / 4) }).map((_, slideIndex) => (
-                      <div key={slideIndex} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-1 md:px-4">
-                        {trendingBooks.slice(slideIndex * 4, (slideIndex + 1) * 4).map((book) => (
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-4">
+                      {trendingBooks.map((book) => (
+                        <CarouselItem key={book.id} className="pl-4 basis-1/2 md:basis-1/4 lg:basis-1/5">
                           <ProductCard
-                            key={`${slideIndex}-${book.id}`}
                             {...book}
                             discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
                           />
-                        ))}
-                      </div>
-                    ))}
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden md:flex" />
+                    <CarouselNext className="hidden md:flex" />
                   </Carousel>
                 </div>
               </section>
@@ -426,8 +493,11 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials */}
+        {/* Testimonials Section */}
         <TestimonialsSection />
+
+        {/* Enquiry Section */}
+        <EnquirySection />
 
         {/* Newsletter */}
         {/* <section className="py-16 bg-white">

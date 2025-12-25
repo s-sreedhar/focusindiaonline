@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, where, getDocs, query } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
@@ -107,8 +107,9 @@ export function PhoneRegister() {
             return;
         }
 
-        if (!phoneNumber || phoneNumber.length !== 10) {
-            setError('Please enter a valid 10-digit mobile number');
+        const cleanedPhone = phoneNumber.replace(/\D/g, '');
+        if (!cleanedPhone || cleanedPhone.length !== 10) {
+            setError('Please enter a valid 10-digit phone number');
             return;
         }
 
@@ -238,6 +239,20 @@ export function PhoneRegister() {
             const userDoc = await getDoc(userDocRef);
             // console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
 
+            const phoneNumber = user.phoneNumber ? user.phoneNumber.replace(/\D/g, '').slice(-10) : '';
+
+            // Check if ANY user exists with this phone number (to prevent duplicate accounts if UID is different for some reason, though unlikely with Phone Auth, but requested)
+            if (phoneNumber) {
+                const q = query(collection(db, 'users'), where('phone', '==', phoneNumber));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty && !userDoc.exists()) {
+
+                    setError('An account with this phone number already exists created by Admin. Please contact support.');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             if (userDoc.exists()) {
                 // console.log('[PhoneRegister] User already exists, updating...');
             }
@@ -246,7 +261,7 @@ export function PhoneRegister() {
                 uid: user.uid,
                 displayName: name.trim(),
                 email: email.trim(),
-                phone: user.phoneNumber,
+                phone: user.phoneNumber ? user.phoneNumber.replace(/\D/g, '').slice(-10) : '',
                 role: 'customer',
                 password: hashedPassword, // Store hashed password
                 createdAt: serverTimestamp(),

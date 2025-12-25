@@ -110,8 +110,10 @@ export default function UsersPage() {
   };
 
   const filteredUsers = users.filter(user =>
-    (user.displayName?.toLowerCase() || '').includes(search.toLowerCase()) ||
-    (user.phone || '').includes(search)
+    ((user.displayName?.toLowerCase() || '').includes(search.toLowerCase()) ||
+      (user.phone || '').includes(search)) &&
+    user.role !== 'admin' &&
+    user.role !== 'superadmin'
   );
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);

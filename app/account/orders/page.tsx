@@ -78,22 +78,22 @@ export default function OrdersPage() {
       case 'delivered': return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'shipped': return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
       case 'processing': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100';
+      case 'confirmed': return 'bg-sky-100 text-sky-800 hover:bg-sky-100';
+      case 'received':
       case 'placed': return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
+      case 'payment_pending': return 'bg-slate-100 text-slate-800 hover:bg-slate-100';
       case 'cancelled': return 'bg-red-100 text-red-800 hover:bg-red-100';
       case 'returned': return 'bg-orange-100 text-orange-800 hover:bg-orange-100';
+      case 'failed': return 'bg-red-100 text-red-800 hover:bg-red-100';
       default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
     }
   };
 
   const canCancel = (order: Order) => {
-    if (order.status !== 'placed' && order.status !== 'processing') return false;
-    if (!order.createdAt) return false;
-
-    const orderDate = order.createdAt.seconds ? new Date(order.createdAt.seconds * 1000) : new Date(order.createdAt);
-    const now = new Date();
-    const diffInHours = (now.getTime() - orderDate.getTime()) / (1000 * 60 * 60);
-
-    return diffInHours < 24;
+    // Can only cancel if payment is pending, received, placed, or processing (before confirmed)
+    const cancellableStatuses = ['payment_pending', 'received', 'placed'];
+    return cancellableStatuses.includes(order.status);
+    // Removed 24h check as per requirement to strictly follow status
   };
 
   if (loading) {

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Loader2, Tag } from 'lucide-react';
@@ -123,21 +124,38 @@ export default function CouponsPage() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this coupon?')) return;
+    // Confirm Dialog
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
 
         try {
-            await deleteDoc(doc(db, 'coupons', id));
+            await deleteDoc(doc(db, 'coupons', deleteId));
             toast.success('Coupon deleted successfully');
             fetchCoupons();
         } catch (error) {
             console.error('Error deleting coupon:', error);
             toast.error('Failed to delete coupon');
+        } finally {
+            setDeleteId(null);
         }
     };
 
     return (
         <div className="space-y-6">
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Coupon"
+                description="Are you sure you want to delete this coupon? This action cannot be undone."
+                variant="destructive"
+            />
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Coupons</h1>
@@ -283,7 +301,7 @@ export default function CouponsPage() {
                                         <Button variant="ghost" size="icon" onClick={() => handleEdit(coupon)}>
                                             <Edit2 className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(coupon.id)}>
+                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteClick(coupon.id)}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </TableCell>

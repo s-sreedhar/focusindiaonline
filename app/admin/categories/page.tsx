@@ -1,20 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Loader2, Edit2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { uploadToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface Category {
     id: string;
     name: string;
+    image?: string;
     createdAt: any;
 }
 
@@ -29,8 +33,15 @@ export default function CategoriesPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCategory, setNewCategory] = useState('');
+    const [newCategoryFile, setNewCategoryFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
     const [newSubject, setNewSubject] = useState('');
     const [adding, setAdding] = useState(false);
+
+    // Edit State
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editFile, setEditFile] = useState<File | null>(null);
 
     // Dialog States
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -84,17 +95,31 @@ export default function CategoriesPage() {
     const handleAddCategory = async () => {
         if (!newCategory.trim()) return;
         setAdding(true);
+        setUploading(true);
         try {
+            let imageUrl = '';
+            if (newCategoryFile) {
+                imageUrl = await uploadToCloudinary(newCategoryFile);
+            }
+
             await addDoc(collection(db, 'categories'), {
                 name: newCategory.trim(),
+                image: imageUrl,
                 createdAt: serverTimestamp()
             });
             toast.success('Category added');
             setNewCategory('');
+            setNewCategoryFile(null);
+            // Reset file input manually if needed, or rely on state
+            const fileInput = document.getElementById('category-image-input') as HTMLInputElement;
+            if (fileInput) fileInput.value = '';
+
         } catch (error) {
             toast.error('Failed to add category');
+            console.error(error);
         } finally {
             setAdding(false);
+            setUploading(false);
         }
     };
 
@@ -120,6 +145,10 @@ export default function CategoriesPage() {
             'Delete Category',
             `Are you sure you want to delete "${name}"? This cannot be undone.`,
             async () => {
+                const catToDelete = categories.find(c => c.id === id);
+                if (catToDelete?.image) {
+                    await deleteFromCloudinary(catToDelete.image);
+                }
                 await deleteDoc(doc(db, 'categories', id));
                 toast.success('Category deleted');
             },
@@ -137,6 +166,38 @@ export default function CategoriesPage() {
             },
             'destructive'
         );
+    };
+
+    const openEditCategory = (cat: Category) => {
+        setEditingCategory(cat);
+        setEditName(cat.name);
+        setEditFile(null);
+    };
+
+    const handleUpdateCategory = async () => {
+        if (!editingCategory || !editName.trim()) return;
+
+        setUploading(true);
+        try {
+            let imageUrl = editingCategory.image;
+
+            if (editFile) {
+                imageUrl = await uploadToCloudinary(editFile);
+            }
+
+            await updateDoc(doc(db, 'categories', editingCategory.id), {
+                name: editName.trim(),
+                image: imageUrl
+            });
+
+            toast.success('Category updated');
+            setEditingCategory(null);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to update category');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleSeedData = () => {
@@ -192,16 +253,47 @@ export default function CategoriesPage() {
                 loading={loading && dialogOpen} // Simple loading state for dialog
             />
 
-            {/* <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Master Data</h1>
-                    <p className="text-muted-foreground">Manage Categories and Subjects.</p>
-                </div>
-                <Button variant="outline" onClick={handleSeedData} disabled={loading}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Seed Defaults
-                </Button>
-            </div> */}
+            {/* Edit Dialog */}
+            <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label>Category Name</Label>
+                            <Input
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder="Category Name"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Categor Image</Label>
+                            <div className="flex items-center gap-4">
+                                {editingCategory?.image && !editFile && (
+                                    <div className="w-32 h-32 rounded overflow-hidden border">
+                                        <img src={editingCategory.image} alt="Current" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setEditFile(e.target.files ? e.target.files[0] : null)}
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Upload a new image to replace the existing one.</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingCategory(null)}>Cancel</Button>
+                        <Button onClick={handleUpdateCategory} disabled={uploading || !editName.trim()}>
+                            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Tabs defaultValue="categories">
                 <TabsList>
@@ -215,23 +307,52 @@ export default function CategoriesPage() {
                             <CardTitle>Categories</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="New Category Name"
-                                    value={newCategory}
-                                    onChange={(e) => setNewCategory(e.target.value)}
-                                />
-                                <Button onClick={handleAddCategory} disabled={adding || !newCategory.trim()}>
-                                    <Plus className="h-4 w-4" />
-                                </Button>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="New Category Name"
+                                        value={newCategory}
+                                        onChange={(e) => setNewCategory(e.target.value)}
+                                        className="flex-1"
+                                    />
+                                    <div className="flex-1">
+                                        <Input
+                                            id="category-image-input"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setNewCategoryFile(e.target.files ? e.target.files[0] : null)}
+                                        />
+                                    </div>
+                                    <Button onClick={handleAddCategory} disabled={adding || !newCategory.trim() || uploading}>
+                                        {uploading && !editingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                                    </Button>
+
+                                </div>
+                                <p className="text-xs text-muted-foreground">Upload an image for the category (optional, recommended for Home page display).</p>
                             </div>
+
                             <div className="grid gap-2">
                                 {categories.map(cat => (
                                     <div key={cat.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
-                                        <span>{cat.name}</span>
-                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(cat.id, cat.name)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                        <div className="flex items-center gap-3">
+                                            {/* @ts-ignore */}
+                                            {cat.image ? (
+                                                <img src={cat.image} alt={cat.name} className="w-8 h-8 rounded object-cover" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                                                    <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                            <span className="font-medium">{cat.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Button variant="ghost" size="sm" onClick={() => openEditCategory(cat)}>
+                                                <Edit2 className="h-4 w-4 text-blue-500" />
+                                            </Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(cat.id, cat.name)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                                 {categories.length === 0 && !loading && (

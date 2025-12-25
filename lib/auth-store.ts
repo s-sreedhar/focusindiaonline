@@ -26,10 +26,12 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  lastActivity?: number;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   initialize: () => () => void; // Returns unsubscribe function
   updateProfile: (data: Partial<User>) => Promise<void>;
+  checkActivity: () => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -38,15 +40,29 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
       loading: true,
+      lastActivity: Date.now(),
       logout: async () => {
         // console.log('[AuthStore] Logging out...');
         await signOut(auth);
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, isAuthenticated: false, lastActivity: undefined });
         // console.log('[AuthStore] Logged out successfully');
       },
       setUser: (user: User | null) => {
         // console.log('[AuthStore] Setting user:', user ? { id: user.id, role: user.role } : null);
-        set({ user, isAuthenticated: !!user });
+        set({ user, isAuthenticated: !!user, lastActivity: Date.now() });
+      },
+      checkActivity: () => {
+        const { lastActivity, user, logout } = get();
+        if (user && lastActivity) {
+          const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          if (now - lastActivity > thirtyDaysMs) {
+            console.log('[AuthStore] Session expired due to inactivity');
+            logout();
+          } else {
+            set({ lastActivity: now });
+          }
+        }
       },
       updateProfile: async (data: Partial<User>) => {
         const currentUser = get().user;
@@ -71,12 +87,13 @@ export const useAuthStore = create<AuthStore>()(
       },
       initialize: () => {
         // console.log('[AuthStore] Initializing auth listener...');
+        get().checkActivity();
 
         // Check if auth is properly initialized
         if (!auth) {
           console.warn('[AuthStore] Firebase auth not initialized');
           set({ loading: false });
-          return () => {}; // Return no-op unsubscribe
+          return () => { }; // Return no-op unsubscribe
         }
 
         return onAuthStateChanged(auth, async (firebaseUser) => {
@@ -160,7 +177,11 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        lastActivity: state.lastActivity
+      }),
     }
   )
 );

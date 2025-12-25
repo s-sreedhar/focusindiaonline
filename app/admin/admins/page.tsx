@@ -154,7 +154,12 @@ export default function AdminsPage() {
         try {
             // Normalize phone
             const digits = formData.phone.replace(/\D/g, '');
-            const normalizedPhone = `+91${digits.slice(-10)}`; // Assuming India context as per project
+            if (digits.length !== 10) {
+                toast.error("Phone number must be exactly 10 digits");
+                setProcessing(false);
+                return;
+            }
+            const normalizedPhone = digits.slice(-10); // Store only last 10 digits
 
             // Unique check
             // Check against normalized form and other common forms just in case
@@ -223,7 +228,12 @@ export default function AdminsPage() {
             // If phone changed, check uniqueness
             if (formData.phone !== selectedUser.phone && formData.phone) {
                 const digits = formData.phone.replace(/\D/g, '');
-                const normalizedPhone = `+91${digits.slice(-10)}`;
+                if (digits.length !== 10) {
+                    toast.error("Phone number must be exactly 10 digits");
+                    setProcessing(false);
+                    return;
+                }
+                const normalizedPhone = digits.slice(-10);
 
                 const candidates = [normalizedPhone, digits.slice(-10), digits];
                 const usersRef = collection(db, 'users');

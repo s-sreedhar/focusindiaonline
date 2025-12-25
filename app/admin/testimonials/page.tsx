@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, Trash2, ArrowUp, ArrowDown, User, Star } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function TestimonialsPage() {
 
     const fetchTestimonials = async () => {
         try {
-            const q = query(collection(db, 'testimonials'));
+            const q = query(collection(db, 'reviews'));
             const querySnapshot = await getDocs(q);
             const data = querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -59,7 +60,7 @@ export default function TestimonialsPage() {
             setTestimonials(data);
         } catch (error) {
             console.error("Error fetching testimonials:", error);
-            toast.error("Failed to load testimonials");
+            toast.error("Failed to load reviews");
         } finally {
             setLoading(false);
         }
@@ -95,7 +96,7 @@ export default function TestimonialsPage() {
             // Get the highest order number
             const newOrder = testimonials.length > 0 ? Math.max(...testimonials.map(t => t.order || 0)) + 1 : 0;
 
-            await addDoc(collection(db, 'testimonials'), {
+            await addDoc(collection(db, 'reviews'), {
                 ...formData,
                 rating: Number(formData.rating),
                 avatarUrl,
@@ -103,7 +104,7 @@ export default function TestimonialsPage() {
                 createdAt: serverTimestamp()
             });
 
-            toast.success("Testimonial added successfully");
+            toast.success("Review added successfully");
             setFormData({ name: '', role: '', content: '', rating: 5 });
             setImageFile(null);
             const fileInput = document.getElementById('image') as HTMLInputElement;
@@ -112,22 +113,40 @@ export default function TestimonialsPage() {
             fetchTestimonials();
         } catch (error) {
             console.error("Error adding testimonial:", error);
-            toast.error("Failed to add testimonial");
+            toast.error("Failed to add review");
         } finally {
             setUploading(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this testimonial?")) return;
+    // Confirm Dialog
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
 
         try {
-            await deleteDoc(doc(db, 'testimonials', id));
-            toast.success("Testimonial deleted successfully");
-            setTestimonials(prev => prev.filter(t => t.id !== id));
+            await deleteDoc(doc(db, 'reviews', deleteId));
+
+            // Delete associated image if exists
+            const review = testimonials.find(t => t.id === deleteId);
+            if (review?.avatarUrl && review.avatarUrl.includes('cloudinary')) {
+                // We can import deleteFromCloudinary if we want strict cleanup, but staying focused on Dialog for now.
+                // Actually the user just asked for "Custom pop up". 
+                // But cleaning up is good. I'll stick to just the Dialog as requested to minimize scope creep unless I already imported it.
+            }
+
+            toast.success("Review deleted successfully");
+            setTestimonials(prev => prev.filter(t => t.id !== deleteId));
         } catch (error) {
             console.error("Error deleting testimonial:", error);
-            toast.error("Failed to delete testimonial");
+            toast.error("Failed to delete review");
+        } finally {
+            setDeleteId(null);
         }
     };
 
@@ -150,7 +169,7 @@ export default function TestimonialsPage() {
         try {
             const batch = writeBatch(db);
             newTestimonials.forEach((t, i) => {
-                const ref = doc(db, 'testimonials', t.id);
+                const ref = doc(db, 'reviews', t.id);
                 batch.update(ref, { order: i });
             });
             await batch.commit();
@@ -173,9 +192,18 @@ export default function TestimonialsPage() {
     return (
         <div className="p-8 max-w-6xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold">Testimonial Management</h1>
+                <h1 className="text-3xl font-bold">Customer Reviews Management</h1>
                 <p className="text-muted-foreground">Manage customer reviews displayed on the home page</p>
             </div>
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Review"
+                description="Are you sure you want to delete this review? This action cannot be undone."
+                variant="destructive"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Form */}
@@ -323,7 +351,7 @@ export default function TestimonialsPage() {
                                         <Button
                                             variant="destructive"
                                             size="icon"
-                                            onClick={() => handleDelete(testimonial.id)}
+                                            onClick={() => handleDeleteClick(testimonial.id)}
                                             className="shrink-0 h-8 w-8"
                                         >
                                             <Trash2 className="w-4 h-4" />

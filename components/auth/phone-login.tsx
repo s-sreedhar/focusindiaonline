@@ -118,8 +118,8 @@ export function PhoneLogin() {
 
     const handleContinue = async () => {
         const cleanedPhone = phoneNumber.replace(/\D/g, '');
-        if (!cleanedPhone || cleanedPhone.length < 10) {
-            setError('Please enter a valid phone number');
+        if (!cleanedPhone || cleanedPhone.length !== 10) {
+            setError('Please enter a valid 10-digit phone number');
             return;
         }
 
@@ -315,7 +315,8 @@ export function PhoneLogin() {
                                 placeholder="Mobile Number"
                                 className="pl-10"
                                 value={phoneNumber}
-                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                maxLength={10}
+                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                             />
                         </div>
 
