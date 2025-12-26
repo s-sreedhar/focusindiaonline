@@ -13,6 +13,14 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { Switch } from '@/components/ui/switch';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { toast } from 'sonner';
 
 interface Item {
@@ -44,7 +52,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         subjects: [] as string[],
         language: 'English Medium',
         stock: '100',
-        weight: '500' // Default
+        weight: '500', // Default
+        show: true
     });
 
     useEffect(() => {
@@ -80,7 +89,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         subjects: data.subjects || (data.subject ? [data.subject] : []),
                         language: data.language || 'English Medium',
                         stock: data.stockQuantity?.toString() || '0',
-                        weight: data.weight?.toString() || '500'
+                        weight: data.weight?.toString() || '500',
+                        show: data.show ?? true
                     });
                     setCurrentImageUrl(data.image || '');
                 } else {
@@ -133,6 +143,8 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                 stockQuantity: Number(formData.stock),
                 weight: Number(formData.weight),
                 image: imageUrl,
+
+                show: formData.show,
                 updatedAt: serverTimestamp(),
                 slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
             });
@@ -176,6 +188,15 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                             required
                             placeholder="e.g. Indian Polity 6th Edition"
                         />
+                    </div>
+
+                    <div className="flex items-center gap-2 border p-4 rounded-lg bg-muted/20">
+                        <Switch
+                            id="show"
+                            checked={formData.show}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show: checked }))}
+                        />
+                        <Label htmlFor="show" className="cursor-pointer">Visible to Public</Label>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -241,17 +262,19 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="language">Language</Label>
-                            <select
-                                id="language"
-                                name="language"
+                            <Select
                                 value={formData.language}
-                                onChange={handleInputChange}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}
                             >
-                                <option value="English Medium">English Medium</option>
-                                <option value="Telugu Medium">Telugu Medium</option>
-                                <option value="Hindi Medium">Hindi Medium</option>
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Language" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="English Medium">English Medium</SelectItem>
+                                    <SelectItem value="Telugu Medium">Telugu Medium</SelectItem>
+                                    <SelectItem value="Hindi Medium">Hindi Medium</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 

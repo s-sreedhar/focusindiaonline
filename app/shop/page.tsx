@@ -34,7 +34,7 @@ export default function ShopPage() {
             // Ensure inStock is determined by stockQuantity if explicit inStock boolean is missing
             inStock: data.inStock !== undefined ? data.inStock : (data.stockQuantity ? Number(data.stockQuantity) > 0 : false),
           };
-        }) as Book[];
+        }).filter((item: any) => item.show !== false) as Book[];
         setBooks(booksData);
 
         // Fetch Test Series
@@ -49,7 +49,7 @@ export default function ShopPage() {
             category: 'Test Series', // Normalize for filtering
             isTestSeries: true
           };
-        });
+        }).filter((item: any) => item.show !== false);
         setTestSeries(tsData);
 
         // Fetch Subjects

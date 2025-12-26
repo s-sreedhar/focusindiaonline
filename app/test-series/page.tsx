@@ -45,7 +45,7 @@ export default function TestSeriesPublicPage() {
                 id: doc.id,
                 ...doc.data()
             })) as TestSeries[];
-            setSeries(data);
+            setSeries(data.filter((s: any) => s.show !== false));
         } catch (error) {
             //console.error("Error fetching series:", error);
         } finally {

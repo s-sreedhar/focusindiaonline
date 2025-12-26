@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { CategoryManager } from '@/components/admin/category-manager';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
     Pagination,
     PaginationContent,
@@ -32,6 +33,8 @@ interface Book {
     category: string;
     subject?: string;
     subjects?: string[];
+    show?: boolean;
+    language?: string;
 }
 
 interface Item {
@@ -228,45 +231,47 @@ export default function BooksPage() {
                                             src={book.image || '/placeholder-book.jpg'}
                                             alt={book.title}
                                             fill
-                                            className="object-cover transition-transform group-hover:scale-105"
+                                            className={cn("object-cover transition-transform group-hover:scale-105", book.show === false && "grayscale opacity-75")}
                                         />
+                                        {book.show === false && (
+                                            <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1 z-10">
+                                                <EyeOff className="w-3 h-3" />
+                                                Hidden
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-3">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h3 className="font-bold truncate flex-1" title={book.title}>{book.title}</h3>
-                                            {book.category && (
-                                                <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full ml-2 shrink-0">
-                                                    {book.category}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
+                                        <div className="mb-2">
+                                            <h3 className="font-bold text-sm leading-tight line-clamp-2 mb-1" title={book.title}>{book.title}</h3>
 
-                                        {/* Display Subject if available */}
-                                        {book.subject && (
-                                            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                                                {book.subject}
-                                            </p>
-                                        )}
-
-                                        <div className="flex justify-between items-center mt-2">
-                                            <span className="font-bold text-primary">₹{book.price}</span>
-                                            <div className="flex gap-2">
-                                                <Button size="icon" variant="ghost" asChild>
-                                                    <Link href={`/admin/books/${book.id}`}>
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Link>
-                                                </Button>
-                                                <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteClick(book.id)}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                            <div className="flex flex-wrap gap-1.5 mt-1">
+                                                {book.category && (
+                                                    <span className="text-[10px] font-medium px-1.5 py-0.5 bg-primary/10 text-primary rounded-full shrink-0">
+                                                        {book.category}
+                                                    </span>
+                                                )}
+                                                {book.language && (
+                                                    <span className="text-[10px] font-medium px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full shrink-0">
+                                                        {book.language}
+                                                    </span>
+                                                )}
                                             </div>
+                                        </div>
+                                        <span className="font-bold text-primary">₹{book.price}</span>
+                                        <div className="flex gap-2">
+                                            <Button size="icon" variant="ghost" asChild>
+                                                <Link href={`/admin/books/${book.id}`}>
+                                                    <Pencil className="w-4 h-4" />
+                                                </Link>
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteClick(book.id)}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </Card>
                             ))}
-                        </div>
+                        </div >
 
                         {totalPages > 1 && (
                             <div className="mt-8">
@@ -298,16 +303,19 @@ export default function BooksPage() {
                                     </PaginationContent>
                                 </Pagination>
                             </div>
-                        )}
+                        )
+                        }
                     </>
                 );
             })()}
 
-            {filteredBooks.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                    No books found matching your criteria.
-                </div>
-            )}
-        </div>
+            {
+                filteredBooks.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                        No books found matching your criteria.
+                    </div>
+                )
+            }
+        </div >
     );
 }

@@ -23,7 +23,8 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Trash2, Plus, Search, FileText, Loader2, Download } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Edit, Trash2, Plus, Search, FileText, Loader2, Download, EyeOff } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -55,7 +56,8 @@ export default function TestSeriesPage() {
         description: '',
         price: '',
         file: null as File | null,
-        image: null as File | null
+        image: null as File | null,
+        show: true
     });
 
     useEffect(() => {
@@ -169,6 +171,7 @@ export default function TestSeriesPage() {
                 price: parseFloat(formData.price),
                 fileUrl,
                 imageUrl,
+                show: formData.show,
                 updatedAt: serverTimestamp()
             };
 
@@ -200,7 +203,7 @@ export default function TestSeriesPage() {
     };
 
     const resetForm = () => {
-        setFormData({ title: '', description: '', price: '', file: null, image: null });
+        setFormData({ title: '', description: '', price: '', file: null, image: null, show: true });
         setEditingSeries(null);
     };
 
@@ -255,7 +258,9 @@ export default function TestSeriesPage() {
             description: item.description,
             price: item.price.toString(),
             file: null,
-            image: null
+
+            image: null,
+            show: (item as any).show ?? true
         });
         setIsDialogOpen(true);
     };
@@ -310,8 +315,18 @@ export default function TestSeriesPage() {
                         </TableHeader>
                         <TableBody>
                             {filteredSeries.map((item) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.title}</TableCell>
+                                <TableRow key={item.id} className={(item as any).show === false ? 'bg-muted/50' : ''}>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            {item.title}
+                                            {(item as any).show === false && (
+                                                <div className="flex items-center gap-0.5 text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
+                                                    <EyeOff className="w-3 h-3" />
+                                                    Hidden
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="max-w-xs truncate" title={item.description}>{item.description}</TableCell>
                                     <TableCell>₹{item.price}</TableCell>
                                     <TableCell>
@@ -404,6 +419,15 @@ export default function TestSeriesPage() {
                             {editingSeries?.imageUrl && !formData.image && (
                                 <img src={editingSeries.imageUrl} alt="Thumbnail" className="h-16 w-16 object-cover rounded mt-2 border" />
                             )}
+                        </div>
+
+                        <div className="flex items-center gap-2 border p-4 rounded-lg bg-muted/20">
+                            <Switch
+                                id="show"
+                                checked={formData.show}
+                                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show: checked }))}
+                            />
+                            <Label htmlFor="show" className="cursor-pointer">Visible to Public</Label>
                         </div>
                     </div>
                     <DialogFooter>

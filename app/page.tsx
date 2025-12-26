@@ -61,7 +61,7 @@ export default function Home() {
         const booksData = booksSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as Book[];
+        })).filter((item: any) => item.show !== false) as Book[];
         setBooks(booksData);
 
         // Fetch banners
@@ -81,7 +81,7 @@ export default function Home() {
         // Fetch Test Series
         const tsQuery = query(collection(db, 'test_series'), orderBy('createdAt', 'desc'), limit(10));
         const tsSnapshot = await getDocs(tsQuery);
-        const tsData = tsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const tsData = tsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter((item: any) => (item as any).show !== false);
         setTestSeries(tsData);
 
         // Sort banners

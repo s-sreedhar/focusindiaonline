@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { initializeFirestore, memoryLocalCache, setLogLevel, Firestore } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache, setLogLevel, Firestore, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,9 +21,15 @@ if (firebaseConfig.apiKey) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
-    db = initializeFirestore(app, {
-      localCache: memoryLocalCache()
-    }, "focusindia");
+
+    try {
+      db = initializeFirestore(app, {
+        localCache: memoryLocalCache()
+      }, "focusindia");
+    } catch (e) {
+      // console.warn("Firestore initialize error, falling back to getFirestore:", e);
+      db = getFirestore(app, "focusindia");
+    }
   } catch (error) {
     //console.error("Firebase initialization error:", error);
   }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, ShoppingCart, Star, ArrowRightLeft } from 'lucide-react';
+import { Heart, ShoppingCart, Star, ArrowRightLeft, Share2 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
@@ -145,6 +145,21 @@ export function ProductCard({
     }
   };
 
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const url = `${window.location.origin}/product/${slug}`;
+    if (navigator.share) {
+      navigator.share({
+        title: title,
+        text: `Check out ${title} on Focus India Online`,
+        url: url,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(url);
+      import('sonner').then(({ toast }) => toast.success('Link copied to clipboard'));
+    }
+  };
+
   return (
     <Link href={`/product/${slug}`}>
       <motion.div
@@ -186,6 +201,15 @@ export function ProductCard({
                 title="Compare"
               >
                 <ArrowRightLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="rounded-full w-8 h-8 bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:text-green-500"
+                onClick={handleShare}
+                title="Share"
+              >
+                <Share2 className="w-4 h-4" />
               </Button>
             </div>
           </div>

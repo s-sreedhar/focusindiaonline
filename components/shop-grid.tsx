@@ -165,6 +165,9 @@ export function ShopGrid({ books, testSeries = [], activeCategory, showCombos = 
       // Test Series don't have all book fields, so be careful.
       const isTestSeries = (item as any).isTestSeries;
 
+      // Explicitly filter out hidden items (safety check)
+      if ((item as any).show === false) return false;
+
       if (filters.showTestSeries) {
         // If we are showing test series, we are iterating over testSeries array (set above).
         // We might still want to apply Price filter?
@@ -453,7 +456,10 @@ export function ShopGrid({ books, testSeries = [], activeCategory, showCombos = 
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">No products found matching your criteria.</p>
             <button
-              onClick={() => setFilters({ priceRange: [0, 2000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false, showBundles: false, showTestSeries: false })}
+              onClick={() => {
+                setFilters({ priceRange: [0, 2000], selectedCategories: [], selectedSubjects: [], selectedLanguages: [], inStockOnly: false, showBundles: false, showTestSeries: false });
+                router.push('/shop');
+              }}
               className="text-primary hover:underline"
             >
               Clear filters and try again

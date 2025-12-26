@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Edit2, Loader2, Package, Upload, X, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, Loader2, Package, Upload, X, Check, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -61,7 +62,8 @@ export default function CombosPage() {
         image: '',
         comboBookIds: [] as string[],
         categories: [] as string[],
-        subjects: [] as string[]
+        subjects: [] as string[],
+        show: true
     });
 
     // Filter states
@@ -147,6 +149,7 @@ export default function CombosPage() {
                 language: 'English', // Default
                 subject: formData.subjects[0] || 'Mixed',
                 subjects: formData.subjects,
+                show: formData.show,
                 slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
             };
 
@@ -170,8 +173,10 @@ export default function CombosPage() {
                 description: '',
                 image: '',
                 comboBookIds: [],
+
                 categories: [],
-                subjects: []
+                subjects: [],
+                show: true
             });
             setImageFile(null);
             setEditingId(null);
@@ -194,7 +199,8 @@ export default function CombosPage() {
             image: combo.image,
             comboBookIds: combo.comboBookIds || [],
             categories: (combo as any).categories || (combo.category ? [combo.category] : []),
-            subjects: (combo as any).subjects || (combo.subject ? [combo.subject] : [])
+            subjects: (combo as any).subjects || (combo.subject ? [combo.subject] : []),
+            show: (combo as any).show ?? true
         });
         setIsDialogOpen(true);
     };
@@ -261,8 +267,10 @@ export default function CombosPage() {
                             description: '',
                             image: '',
                             comboBookIds: [],
+
                             categories: [],
-                            subjects: []
+                            subjects: [],
+                            show: true
                         });
                         setImageFile(null);
                     }
@@ -411,6 +419,15 @@ export default function CombosPage() {
                                 </div>
                             </div>
 
+                            <div className="flex items-center gap-2 border p-4 rounded-lg bg-muted/20">
+                                <Switch
+                                    id="show"
+                                    checked={formData.show}
+                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show: checked }))}
+                                />
+                                <Label htmlFor="show" className="cursor-pointer">Visible to Public</Label>
+                            </div>
+
                             <Button onClick={handleSubmit} disabled={uploading}>
                                 {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {editingId ? 'Update Combo' : 'Create Combo'}
@@ -439,7 +456,7 @@ export default function CombosPage() {
                                             src={combo.image}
                                             alt={combo.title}
                                             fill
-                                            className="object-cover"
+                                            className={cn("object-cover", (combo as any).show === false && "grayscale opacity-75")}
                                         />
                                     ) : (
                                         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -454,14 +471,32 @@ export default function CombosPage() {
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
+                                    {(combo as any).show === false && (
+                                        <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                                            <EyeOff className="w-3 h-3" />
+                                            Hidden
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-lg leading-tight">{combo.title}</h3>
+                                    <div className="flex justify-between items-start mb-2 gap-2">
+                                        <h3 className="font-bold text-lg leading-tight line-clamp-2">{combo.title}</h3>
                                         <span className="font-bold text-primary shrink-0 bg-primary/5 px-2 py-1 rounded">
                                             ₹{combo.price}
                                         </span>
                                     </div>
+
+                                    <div className="flex flex-wrap gap-1 mb-3">
+                                        {((combo as any).categories || []).map((cat: string) => (
+                                            <Badge key={cat} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 pointer-events-none">
+                                                {cat}
+                                            </Badge>
+                                        ))}
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-blue-200 text-blue-700 bg-blue-50 pointer-events-none">
+                                            {(combo as any).language || 'English'}
+                                        </Badge>
+                                    </div>
+
                                     <p className="text-sm text-muted-foreground line-clamp-2 mb-4 h-10">
                                         {combo.description || 'No description provided.'}
                                     </p>
@@ -476,37 +511,39 @@ export default function CombosPage() {
                 )}
             </div>
 
-            {combos.length > itemsPerPage && (
-                <div className="mt-8">
-                    <Pagination>
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
-                            </PaginationItem>
-                            {[...Array(Math.ceil(combos.length / itemsPerPage))].map((_, i) => (
-                                <PaginationItem key={i}>
-                                    <PaginationLink
-                                        isActive={currentPage === i + 1}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        className="cursor-pointer"
-                                    >
-                                        {i + 1}
-                                    </PaginationLink>
+            {
+                combos.length > itemsPerPage && (
+                    <div className="mt-8">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                    />
                                 </PaginationItem>
-                            ))}
-                            <PaginationItem>
-                                <PaginationNext
-                                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(combos.length / itemsPerPage), p + 1))}
-                                    className={currentPage === Math.ceil(combos.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
-            )}
-        </div>
+                                {[...Array(Math.ceil(combos.length / itemsPerPage))].map((_, i) => (
+                                    <PaginationItem key={i}>
+                                        <PaginationLink
+                                            isActive={currentPage === i + 1}
+                                            onClick={() => setCurrentPage(i + 1)}
+                                            className="cursor-pointer"
+                                        >
+                                            {i + 1}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                ))}
+                                <PaginationItem>
+                                    <PaginationNext
+                                        onClick={() => setCurrentPage(p => Math.min(Math.ceil(combos.length / itemsPerPage), p + 1))}
+                                        className={currentPage === Math.ceil(combos.length / itemsPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )
+            }
+        </div >
     );
 }
