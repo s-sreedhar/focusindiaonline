@@ -225,7 +225,8 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (phone.length !== 10 || !/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
       toast.error("Please enter a valid 10-digit phone number");
       return false;
     }
@@ -505,8 +506,8 @@ export default function CheckoutPage() {
         transaction.set(newOrderRef, {
           orderId,
           userId,
-          items,
-          shippingAddress: {
+          items: JSON.parse(JSON.stringify(items)), // Remove undefined values
+          shippingAddress: JSON.parse(JSON.stringify({
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
@@ -515,7 +516,7 @@ export default function CheckoutPage() {
             city: formData.city,
             state: formData.state,
             zipCode: formData.zipCode,
-          },
+          })),
           paymentMethod: 'PHONEPE',
           subtotal,
           shippingCharges,

@@ -19,7 +19,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         }
 
         // 1. Verify Payment Status with PhonePe API
+        console.log('Checking status for:', transactionId);
         const statusResponse = await checkPaymentStatus(transactionId);
+        console.log('PhonePe Status Response:', JSON.stringify(statusResponse, null, 2));
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
         if (statusResponse && statusResponse.success && statusResponse.code === 'PAYMENT_SUCCESS') {

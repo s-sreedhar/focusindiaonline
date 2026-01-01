@@ -35,10 +35,34 @@ export async function POST(request: Request) {
             // Update order status in Firestore
             const orderRef = doc(db, 'orders', merchantTransactionId);
             await updateDoc(orderRef, {
+                status: 'received',
                 paymentStatus: 'paid',
                 paymentId: data.transactionId, // PhonePe Transaction ID
                 updatedAt: serverTimestamp()
             });
+
+            // Send WhatsApp Notification to Admin
+            try {
+                const { getDoc } = require('firebase/firestore');
+                const orderSnap = await getDoc(orderRef);
+
+                if (orderSnap.exists()) {
+                    const orderData = orderSnap.data();
+                    const { sendWhatsAppNotification } = require('@/lib/twilio');
+
+                    const itemsList = orderData.items?.map((item: any) => `${item.title} (x${item.quantity})`).join(', ') || 'No items';
+
+                    await sendWhatsAppNotification(
+                        orderData.orderId || merchantTransactionId,
+                        orderData.shippingAddress?.firstName || 'Customer',
+                        orderData.totalAmount || 0,
+                        itemsList
+                    );
+                }
+            } catch (twilioError) {
+                console.error("Failed to send WhatsApp notification:", twilioError);
+                // Continue execution, don't fail the request
+            }
 
             // Fetch order details to send email
             // We need to get the doc again to get the latest data or use what we have if possible

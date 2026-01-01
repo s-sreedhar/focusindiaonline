@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         });
 
         const data = await response.json();
+        console.log('PhonePe Init Response:', JSON.stringify(data, null, 2)); // Debug log
 
         if (data.success) {
             return NextResponse.json({
