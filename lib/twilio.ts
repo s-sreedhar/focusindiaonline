@@ -18,14 +18,22 @@ export const sendWhatsAppNotification = async (
 
     const client = twilio(accountSid, authToken);
 
+    // Ensure E.164 format for Indian numbers if prefix is missing
+    let formattedAdminPhone = adminPhoneNumber;
+    if (!adminPhoneNumber.startsWith('+')) {
+        formattedAdminPhone = `+91${adminPhoneNumber}`;
+    }
+
+    // console.log(`Attempting to send WhatsApp to: ${formattedAdminPhone}`);
+
     try {
         const message = await client.messages.create({
             body: `New Order Received!\n\nOrder ID: ${orderId}\nCustomer: ${customerName}\nAmount: ₹${amount}\nItems: ${items}`,
             from: `whatsapp:${twilioPhoneNumber}`,
-            to: `whatsapp:${adminPhoneNumber}`
+            to: `whatsapp:${formattedAdminPhone}`
         });
 
-        // console.log('WhatsApp notification sent:', message.sid);
+        console.log('WhatsApp notification sent:', message.sid);
         return { success: true, sid: message.sid };
     } catch (error) {
         console.error('Error sending WhatsApp notification:', error);

@@ -22,7 +22,7 @@ const debouncedWriteCart = debounce(async (userId: string, items: { bookId: stri
 
 export function CartSync() {
     const { user } = useAuthStore();
-    const { items, addItem, clearCart } = useCartStore();
+    const { items, addItem, clearCart, hasHydrated } = useCartStore();
     // Use a ref to track if we're in the initial fetch phase to avoid overwriting remote with empty local
     const isFetchingRef = useRef(false);
 
@@ -43,15 +43,6 @@ export function CartSync() {
                     const firestoreCart = userData.cart || [];
 
                     if (Array.isArray(firestoreCart) && firestoreCart.length > 0) {
-                        // We have remote items.
-                        // Strategy: Merge? Or Replace?
-                        // For simplicity and "sync across devices", remote usually wins on login if local is empty.
-                        // If local has items (user added before login), we should probably merge.
-                        // Current implementation: Let's fetch details for remote items and add them.
-
-                        // If local cart is empty, simple populate.
-                        // If not, we might duplicate. The addItem store method handles aggregation if ID exists.
-
                         for (const cartItem of firestoreCart) {
                             try {
                                 const bookRef = doc(db, 'books', cartItem.bookId);
@@ -88,7 +79,7 @@ export function CartSync() {
 
     // Sync TO Firestore on store change
     useEffect(() => {
-        if (!user || isFetchingRef.current) return;
+        if (!user || isFetchingRef.current || !hasHydrated) return;
         const userId = user.id || (user as any).uid;
         if (!userId) return;
 
@@ -99,7 +90,7 @@ export function CartSync() {
         }));
 
         debouncedWriteCart(userId, cartData);
-    }, [items, user]);
+    }, [items, user, hasHydrated]);
 
     return null;
 }

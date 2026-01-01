@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { checkPaymentStatus } from '@/lib/phonepe';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { sendWhatsAppNotification } from '@/lib/twilio';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -37,6 +38,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                     paymentId: statusResponse.data?.transactionId || 'PHONEPE_PAID',
                     updatedAt: serverTimestamp()
                 });
+
+                // Send WhatsApp Notification
+                try {
+                    const orderData = orderSnap.data();
+                    const itemsList = orderData.items ? orderData.items.map((item: any) => `${item.title} (x${item.quantity})`).join(', ') : 'Items info unavailable';
+
+                    await sendWhatsAppNotification(
+                        transactionId, // Using transactionId as Order ID
+                        orderData.shippingAddress?.fullName || orderData.shippingAddress?.firstName || 'Customer',
+                        orderData.totalAmount,
+                        itemsList
+                    );
+                } catch (err) {
+                    console.error('Failed to send WhatsApp notification from status route:', err);
+                }
             }
 
             return NextResponse.redirect(`${baseUrl}/checkout/success?orderId=${transactionId}`, 303);

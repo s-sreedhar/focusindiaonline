@@ -499,27 +499,39 @@ export default function OrdersPage() {
 
                   {/* Notes Section */}
                   <div>
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><FileText className="w-4 h-4" /> Internal Notes</h3>
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" /> Internal Notes
+                    </h3>
                     <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
-                      {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 && (
-                        <div className="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                          {[...selectedOrder.notesHistory].reverse().map((note, i) => (
-                            <div key={i} className="text-xs bg-background p-2 rounded border shadow-sm">
-                              <div className="flex justify-between mb-1 opacity-70">
-                                <span className="font-semibold">{note.adminName || 'Admin'}</span>
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        {selectedOrder.notesHistory && selectedOrder.notesHistory.length > 0 ? (
+                          [...selectedOrder.notesHistory].reverse().map((note, i) => (
+                            <div key={i} className="text-sm bg-background p-3 rounded-md border shadow-sm space-y-2">
+                              <div className="flex justify-between items-center text-xs text-muted-foreground border-b pb-1">
+                                <span className="font-semibold text-primary">{note.adminName || 'Admin'}</span>
                                 <span>{new Date(note.createdAt).toLocaleString()}</span>
                               </div>
-                              <p>{note.content}</p>
+                              <p className="whitespace-pre-wrap text-foreground/90 leading-relaxed">{note.content}</p>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex gap-2">
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground text-sm italic">
+                            No internal notes added yet.
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t">
                         <Input
                           value={adminNotes}
                           onChange={(e) => setAdminNotes(e.target.value)}
                           placeholder="Add a private note..."
                           className="h-9 text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSaveNotes();
+                            }
+                          }}
                         />
                         <Button size="sm" onClick={handleSaveNotes} disabled={!adminNotes.trim()}>Save</Button>
                       </div>

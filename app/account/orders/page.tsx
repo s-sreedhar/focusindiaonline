@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Header } from '@/components/layouts/header';
@@ -8,13 +9,22 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Order } from '@/lib/types';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
+
 
 export default function OrdersPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -54,19 +64,29 @@ export default function OrdersPage() {
     fetchOrders();
   }, [isAuthenticated, user, router]);
 
-  const handleCancelOrder = async (orderId: string) => {
-    if (!confirm('Are you sure you want to cancel this order?')) return;
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+
+  const initiateCancelOrder = (orderId: string) => {
+    setOrderToCancel(orderId);
+    setCancelDialogOpen(true);
+  };
+
+  const confirmCancelOrder = async () => {
+    if (!orderToCancel) return;
 
     try {
-      await updateDoc(doc(db, 'orders', orderId), {
+      await updateDoc(doc(db, 'orders', orderToCancel), {
         status: 'cancelled'
       });
 
       setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status: 'cancelled' } : order
+        order.id === orderToCancel ? { ...order, status: 'cancelled' } : order
       ));
 
       toast.success('Order cancelled successfully');
+      setCancelDialogOpen(false);
+      setOrderToCancel(null);
     } catch (error) {
       //console.error("Error cancelling order:", error);
       toast.error('Failed to cancel order');
@@ -141,7 +161,7 @@ export default function OrdersPage() {
                           variant="destructive"
                           size="sm"
                           className="h-7 text-xs"
-                          onClick={() => handleCancelOrder(order.id)}
+                          onClick={() => initiateCancelOrder(order.id)}
                         >
                           Cancel Order
                         </Button>
@@ -169,7 +189,7 @@ export default function OrdersPage() {
                   </div>
 
                   <Button variant="outline" asChild>
-                    <Link href={`/account/orders/${order.id}`}>View Details</Link>
+                    <Link href={`/ account / orders / ${order.id} `}>View Details</Link>
                   </Button>
                 </Card>
               ))}
@@ -186,6 +206,34 @@ export default function OrdersPage() {
       </main>
 
       <Footer />
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              Cancel Order
+            </DialogTitle>
+            <DialogDescription className="pt-2 space-y-2" asChild>
+              <div className="text-muted-foreground text-sm">
+                <p>Are you sure you want to cancel this order?</p>
+                <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">
+                  <strong>Please Note:</strong> Orders can only be cancelled before they are confirmed by our team. Once confirmed, cancellation is no longer possible.
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              No, Keep Order
+            </Button>
+            <Button variant="destructive" onClick={confirmCancelOrder}>
+              Yes, Cancel Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
