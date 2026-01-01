@@ -226,8 +226,8 @@ export default function CheckoutPage() {
     }
 
     const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      toast.error("Please enter a valid 10-digit phone number");
+    if (cleanPhone.length < 10 || cleanPhone.length > 12) {
+      toast.error("Please enter a valid phone number (10-12 digits)");
       return false;
     }
 
@@ -501,8 +501,8 @@ export default function CheckoutPage() {
         });
 
         // Create Order
-        const newOrderRef = doc(collection(db, 'orders'));
         orderId = generateOrderId();
+        const newOrderRef = doc(db, 'orders', orderId);
         transaction.set(newOrderRef, {
           orderId,
           userId,

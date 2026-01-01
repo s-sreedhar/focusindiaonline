@@ -32,6 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             const orderSnap = await getDoc(orderRef);
             if (orderSnap.exists() && orderSnap.data().paymentStatus !== 'paid') {
                 await updateDoc(orderRef, {
+                    status: 'received',
                     paymentStatus: 'paid',
                     paymentId: statusResponse.data?.transactionId || 'PHONEPE_PAID',
                     updatedAt: serverTimestamp()

@@ -130,7 +130,7 @@ export default function OrdersPage() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Order Number</p>
-                      <h3 className="text-xl font-bold">#{order.id.slice(0, 8)}</h3>
+                      <h3 className="text-xl font-bold">#{order.id}</h3>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <Badge variant="outline" className={getStatusColor(order.status)}>
