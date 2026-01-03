@@ -105,7 +105,7 @@ export default function OrderDetailsPage() {
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold mb-2">Order #{order.id.slice(0, 8)}</h1>
+                            <h1 className="text-3xl font-bold mb-2">Order #{order.id}</h1>
                             <p className="text-muted-foreground">
                                 Placed on {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('en-GB').replace(/\//g, '-') : 'N/A'}
                             </p>
