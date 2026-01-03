@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/pagination";
 import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Book {
     id: string;
@@ -48,7 +49,9 @@ interface Combo extends Book {
 
 export default function CombosPage() {
     const [combos, setCombos] = useState<Combo[]>([]);
-    const [books, setBooks] = useState<Book[]>([]); // All available books for selection
+    const [books, setBooks] = useState<Book[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [subjects, setSubjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,8 +78,8 @@ export default function CombosPage() {
 
     const filteredBooks = books.filter(book => {
         const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = selectedCategory ? (book.category === selectedCategory) : true;
-        const matchesSubject = selectedSubject ? (book.subject === selectedSubject) : true;
+        const matchesCategory = (selectedCategory && selectedCategory !== 'all') ? (book.category === selectedCategory) : true;
+        const matchesSubject = (selectedSubject && selectedSubject !== 'all') ? (book.subject === selectedSubject) : true;
         return matchesSearch && matchesCategory && matchesSubject;
     });
 
@@ -103,6 +106,16 @@ export default function CombosPage() {
                 .map(doc => ({ id: doc.id, ...doc.data() } as any))
                 .filter(b => !b.isCombo) as Book[]; // Exclude combos from being inside other combos
             setBooks(booksData);
+
+            // Fetch Categories
+            const catQuery = query(collection(db, 'categories'), orderBy('name'));
+            const catSnapshot = await getDocs(catQuery);
+            setCategories(catSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+            // Fetch Subjects
+            const subQuery = query(collection(db, 'subjects'), orderBy('name'));
+            const subSnapshot = await getDocs(subQuery);
+            setSubjects(subSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
         } catch (error) {
             //console.error('Error fetching data:', error);
@@ -310,7 +323,7 @@ export default function CombosPage() {
                             <div className="grid gap-2">
                                 <Label>Categories</Label>
                                 <MultiSelect
-                                    options={PRIMARY_CATEGORIES.map(c => ({ label: c, value: c }))}
+                                    options={categories.map(c => ({ label: c.name, value: c.name }))}
                                     selected={formData.categories}
                                     onChange={(selected) => setFormData(prev => ({ ...prev, categories: selected }))}
                                     placeholder="Select Categories"
@@ -320,7 +333,7 @@ export default function CombosPage() {
                             <div className="grid gap-2">
                                 <Label>Subjects</Label>
                                 <MultiSelect
-                                    options={SUBJECTS.map(s => ({ label: s, value: s }))}
+                                    options={subjects.map(s => ({ label: s.name, value: s.name }))}
                                     selected={formData.subjects}
                                     onChange={(selected) => setFormData(prev => ({ ...prev, subjects: selected }))}
                                     placeholder="Select Subjects"
@@ -338,26 +351,28 @@ export default function CombosPage() {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="col-span-2"
                                     />
-                                    <select
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                    >
-                                        <option value="">All Categories</option>
-                                        {PRIMARY_CATEGORIES.map(cat => (
-                                            <option key={cat} value={cat}>{cat}</option>
-                                        ))}
-                                    </select>
-                                    <select
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={selectedSubject}
-                                        onChange={(e) => setSelectedSubject(e.target.value)}
-                                    >
-                                        <option value="">All Subjects</option>
-                                        {SUBJECTS.map(sub => (
-                                            <option key={sub} value={sub}>{sub}</option>
-                                        ))}
-                                    </select>
+                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Categories" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Categories</SelectItem>
+                                            {categories.map(cat => (
+                                                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="All Subjects" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Subjects</SelectItem>
+                                            {subjects.map(sub => (
+                                                <SelectItem key={sub.id} value={sub.name}>{sub.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-2">
