@@ -107,7 +107,7 @@ export default function OrderDetailsPage() {
                         <div>
                             <h1 className="text-3xl font-bold mb-2">Order #{order.id.slice(0, 8)}</h1>
                             <p className="text-muted-foreground">
-                                Placed on {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                                Placed on {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('en-GB').replace(/\//g, '-') : 'N/A'}
                             </p>
                         </div>
                         <Badge variant="outline" className={`px-4 py-1.5 text-sm font-medium ${getStatusColor(order.status)}`}>

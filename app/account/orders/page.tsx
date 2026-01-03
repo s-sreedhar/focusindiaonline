@@ -174,8 +174,8 @@ export default function OrdersPage() {
                       <p className="text-sm text-muted-foreground">Date</p>
                       <p className="font-semibold">
                         {order.createdAt?.seconds
-                          ? new Date(order.createdAt.seconds * 1000).toLocaleDateString()
-                          : new Date().toLocaleDateString()}
+                          ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('en-GB').replace(/\//g, '-')
+                          : new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}
                       </p>
                     </div>
                     <div>
@@ -189,7 +189,7 @@ export default function OrdersPage() {
                   </div>
 
                   <Button variant="outline" asChild>
-                    <Link href={`/ account / orders / ${order.id} `}>View Details</Link>
+                    <Link href={`/account/orders/${order.id}`}>View Details</Link>
                   </Button>
                 </Card>
               ))}

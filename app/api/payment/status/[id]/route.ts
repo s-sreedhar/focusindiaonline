@@ -48,7 +48,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                         transactionId, // Using transactionId as Order ID
                         orderData.shippingAddress?.fullName || orderData.shippingAddress?.firstName || 'Customer',
                         orderData.totalAmount,
-                        itemsList
+                        itemsList,
+                        'SUCCESS'
                     );
                 } catch (err) {
                     console.error('Failed to send WhatsApp notification from status route:', err);
@@ -71,6 +72,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                     failureReason: failureReason,
                     updatedAt: serverTimestamp()
                 });
+
+                // Send WhatsApp Notification for Failure
+                try {
+                    const orderData = orderSnap.data();
+                    const itemsList = orderData.items ? orderData.items.map((item: any) => `${item.title} (x${item.quantity})`).join(', ') : 'Items info unavailable';
+
+                    await sendWhatsAppNotification(
+                        transactionId,
+                        orderData.shippingAddress?.fullName || orderData.shippingAddress?.firstName || 'Customer',
+                        orderData.totalAmount,
+                        itemsList,
+                        'FAILED'
+                    );
+                } catch (err) {
+                    console.error('Failed to send WhatsApp failure notification:', err);
+                }
             }
 
             return NextResponse.redirect(`${baseUrl}/checkout/failure?orderId=${transactionId}&reason=${failureReason}&message=${encodeURIComponent(message)}`, 303);

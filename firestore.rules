@@ -7,27 +7,54 @@ service cloud.firestore {
       return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
     }
 
+    // Helper function to check if user is owner (for user/customer profiles)
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
     // Users: Users can read/write their own data; Admins can read/write all
     match /users/{userId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read, write: if isOwner(userId) || isAdmin();
     }
     
-    // Products/Books: Public read; Admin write
-    match /books/{bookId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Orders: Users can read/write their own; Admins can read/write all
-    match /orders/{orderId} {
-      allow read, write: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
-      allow create: if request.auth != null; // Allow users to create orders
-    }
-
-    // Customers: Users can read/write their own profile; Admins can read/write all
+    // Customers: Users can read/write their own data; Admins can read/write all
     match /customers/{customerId} {
-      allow read, write: if request.auth != null && (request.auth.uid == customerId || isAdmin());
-      allow create: if request.auth != null && request.auth.uid == customerId;
+      allow read, write: if isOwner(customerId) || isAdmin();
+      allow create: if request.auth != null; // Allow signup with auth
+    }
+    
+    // Public Content (Read: Public, Write: Admin)
+    match /books/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /categories/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /subjects/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /combos/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /coupons/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /testimonials/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /popups/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /pages/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /test-series/{document=**} { allow read: if true; allow write: if isAdmin(); }
+
+    // Enquiries: Public create, Admin manage
+    match /enquiries/{document=**} { 
+      allow create: if true;
+      allow read, write, delete: if isAdmin();
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      // Admins can do everything
+      allow delete: if isAdmin();
+      
+      // Users can read their own orders
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      
+      // Public creation needed for guest checkout
+      allow create: if true;
+
+      // Public update needed for Payment Gateway Callback (uses Client SDK)
+      // WARNING: Ideally this should be more restricted or use Admin SDK on backend
+      allow update: if true;
     }
     
     // Default deny

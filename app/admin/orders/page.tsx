@@ -58,6 +58,7 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -312,15 +313,40 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      {order.items?.slice(0, 2).map((item, idx) => (
-                        <span key={idx} className="text-xs">
-                          {item.quantity}x {item.title.slice(0, 20)}...
-                        </span>
-                      ))}
-                      {order.items?.length > 2 && (
-                        <span className="text-xs text-muted-foreground">+{order.items.length - 2} more</span>
-                      )}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1">
+                        {order.items?.slice(0, 4).map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="h-8 w-6 relative overflow-hidden rounded-sm border bg-muted flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+                            title={item.title}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (item.image) setPreviewImage(item.image);
+                            }}
+                          >
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-gray-100">
+                                <PackageIcon className="h-3 w-3 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {order.items?.length > 4 && (
+                          <div className="h-8 w-6 bg-muted border rounded-sm flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                            +{order.items.length - 4}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {order.items?.slice(0, 1).map(i => i.title.slice(0, 20) + (order.items.length > 1 ? '...' : ''))}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold">₹{order.totalAmount}</td>
@@ -330,7 +356,9 @@ export default function OrdersPage() {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    {order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                    {order.createdAt?.seconds
+                      ? new Date(order.createdAt.seconds * 1000).toLocaleDateString('en-GB').replace(/\//g, '-')
+                      : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
@@ -395,7 +423,9 @@ export default function OrdersPage() {
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5" />
-                      {selectedOrder.createdAt?.seconds ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                      {selectedOrder.createdAt?.seconds
+                        ? new Date(selectedOrder.createdAt.seconds * 1000).toLocaleDateString('en-GB').replace(/\//g, '-') + ' ' + new Date(selectedOrder.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'N/A'}
                     </p>
                   </div>
 
@@ -476,6 +506,7 @@ export default function OrdersPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/50">
+                            <TableHead className="py-2 w-[80px]">Image</TableHead>
                             <TableHead className="py-2">Product</TableHead>
                             <TableHead className="text-center py-2">Qty</TableHead>
                             <TableHead className="text-right py-2">Price</TableHead>
@@ -484,6 +515,24 @@ export default function OrdersPage() {
                         <TableBody>
                           {selectedOrder.items.map((item, idx) => (
                             <TableRow key={idx}>
+                              <TableCell className="py-2">
+                                <div
+                                  className="h-12 w-10 relative overflow-hidden rounded-sm border bg-muted cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+                                  onClick={() => item.image && setPreviewImage(item.image)}
+                                >
+                                  {item.image ? (
+                                    <img
+                                      src={item.image}
+                                      alt={item.title}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                      <PackageIcon className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="py-3">
                                 <div className="font-medium text-sm">{item.title}</div>
                                 <div className="text-xs text-muted-foreground">ID: {item.bookId?.slice(0, 6)}...</div>
@@ -509,7 +558,7 @@ export default function OrdersPage() {
                             <div key={i} className="text-sm bg-background p-3 rounded-md border shadow-sm space-y-2">
                               <div className="flex justify-between items-center text-xs text-muted-foreground border-b pb-1">
                                 <span className="font-semibold text-primary">{note.adminName || 'Admin'}</span>
-                                <span>{new Date(note.createdAt).toLocaleString()}</span>
+                                <span>{new Date(note.createdAt).toLocaleDateString('en-GB').replace(/\//g, '-') + ' ' + new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                               </div>
                               <p className="whitespace-pre-wrap text-foreground/90 leading-relaxed">{note.content}</p>
                             </div>
@@ -545,6 +594,31 @@ export default function OrdersPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-transparent border-none shadow-none flex items-center justify-center">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
+          <div className="relative w-full h-full flex justify-center items-center">
+            {previewImage && (
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-h-[85vh] max-w-full object-contain rounded-md shadow-2xl"
+              />
+            )}
+            <Button
+              variant="secondary"
+              size="icon"
+              className="absolute top-2 right-2 rounded-full opacity-70 hover:opacity-100 transition-opacity z-50 shadow-md"
+              onClick={() => setPreviewImage(null)}
+            >
+              <span className="sr-only">Close</span>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.5571 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.5571 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
