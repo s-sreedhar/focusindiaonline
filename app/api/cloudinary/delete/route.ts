@@ -15,6 +15,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Public ID is required' }, { status: 400 });
         }
 
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        const apiKey = process.env.CLOUDINARY_API_KEY;
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+        if (!cloudName || !apiKey || !apiSecret) {
+            console.error('Cloudinary credentials missing:', {
+                cloudName: !!cloudName,
+                apiKey: !!apiKey,
+                apiSecret: !!apiSecret
+            });
+            return NextResponse.json({ error: 'Server configuration error: Missing Cloudinary credentials' }, { status: 500 });
+        }
+
         const result = await cloudinary.uploader.destroy(publicId, {
             resource_type: resourceType || 'image',
         });

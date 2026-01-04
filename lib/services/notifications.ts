@@ -95,7 +95,7 @@ export function subscribeToUnreadNotifications(callback: (notifications: AdminNo
     const q = query(
         collection(db, NOTIFICATIONS_COLLECTION),
         where('read', '==', false),
-        orderBy('createdAt', 'desc'),
+        // orderBy('createdAt', 'desc'), // Temporarily removed to debug assertion failure (potential missing index)
         limit(50)
     );
 
@@ -105,5 +105,7 @@ export function subscribeToUnreadNotifications(callback: (notifications: AdminNo
             ...doc.data()
         })) as AdminNotification[];
         callback(notifications);
+    }, (error) => {
+        console.error("Notification subscription error:", error);
     });
 }

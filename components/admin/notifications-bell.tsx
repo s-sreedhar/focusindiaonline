@@ -17,6 +17,7 @@ import {
     markAsRead,
     markAllAsRead
 } from '@/lib/services/notifications';
+import { useAuthStore } from '@/lib/auth-store';
 import { cn } from '@/lib/utils'; // Assuming cn exists
 
 function NotificationIcon({ type }: { type: AdminNotification['type'] }) {
@@ -35,14 +36,17 @@ function NotificationIcon({ type }: { type: AdminNotification['type'] }) {
 export function NotificationsBell() {
     const [notifications, setNotifications] = useState<AdminNotification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+    const { user } = useAuthStore();
     const router = useRouter();
 
     useEffect(() => {
+        if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) return;
+
         const unsubscribe = subscribeToUnreadNotifications((data) => {
             setNotifications(data);
         });
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     const handleNotificationClick = async (notification: AdminNotification) => {
         try {

@@ -124,20 +124,19 @@ export default function BannersPage() {
         try {
             await deleteDoc(doc(db, 'banners', deleteId));
 
-            // Delete associated image from Cloudinary if needed
-            // The banner object might not be readily available if we just have ID, 
-            // but we can find it in 'banners' state
-            const bannerToDelete = banners.find(b => b.id === deleteId);
-            if (bannerToDelete?.imageUrl) {
-                // If we imported deleteFromCloudinary, we could use it. 
-                // The current file imports it! Line 11.
-                // It's good practice to cleanup.
-                await deleteFromCloudinary(bannerToDelete.imageUrl);
+            try {
+                if (bannerToDelete?.imageUrl) {
+                    await deleteFromCloudinary(bannerToDelete.imageUrl);
+                }
+            } catch (err) {
+                console.error("Cloudinary delete failed:", err);
             }
 
-            toast.success("Banner deleted successfully");
             setBanners(prev => prev.filter(banner => banner.id !== deleteId));
+            toast.success("Banner deleted successfully");
         } catch (error) {
+            //console.error("Error deleting banner:", error);
+            toast.error("Failed to delete banner");
             //console.error("Error deleting banner:", error);
             toast.error("Failed to delete banner");
         } finally {

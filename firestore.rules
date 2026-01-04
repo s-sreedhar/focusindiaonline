@@ -2,9 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is admin
+    // Helper function to check if user is admin or superadmin
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin' || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
     // Helper function to check if user is owner (for user/customer profiles)
@@ -30,16 +33,21 @@ service cloud.firestore {
     match /banners/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /combos/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /coupons/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /testimonials/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /reviews/{document=**} { 
+      allow read: if true; 
+      allow create: if request.auth != null;
+      allow write: if isAdmin(); 
+    }
     match /popups/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /pages/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /test-series/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /admin_notifications/{document=**} { allow read, write: if isAdmin(); }
+    match /test_series/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
     // Enquiries: Public create, Admin manage
     match /enquiries/{document=**} { 
-      allow create: if true;
-      allow read, write, delete: if isAdmin();
-    }
+      allow create: if true; 
+      allow read, write, delete: if isAdmin(); 
+    } 
 
     // Orders
     match /orders/{orderId} {

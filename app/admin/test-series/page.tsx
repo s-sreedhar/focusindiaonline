@@ -238,7 +238,11 @@ export default function TestSeriesPage() {
 
             // Delete Image from Cloudinary
             if (seriesToDelete?.imageUrl) {
-                await deleteFromCloudinary(seriesToDelete.imageUrl, 'image');
+                try {
+                    await deleteFromCloudinary(seriesToDelete.imageUrl, 'image');
+                } catch (imgError) {
+                    console.error("Failed to delete image from Cloudinary:", imgError);
+                }
             }
 
             toast.success("Test Series deleted");

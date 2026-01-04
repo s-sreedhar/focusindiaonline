@@ -107,7 +107,12 @@ export default function BooksPage() {
         try {
             const bookToDelete = books.find(b => b.id === itemToDelete);
             if (bookToDelete?.image) {
-                await deleteFromCloudinary(bookToDelete.image);
+                try {
+                    await deleteFromCloudinary(bookToDelete.image);
+                } catch (imgError) {
+                    console.error("Failed to delete image from Cloudinary:", imgError);
+                    toast.error('Could not delete image, but removing book entry...');
+                }
             }
             await deleteDoc(doc(db, 'books', itemToDelete));
             setBooks(books.filter(book => book.id !== itemToDelete));

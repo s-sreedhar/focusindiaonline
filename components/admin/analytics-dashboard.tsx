@@ -80,25 +80,34 @@ export function AnalyticsDashboard() {
     const fetchData = async () => {
         try {
             setLoading(true);
+
             // Fetch Orders
-            const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-            const ordersSnapshot = await getDocs(ordersQuery);
-            const ordersData = ordersSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Order[];
-            setOrders(ordersData);
+            try {
+                const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+                const ordersSnapshot = await getDocs(ordersQuery);
+                const ordersData = ordersSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Order[];
+                setOrders(ordersData);
+            } catch (orderError) {
+                console.error("Error fetching orders:", orderError);
+            }
 
             // Fetch Books (Inventory)
-            const booksSnapshot = await getDocs(collection(db, 'books'));
-            const booksData = booksSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Book[];
-            setBooks(booksData);
+            try {
+                const booksSnapshot = await getDocs(collection(db, 'books'));
+                const booksData = booksSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Book[];
+                setBooks(booksData);
+            } catch (bookError) {
+                console.error("Error fetching books:", bookError);
+            }
 
         } catch (error) {
-            //console.error("Error fetching analytics data:", error);
+            console.error("Error in dashboard fetch:", error);
         } finally {
             setLoading(false);
         }

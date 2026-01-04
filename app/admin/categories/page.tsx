@@ -59,6 +59,8 @@ export default function CategoriesPage() {
         const unsubscribeCat = onSnapshot(catQuery, (snapshot) => {
             const catData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[];
             setCategories(catData);
+        }, (error) => {
+            console.error("Error fetching categories:", error);
         });
 
         // Real-time listener for Subjects

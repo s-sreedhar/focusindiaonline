@@ -90,30 +90,29 @@ export function PhoneLogin() {
     }, [step, timeLeft, canResend]);
 
     const checkUserExists = async (phone: string) => {
-        // Prepare multiple formats to check against
-        const digits = phone.replace(/\D/g, ''); // Ensure only digits
-        const last10 = digits.slice(-10);
+        try {
+            const response = await fetch('/api/auth/check-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone }),
+            });
 
-        const candidates = [
-            `+91${last10}`, // Format: +919876543210
-            last10,         // Format: 9876543210
-            digits,         // Format: whatever full digits user has
-            phone           // Original input just in case
-        ];
+            if (!response.ok) {
+                if (response.status === 404) {
+                    return null;
+                }
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to check user');
+            }
 
-        // Remove duplicates
-        const uniqueCandidates = Array.from(new Set(candidates));
-
-        const usersRef = collection(db, 'users');
-        // Use 'in' query to check all formats at once
-        const q = query(usersRef, where('phone', 'in', uniqueCandidates));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-            return null;
+            const data = await response.json();
+            return data.user;
+        } catch (error) {
+            console.error('Error checking user:', error);
+            throw error;
         }
-
-        return querySnapshot.docs[0].data();
     };
 
     const handleContinue = async () => {
