@@ -55,8 +55,8 @@ export default function BooksPage() {
     const [categories, setCategories] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [selectedSubject, setSelectedSubject] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedSubject, setSelectedSubject] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 12;
 
@@ -137,9 +137,9 @@ export default function BooksPage() {
         const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             book.author.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesCategory = selectedCategory ? book.category === selectedCategory : true;
+        const matchesCategory = selectedCategory && selectedCategory !== 'all' ? book.category === selectedCategory : true;
 
-        const matchesSubject = selectedSubject ? (
+        const matchesSubject = selectedSubject && selectedSubject !== 'all' ? (
             (book.subject === selectedSubject) ||
             (book.subjects && book.subjects.includes(selectedSubject))
         ) : true;
@@ -203,7 +203,7 @@ export default function BooksPage() {
                             <SelectValue placeholder="All Categories" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Categories</SelectItem>
+                            <SelectItem value="all">All Categories</SelectItem>
                             {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.name}>
                                     {cat.name}
@@ -222,7 +222,7 @@ export default function BooksPage() {
                             <SelectValue placeholder="All Subjects" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All Subjects</SelectItem>
+                            <SelectItem value="all">All Subjects</SelectItem>
                             {subjects.map((subject) => (
                                 <SelectItem key={subject.id} value={subject.name}>
                                     {subject.name}

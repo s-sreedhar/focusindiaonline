@@ -13,16 +13,16 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-    console.log('[Crypto] Verifying password...');
-    console.log('[Crypto] Stored hash length:', hash?.length);
-    console.log('[Crypto] Stored hash preview:', hash?.substring(0, 20) + '...');
+    // console.log('[Crypto] Verifying password...');
+    // console.log('[Crypto] Stored hash length:', hash?.length);
+    // console.log('[Crypto] Stored hash preview:', hash?.substring(0, 20) + '...');
     const newHash = await hashPassword(password);
     const result = newHash === hash;
-    console.log('[Crypto] Verification result:', result);
+    // console.log('[Crypto] Verification result:', result);
     if (!result) {
-        console.log('[Crypto] Hash mismatch!');
-        console.log('[Crypto] Expected:', hash?.substring(0, 40));
-        console.log('[Crypto] Got:     ', newHash.substring(0, 40));
+        // console.log('[Crypto] Hash mismatch!');
+        // console.log('[Crypto] Expected:', hash?.substring(0, 40));
+        // console.log('[Crypto] Got:     ', newHash.substring(0, 40));
     }
     return result;
 }
