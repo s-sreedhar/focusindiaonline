@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/lib/auth-store';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import {
@@ -63,6 +64,7 @@ interface Book {
 }
 
 export function AnalyticsDashboard() {
+    const { user } = useAuthStore();
     const [orders, setOrders] = useState<Order[]>([]);
     const [books, setBooks] = useState<Book[]>([]);
     const [loading, setLoading] = useState(true);
@@ -74,8 +76,10 @@ export function AnalyticsDashboard() {
     const [inventoryBasis, setInventoryBasis] = useState<'selling' | 'original'>('selling');
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (user && (user.role === 'admin' || user.role === 'superadmin')) {
+            fetchData();
+        }
+    }, [user]);
 
     const fetchData = async () => {
         try {
