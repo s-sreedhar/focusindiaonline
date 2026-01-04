@@ -199,30 +199,50 @@ export function PhoneLogin() {
         setError('');
 
         try {
+            console.log('=== Password Login Debug ===');
+            console.log('User Data:', {
+                uid: userData.uid,
+                phone: userData.phone,
+                role: userData.role,
+                hasPassword: !!userData.password,
+                passwordLength: userData.password?.length
+            });
+            console.log('Entered password length:', password.length);
+
             // Verify password
             const isValid = await verifyPassword(password, userData.password);
+            console.log('Password verification result:', isValid);
 
             if (!isValid) {
+                console.error('Password verification failed');
                 setError('Invalid password');
                 setLoading(false);
                 return;
             }
 
-            // Login successful (Local state only, no Firebase Auth token if using password only)
-            // WARNING: This does not establish a Firebase Auth session.
-            // If the app relies on Firebase Auth rules, this will fail.
-            // However, based on the prompt, we are storing password in DB and logging in.
+            console.log('Password verified successfully, creating custom token...');
 
-            setUser({
-                id: userData.uid,
-                username: userData.phone || '',
-                displayName: userData.displayName || 'User',
-                phone: userData.phone || '',
-                createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-                role: userData.role || 'customer',
-                authMethod: 'custom'
+            // Get custom token from backend
+            const tokenResponse = await fetch('/api/auth/custom-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: userData.uid })
             });
 
+            if (!tokenResponse.ok) {
+                throw new Error('Failed to create authentication token');
+            }
+
+            const { customToken } = await tokenResponse.json();
+
+            // Sign in with custom token to establish Firebase Auth session
+            const { signInWithCustomToken } = await import('firebase/auth');
+            const userCredential = await signInWithCustomToken(auth, customToken);
+
+            console.log('Firebase Auth session established:', userCredential.user.uid);
+
+            // The auth state listener in auth-store will handle setting the user
+            // Just redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
                 router.push('/admin');
             } else {
@@ -230,7 +250,7 @@ export function PhoneLogin() {
             }
 
         } catch (err: any) {
-            //console.error('Error logging in:', err);
+            console.error('Error logging in:', err);
             setError('Login failed. Please try again.');
         } finally {
             setLoading(false);

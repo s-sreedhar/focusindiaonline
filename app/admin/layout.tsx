@@ -20,17 +20,13 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    // console.log('[Admin Layout] Auth state:', { user, loading, role: user?.role });
-
     if (!loading) {
       if (!user) {
-        // console.log('[Admin Layout] No user found, redirecting to home');
         router.push('/');
       } else if (user.role !== 'superadmin' && user.role !== 'admin') {
-        // console.log('[Admin Layout] User role is not superadmin/admin:', user.role);
         router.push('/');
-      } else {
-        // console.log('[Admin Layout] Access granted for admin/superadmin');
+      } else if (user.authMethod !== 'firebase') {
+        router.push('/login');
       }
     }
   }, [user, loading, router]);
@@ -46,7 +42,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user || (user.role !== 'superadmin' && user.role !== 'admin')) {
+  if (!user || (user.role !== 'superadmin' && user.role !== 'admin') || user.authMethod !== 'firebase') {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md p-8">
@@ -57,7 +53,7 @@ export default function AdminLayout({
             {user ? ` Your current role is: ${user.role}` : ' Please log in with an admin account.'}
           </p>
           <p className="text-sm text-muted-foreground">
-            If you believe this is an error, please contact the system administrator.
+            Use phone OTP login to access admin features.
           </p>
         </div>
       </div>

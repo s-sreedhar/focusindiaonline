@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Pencil, Trash2, Loader2, Search, EyeOff } from 'lucide-react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
@@ -185,36 +192,44 @@ export default function BooksPage() {
                             }}
                         />
                     </div>
-                    <select
+                    <Select
                         value={selectedCategory}
-                        onChange={(e) => {
-                            setSelectedCategory(e.target.value);
+                        onValueChange={(value) => {
+                            setSelectedCategory(value);
                             setCurrentPage(1);
                         }}
-                        className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                        <option value="">All Categories</option>
-                        {categories.map((cat) => (
-                            <option key={cat.id} value={cat.name}>
-                                {cat.name}
-                            </option>
-                        ))}
-                    </select>
-                    <select
+                        <SelectTrigger className="w-full md:w-[200px]">
+                            <SelectValue placeholder="All Categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Categories</SelectItem>
+                            {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.name}>
+                                    {cat.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select
                         value={selectedSubject}
-                        onChange={(e) => {
-                            setSelectedSubject(e.target.value);
+                        onValueChange={(value) => {
+                            setSelectedSubject(value);
                             setCurrentPage(1);
                         }}
-                        className="flex h-10 w-full md:w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                        <option value="">All Subjects</option>
-                        {subjects.map((subject) => (
-                            <option key={subject.id} value={subject.name}>
-                                {subject.name}
-                            </option>
-                        ))}
-                    </select>
+                        <SelectTrigger className="w-full md:w-[200px]">
+                            <SelectValue placeholder="All Subjects" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">All Subjects</SelectItem>
+                            {subjects.map((subject) => (
+                                <SelectItem key={subject.id} value={subject.name}>
+                                    {subject.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </Card>
 

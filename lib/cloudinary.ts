@@ -35,28 +35,19 @@ export const uploadToCloudinary = async (file: File, folder: string = 'focusindi
 
 export const extractPublicId = (url: string): string | null => {
     try {
-        // Handle Cloudinary URLs
-        // Format: https://res.cloudinary.com/[cloud_name]/[resource_type]/[type]/[version]/[public_id].[format]
         if (url.includes('cloudinary.com')) {
             const parts = url.split('/');
             const filenameWithExtension = parts[parts.length - 1];
             const publicId = filenameWithExtension.split('.')[0];
-
-            // If there are folders, we might need to handle them. 
-            // A safer way is to regex but let's stick to simple split for now if we use flat structure.
-            // Cloudinary standard: .../upload/v12345678/folder/public_id.jpg
-
-            // Better regex approach for Cloudinary
-            const regex = /\/v\d+\/(.+)\.[a-z]+$/;
+            // Handle versioned URLs (e.g., /v1234567890/folder/image.jpg)
+            const regex = /\/v\d+\/(.+)\.[a-zA-Z0-9]+$/i;
             const match = url.match(regex);
             if (match && match[1]) {
                 return match[1];
             }
-
-            // Fallback for no versioning or simple structure
             return publicId;
         }
-        return url; // Assume it is already a public ID if not a URL
+        return url;
     } catch (e) {
         return null;
     }
@@ -64,12 +55,9 @@ export const extractPublicId = (url: string): string | null => {
 
 export const deleteFromCloudinary = async (publicIdOrUrl: string, resourceType: string = 'image') => {
     const publicId = extractPublicId(publicIdOrUrl);
-
     if (!publicId) {
-        //console.error('Invalid public ID or URL for deletion');
-        return;
+        throw new Error('Invalid Cloudinary URL or public ID');
     }
-
     try {
         const response = await fetch('/api/cloudinary/delete', {
             method: 'POST',
@@ -78,14 +66,13 @@ export const deleteFromCloudinary = async (publicIdOrUrl: string, resourceType: 
             },
             body: JSON.stringify({ publicId, resourceType }),
         });
-
         if (!response.ok) {
-            throw new Error('Failed to delete from Cloudinary');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Cloudinary Delete API Error:', errorData);
+            throw new Error(errorData.error || 'Failed to delete from Cloudinary');
         }
-
         return await response.json();
     } catch (error) {
-        //console.error('Error deleting from Cloudinary:', error);
         throw error;
     }
 };

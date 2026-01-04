@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, doc, updateDoc, where, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { Loader2, User, Search, MoreVertical, Shield, Plus, Lock, Eye, EyeOff } from 'lucide-react';
+import { collection, getDocs, orderBy, query, doc, updateDoc, where, setDoc, serverTimestamp, getDoc, deleteDoc } from 'firebase/firestore';
+import { Loader2, User, Search, MoreVertical, Shield, Plus, Lock, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,6 +79,7 @@ export default function AdminsPage() {
 
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
     const [formData, setFormData] = useState({
@@ -175,22 +176,31 @@ export default function AdminsPage() {
                 return;
             }
 
-            // Create
-            const newId = uuidv4();
+            const res = await fetch('/api/admin/create-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: normalizedPhone })
+            });
+            if (!res.ok) {
+                toast.error('Failed to create Firebase user');
+                setProcessing(false);
+                return;
+            }
+            const { uid } = await res.json();
             const hashedPassword = await hashPassword(formData.password);
 
             const newUser = {
-                uid: newId,
+                uid,
                 displayName: formData.displayName,
-                phone: normalizedPhone, // Save normalized
+                phone: normalizedPhone,
                 email: formData.email,
                 role: formData.role,
                 password: hashedPassword,
                 createdAt: serverTimestamp(),
-                username: normalizedPhone // Fallback
+                username: normalizedPhone
             };
 
-            await setDoc(doc(db, 'users', newId), newUser);
+            await setDoc(doc(db, 'users', uid), newUser);
 
             toast.success("Admin created successfully");
             setIsCreateDialogOpen(false);
@@ -273,6 +283,46 @@ export default function AdminsPage() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!selectedUser) return;
+
+        // Prevent self-deletion
+        if (selectedUser.id === currentUser?.id) {
+            toast.error("You cannot delete your own account");
+            return;
+        }
+
+        setProcessing(true);
+        try {
+            // Delete from Firebase Auth via API
+            const res = await fetch('/api/admin/delete-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: selectedUser.id })
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                toast.error(error.error || 'Failed to delete user from Firebase Auth');
+                setProcessing(false);
+                return;
+            }
+
+            // Delete from Firestore
+            await deleteDoc(doc(db, 'users', selectedUser.id));
+
+            toast.success("Admin deleted successfully");
+            setIsDeleteDialogOpen(false);
+            setSelectedUser(null);
+            fetchAdmins();
+        } catch (error) {
+            //console.error("Error deleting admin:", error);
+            toast.error("Failed to delete admin");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const openEditDialog = (user: UserData) => {
         setSelectedUser(user);
         setFormData({
@@ -283,6 +333,11 @@ export default function AdminsPage() {
             role: user.role
         });
         setIsEditDialogOpen(true);
+    };
+
+    const openDeleteDialog = (user: UserData) => {
+        setSelectedUser(user);
+        setIsDeleteDialogOpen(true);
     };
 
 
@@ -374,6 +429,14 @@ export default function AdminsPage() {
                                                 <DropdownMenuItem onClick={() => openEditDialog(user)}>
                                                     <Shield className="w-4 h-4 mr-2" />
                                                     Edit Details
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => openDeleteDialog(user)}
+                                                    className="text-red-600 focus:text-red-600"
+                                                    disabled={user.id === currentUser?.id}
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Delete Admin
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -562,6 +625,27 @@ export default function AdminsPage() {
                         <Button onClick={handleEdit} disabled={processing}>
                             {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Admin
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* DELETE CONFIRMATION DIALOG */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Delete Admin</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>{selectedUser?.displayName}</strong>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={processing}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={processing}>
+                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Delete Admin
                         </Button>
                     </DialogFooter>
                 </DialogContent>

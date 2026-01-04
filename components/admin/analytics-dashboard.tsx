@@ -82,6 +82,9 @@ export function AnalyticsDashboard() {
     }, [user]);
 
     const fetchData = async () => {
+        if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
+            return;
+        }
         try {
             setLoading(true);
 
@@ -530,5 +533,5 @@ export function AnalyticsDashboard() {
                 </TabsContent>
             </Tabs>
         </div>
-    );
-}
+    )
+};
