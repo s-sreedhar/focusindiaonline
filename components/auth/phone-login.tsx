@@ -199,19 +199,19 @@ export function PhoneLogin() {
         setError('');
 
         try {
-            console.log('=== Password Login Debug ===');
-            console.log('User Data:', {
-                uid: userData.uid,
-                phone: userData.phone,
-                role: userData.role,
-                hasPassword: !!userData.password,
-                passwordLength: userData.password?.length
-            });
-            console.log('Entered password length:', password.length);
+            // console.log('=== Password Login Debug ===');
+            // console.log('User Data:', {
+            //     uid: userData.uid,
+            //     phone: userData.phone,
+            //     role: userData.role,
+            //     hasPassword: !!userData.password,
+            //     passwordLength: userData.password?.length
+            // });
+            // console.log('Entered password length:', password.length);
 
             // Verify password
             const isValid = await verifyPassword(password, userData.password);
-            console.log('Password verification result:', isValid);
+            // console.log('Password verification result:', isValid);
 
             if (!isValid) {
                 console.error('Password verification failed');
@@ -220,7 +220,7 @@ export function PhoneLogin() {
                 return;
             }
 
-            console.log('Password verified successfully, creating custom token...');
+            // console.log('Password verified successfully, creating custom token...');
 
             // Get custom token from backend
             const tokenResponse = await fetch('/api/auth/custom-token', {
@@ -239,14 +239,15 @@ export function PhoneLogin() {
             const { signInWithCustomToken } = await import('firebase/auth');
             const userCredential = await signInWithCustomToken(auth, customToken);
 
-            console.log('Firebase Auth session established:', userCredential.user.uid);
+            // console.log('Firebase Auth session established:', userCredential.user.uid);
 
             // The auth state listener in auth-store will handle setting the user
             // Just redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
-                router.push('/admin');
+                console.log('Redirecting admin user to /admin dashboard');
+                window.location.href = '/admin';
             } else {
-                router.push('/');
+                window.location.href = '/';
             }
 
         } catch (err: any) {
@@ -284,10 +285,12 @@ export function PhoneLogin() {
                     authMethod: 'firebase'
                 });
 
+                // Use window.location.href for admin redirects to ensure full page reload
                 if (userData?.role === 'superadmin' || userData?.role === 'admin') {
-                    router.push('/admin');
+                    console.log('Redirecting admin user to /admin dashboard');
+                    window.location.href = '/admin';
                 } else {
-                    router.push('/');
+                    window.location.href = '/';
                 }
             }
         } catch (err: any) {
