@@ -459,55 +459,15 @@ export default function CheckoutPage() {
   const initiatePayment = async (userId: string) => {
     setLoading(true);
     try {
-      let orderId = '';
 
-      await runTransaction(db, async (transaction) => {
-        // 1. READS: Check stock for all items FIRST
-        const bookReads: { ref: any, item: typeof items[0] }[] = [];
-        for (const item of items) {
-          if (item.type === 'test_series') continue; // Skip stock check for digital items
-          const bookRef = doc(db, 'books', item.bookId);
-          bookReads.push({ ref: bookRef, item });
-        }
-
-        const bookDocs = await Promise.all(bookReads.map(b => transaction.get(b.ref)));
-
-        // Validate all stocks
-        bookDocs.forEach((bookDoc, index) => {
-          const { item } = bookReads[index];
-          if (!bookDoc.exists()) {
-            throw new Error(`Book "${item.title}" not found`);
-          }
-          const bookData = bookDoc.data() as any;
-          // bookData is typed as DocumentData, we need safe access
-          const currentStock = bookData?.stockQuantity ?? bookData?.stock ?? 0;
-
-          if (currentStock < item.quantity) {
-            throw new Error(`Insufficient stock for "${item.title}". Available: ${currentStock}`);
-          }
-        });
-
-        // 2. WRITES: All updates and creations
-
-        // Update stock
-        bookDocs.forEach((bookDoc, index) => {
-          const { ref, item } = bookReads[index];
-          const bookData = bookDoc.data() as any;
-          const currentStock = bookData?.stockQuantity ?? bookData?.stock ?? 0;
-
-          transaction.update(ref, {
-            stockQuantity: currentStock - item.quantity
-          });
-        });
-
-        // Create Order
-        orderId = generateOrderId();
-        const newOrderRef = doc(db, 'orders', orderId);
-        transaction.set(newOrderRef, {
-          orderId,
+      // 1. Create Order via Secure Backend API
+      const createOrderResponse = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           userId,
-          items: JSON.parse(JSON.stringify(items)), // Remove undefined values
-          shippingAddress: JSON.parse(JSON.stringify({
+          items: items, // structured clone happens in JSON.stringify
+          shippingAddress: {
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
@@ -516,36 +476,37 @@ export default function CheckoutPage() {
             city: formData.city,
             state: formData.state,
             zipCode: formData.zipCode,
-          })),
-          paymentMethod: 'PHONEPE',
+          },
           subtotal,
           shippingCharges,
           discount,
-          appliedCoupon: appliedCoupon ? appliedCoupon.code : null, // Store used coupon
+          appliedCoupon: appliedCoupon ? appliedCoupon.code : null,
           totalAmount: total,
-          status: 'payment_pending',
-          paymentStatus: 'pending',
-          createdAt: serverTimestamp(),
-        });
-
-        // Update User Profile
-        const userRef = doc(db, 'users', userId);
-        transaction.set(userRef, {
-          email: formData.email,
-          phone: formData.phone.replace(/\D/g, '').slice(-10),
-          displayName: `${formData.firstName} ${formData.lastName}`,
-          address: {
-            street: formData.address,
-            city: formData.city,
-            state: formData.state,
-            zipCode: formData.zipCode,
-            country: 'India'
+          userProfile: {
+            email: formData.email,
+            phone: formData.phone.replace(/\D/g, '').slice(-10),
+            displayName: `${formData.firstName} ${formData.lastName}`,
+            address: {
+              street: formData.address,
+              city: formData.city,
+              state: formData.state,
+              zipCode: formData.zipCode,
+              country: 'India'
+            }
           },
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+          isGuest: !isAuthenticated || !user?.id
+        })
       });
 
-      // NOTIFY: Potential Lead (Payment Pending)
+      const orderData = await createOrderResponse.json();
+
+      if (!createOrderResponse.ok) {
+        throw new Error(orderData.error || 'Failed to create order');
+      }
+
+      const { orderId } = orderData;
+
+      // NOTIFY: Potential Lead (Payment Pending) - Client side notification can still happen or move to backend
       await createNotification(
         'potential_lead',
         'Potential Lead (Payment Pending)',
@@ -553,7 +514,7 @@ export default function CheckoutPage() {
         orderId
       );
 
-      // 3. Call Payment API
+      // 2. Call Payment API
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -576,7 +537,7 @@ export default function CheckoutPage() {
       }
 
     } catch (error: any) {
-      //console.error("Error initiating payment:", error);
+      console.error("Error initiating payment:", error);
       toast.error(error.message || 'Failed to initiate payment. Please try again.');
       setLoading(false);
     }

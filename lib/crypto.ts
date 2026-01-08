@@ -1,5 +1,5 @@
 export async function hashPassword(password: string): Promise<string> {
-    console.log('[Crypto] Hashing password, length:', password.length);
+    // console.log('[Crypto] Hashing password, length:', password.length);
     const start = performance.now();
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -7,8 +7,8 @@ export async function hashPassword(password: string): Promise<string> {
     const result = Array.from(new Uint8Array(hash))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-    console.log(`[Crypto] Password hashed in ${performance.now() - start}ms, hash length:`, result.length);
-    console.log('[Crypto] Hash preview:', result.substring(0, 20) + '...');
+    // console.log(`[Crypto] Password hashed in ${performance.now() - start}ms, hash length:`, result.length);
+    // console.log('[Crypto] Hash preview:', result.substring(0, 20) + '...');
     return result;
 }
 

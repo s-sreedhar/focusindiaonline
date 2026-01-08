@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthStore>()(
           const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
           const now = Date.now();
           if (now - lastActivity > thirtyDaysMs) {
-            console.log('[AuthStore] Session expired due to inactivity');
+            // console.log('[AuthStore] Session expired due to inactivity');
             logout();
           } else {
             set({ lastActivity: now });

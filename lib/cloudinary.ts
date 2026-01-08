@@ -12,8 +12,8 @@ export const uploadToCloudinary = async (file: File, folder: string = 'focusindi
     formData.append('folder', folder);
 
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
-    console.log('[Cloudinary Debug] Uploading to:', url);
-    console.log('[Cloudinary Debug] Preset exists:', !!uploadPreset);
+    // console.log('[Cloudinary Debug] Uploading to:', url);
+    // console.log('[Cloudinary Debug] Preset exists:', !!uploadPreset);
 
     const response = await fetch(
         url,

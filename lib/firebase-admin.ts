@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 // Singleton instance
 let firebaseAdmin: admin.app.App | null = null;
@@ -20,7 +21,7 @@ function getFirebaseAdmin(): admin.app.App {
 
         if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
             // Use full service account JSON from env
-            // console.log('Using FIREBASE_SERVICE_ACCOUNT_KEY from environment');
+            console.log('🔥 Admin Init: Using FIREBASE_SERVICE_ACCOUNT_KEY');
             try {
                 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
                 credential = admin.credential.cert(serviceAccount);
@@ -30,12 +31,14 @@ function getFirebaseAdmin(): admin.app.App {
             }
         } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
             // Use individual env vars
-            // console.log('Using individual Firebase env vars');
+            console.log('🔥 Admin Init: Using individual Firebase env vars');
             credential = admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
                 privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
             });
+        } else {
+            console.warn('⚠️ Admin Init: No credentials found in env. Returning unauthenticated app or relying on ADC.');
         }
 
         firebaseAdmin = admin.initializeApp({
@@ -59,7 +62,8 @@ export function getAdminAuth() {
 
 export function getAdminDb() {
     const app = getFirebaseAdmin();
-    return admin.firestore(app);
+    // Use the named database 'focusindia' to match client configuration
+    return getFirestore(app, 'focusindia');
 }
 
 export function getAdminStorage() {

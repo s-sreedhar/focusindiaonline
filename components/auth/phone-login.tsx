@@ -244,7 +244,7 @@ export function PhoneLogin() {
             // The auth state listener in auth-store will handle setting the user
             // Just redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
-                console.log('Redirecting admin user to /admin dashboard');
+                // console.log('Redirecting admin user to /admin dashboard');
                 window.location.href = '/admin';
             } else {
                 window.location.href = '/';
@@ -287,7 +287,7 @@ export function PhoneLogin() {
 
                 // Use window.location.href for admin redirects to ensure full page reload
                 if (userData?.role === 'superadmin' || userData?.role === 'admin') {
-                    console.log('Redirecting admin user to /admin dashboard');
+                    // console.log('Redirecting admin user to /admin dashboard');
                     window.location.href = '/admin';
                 } else {
                     window.location.href = '/';

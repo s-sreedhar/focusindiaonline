@@ -28,8 +28,8 @@ export const sendWhatsAppNotification = async (
     }
 
     try {
-        console.log(`[Twilio] Attempting to send WhatsApp message`);
-        console.log(`[Twilio] To: whatsapp:${formattedAdminPhone}`);
+        // console.log(`[Twilio] Attempting to send WhatsApp message`);
+        // console.log(`[Twilio] To: whatsapp:${formattedAdminPhone}`);
 
         // Construct message based on status
         let body = '';
@@ -50,7 +50,7 @@ export const sendWhatsAppNotification = async (
             to: `whatsapp:${formattedAdminPhone}`
         });
 
-        console.log('[Twilio] WhatsApp notification sent. SID:', message.sid);
+        // console.log('[Twilio] WhatsApp notification sent. SID:', message.sid);
         return { success: true, sid: message.sid };
     } catch (error: any) {
         console.error('[Twilio Error] Failed to send WhatsApp notification:', {
