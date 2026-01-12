@@ -17,7 +17,9 @@ service cloud.firestore {
 
     // Users: Users can read/write their own data; Admins can read/write all
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      // Prevent privilege escalation: Users can only write if the resulting role is 'customer'
+      allow write: if (isOwner(userId) && request.resource.data.role == 'customer') || isAdmin();
     }
     
     // Customers: Users can read/write their own data; Admins can read/write all
@@ -40,10 +42,13 @@ service cloud.firestore {
     }
     match /popups/{document=**} { allow read: if true; allow write: if isAdmin(); }
     match /pages/{document=**} { allow read: if true; allow write: if isAdmin(); }
-    match /admin_notifications/{document=**} { allow read, write: if isAdmin(); }
+    match /admin_notifications/{document=**} { 
+      allow read, update, delete: if isAdmin();
+      allow create: if request.auth != null; 
+    }
     match /test_series/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
-    // Enquiries: Public create, Admin manage
+    // Enquiries: Public create, Admin manage 
     match /enquiries/{document=**} { 
       allow create: if true; 
       allow read, write, delete: if isAdmin(); 

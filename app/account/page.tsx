@@ -102,6 +102,12 @@ export default function AccountPage() {
       description: 'Edit your profile information'
     },
     {
+      icon: BarChart3,
+      label: 'My Test Series',
+      href: '/account/downloads',
+      description: 'Access your purchased test series'
+    },
+    {
       icon: Heart,
       label: 'Wishlist',
       href: '/wishlist',

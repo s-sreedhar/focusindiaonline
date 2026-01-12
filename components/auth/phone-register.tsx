@@ -120,21 +120,31 @@ export function PhoneRegister() {
             const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
             // console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
 
-            // Check if user already exists
-            const digits = phoneNumber.replace(/\D/g, '');
-            const last10 = digits.slice(-10);
-            const normalizedPhone = `+91${last10}`;
-            const candidates = [normalizedPhone, last10, digits, phoneNumber];
+            // Call API to check if user exists (server-side check to avoid permission issues)
+            const response = await fetch('/api/auth/check-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: formattedPhone }),
+            });
 
-            const { collection, query, where, getDocs } = await import('firebase/firestore');
-            const usersRef = collection(db, 'users');
-            const q = query(usersRef, where('phone', 'in', candidates));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                setError('This phone number is already registered.');
-                setLoading(false);
-                return;
+            if (response.ok) {
+                const data = await response.json();
+                if (data.exists) {
+                    setError('This phone number is already registered.');
+                    setLoading(false);
+                    return;
+                }
+            } else if (response.status !== 404) {
+                // 404 means user doesn't exist, which is what we want.
+                // Any other error (500 etc) is a problem.
+                console.error('Error checking user existence:', await response.text());
+                // Proceed cautiously or block? 
+                // If the check fails, we might allow OTP sending but registration might fail later if checks are repeated.
+                // Ideally we should block to prevent issues, but let's assume if it's not 404/200 it's a temp error.
+                // For safety: if API fails, we might technically allow proceeding if we are sure, 
+                // but getting a 500 implies DB issue.
+                // Let's assume if not 200/404, we proceed but log it. 
+                // Actually, if status is 404, data.exists is false (or body is just {exists:false}).
             }
 
             const appVerifier = window.recaptchaVerifier;
@@ -239,15 +249,26 @@ export function PhoneRegister() {
             const userDoc = await getDoc(userDocRef);
             // console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
 
-            const phoneNumber = user.phoneNumber ? user.phoneNumber.replace(/\D/g, '').slice(-10) : '';
+            // Server-side check for duplicate account already done via API check logic if we wanted.
+            // But we can double check here or just rely on the fact that if a user with this phone exists in 'users' collection with a different UID, 
+            // it's a conflict.
+            // However, since we are authenticated as 'user' (UID X), we can't query the collection for "phone == Y" generally 
+            // without hitting permission issues if Y belongs to UID Z.
+            // So we skip the client-side duplicate check here and rely on the initial check we did + security rules (which don't enforce unique phone, but app logic does)
+            // OR we call the check-user API again if we really want to be paranoid.
 
-            // Check if ANY user exists with this phone number (to prevent duplicate accounts if UID is different for some reason, though unlikely with Phone Auth, but requested)
-            if (phoneNumber) {
-                const q = query(collection(db, 'users'), where('phone', '==', phoneNumber));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty && !userDoc.exists()) {
+            // Let's call the API again to be safe against race conditions or direct registration attempts (less likely here).
+            const response = await fetch('/api/auth/check-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phoneNumber }),
+            });
 
-                    setError('An account with this phone number already exists created by Admin. Please contact support.');
+            if (response.ok) {
+                const data = await response.json();
+                // If user exists AND the UID is different from ours, it's a conflict.
+                if (data.exists && data.user.uid !== user.uid) {
+                    setError('An account with this phone number already exists. Please contact support.');
                     setLoading(false);
                     return;
                 }

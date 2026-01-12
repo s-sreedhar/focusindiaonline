@@ -68,6 +68,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   image: string;
+  type?: string; // 'book' | 'test_series'
 }
 
 export interface Order {

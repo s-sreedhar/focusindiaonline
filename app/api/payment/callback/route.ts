@@ -41,6 +41,50 @@ export async function POST(request: Request) {
                 updatedAt: serverTimestamp()
             });
 
+            // Grant access to digital content (Test Series)
+            try {
+                const { getDoc, collection, addDoc } = require('firebase/firestore');
+                const orderSnap = await getDoc(orderRef);
+
+                if (orderSnap.exists()) {
+                    const orderData = orderSnap.data();
+                    const items = orderData.items || [];
+                    const userId = orderData.userId;
+
+                    if (userId) {
+                        for (const item of items) {
+                            if (item.type === 'test_series') {
+                                // Fetch Test Series details to get fileUrl
+                                const tsRef = doc(db, 'test_series', item.bookId);
+                                const tsSnap = await getDoc(tsRef);
+
+                                let fileUrl = '';
+                                if (tsSnap.exists()) {
+                                    fileUrl = tsSnap.data().fileUrl || '';
+                                }
+
+                                // Add to user purchases
+                                const purchaseData = {
+                                    itemId: item.bookId,
+                                    title: item.title,
+                                    price: item.price,
+                                    purchaseDate: serverTimestamp(),
+                                    type: 'test_series',
+                                    fileUrl: fileUrl,
+                                    orderId: merchantTransactionId
+                                };
+
+                                await addDoc(collection(db, `users/${userId}/purchases`), purchaseData);
+                                // console.log(`Granted access to Test Series ${item.title} for user ${userId}`);
+                            }
+                        }
+                    }
+                }
+            } catch (grantError) {
+                console.error("Failed to grant digital access:", grantError);
+                // Don't fail the request, but log critical error for manual intervention
+            }
+
             // Send WhatsApp Notification to Admin
             try {
                 const { getDoc } = require('firebase/firestore');
