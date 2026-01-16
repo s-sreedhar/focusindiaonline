@@ -6,6 +6,7 @@ import { ReviewsSection } from '@/components/reviews-section';
 import { RelatedProducts } from '@/components/related-products';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, BookOpen, TrendingUp, ShieldCheck, Loader2, Star } from 'lucide-react';
+import { ShareButton } from '@/components/share-button';
 import type { Book } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
@@ -282,6 +283,13 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 >
                                     <Heart className={`w-5 h-5 ${isInWish ? 'fill-accent text-accent' : ''}`} />
                                 </Button>
+
+                                <ShareButton
+                                    url={`${typeof window !== 'undefined' ? window.location.origin : ''}/product/${product.slug}`}
+                                    title={product.title}
+                                    variant="outline"
+                                    className="w-12 h-12 rounded-xl shrink-0"
+                                />
 
                                 <Button
                                     className="flex-1 gap-2 rounded-xl h-12 text-sm sm:text-base shadow-lg shadow-primary/20 px-2 sm:px-4"

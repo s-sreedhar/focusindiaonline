@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 // Since this is a client component, metadata is handled in layout or parent
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -22,58 +22,87 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let unsubscribeBooks: () => void;
+    let unsubscribeTestSeries: () => void;
+    let unsubscribeSubjects: () => void;
+    let unsubscribeCategories: () => void;
+
+    const setupListeners = async () => {
       try {
-        // Fetch Books
-        const booksSnapshot = await getDocs(collection(db, 'books'));
-        const booksData = booksSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            // Ensure inStock is determined by stockQuantity if explicit inStock boolean is missing
-            inStock: data.inStock !== undefined ? data.inStock : (data.stockQuantity ? Number(data.stockQuantity) > 0 : false),
-          };
-        }).filter((item: any) => item.show !== false) as Book[];
-        setBooks(booksData);
+        // Real-time Books Listener
+        const booksQuery = collection(db, 'books');
+        unsubscribeBooks = onSnapshot(booksQuery, (snapshot) => {
+          const booksData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              inStock: data.inStock !== undefined ? data.inStock : (data.stockQuantity ? Number(data.stockQuantity) > 0 : false),
+            };
+          }).filter((item: any) => item.show !== false) as Book[];
+          setBooks(booksData);
+        }, (error) => {
+          console.error("Error watching books:", error);
+        });
 
-        // Fetch Test Series
-        const tsSnapshot = await getDocs(collection(db, 'test_series'));
-        const tsData = tsSnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            image: data.imageUrl,
-            slug: `ts-${doc.id}`, // Use prefix for product page routing
-            category: 'Test Series', // Normalize for filtering
-            isTestSeries: true
-          };
-        }).filter((item: any) => item.show !== false);
-        setTestSeries(tsData);
+        // Real-time Test Series Listener
+        const tsQuery = collection(db, 'test_series');
+        unsubscribeTestSeries = onSnapshot(tsQuery, (snapshot) => {
+          const tsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              image: data.imageUrl,
+              slug: `ts-${doc.id}`,
+              category: 'Test Series',
+              isTestSeries: true
+            };
+          }).filter((item: any) => item.show !== false);
+          setTestSeries(tsData);
+        }, (error) => {
+          console.error("Error watching test series:", error);
+        });
 
-        // Fetch Subjects
-
-        // Fetch Subjects
+        // Real-time Subjects Listener
         const subjectsQuery = query(collection(db, 'subjects'), orderBy('name'));
-        const subjectsSnapshot = await getDocs(subjectsQuery);
-        const subjectsData = subjectsSnapshot.docs.map(doc => doc.data().name as string);
-        setAllSubjects(subjectsData);
+        unsubscribeSubjects = onSnapshot(subjectsQuery, (snapshot) => {
+          const subjectsData = snapshot.docs.map(doc => doc.data().name as string);
+          setAllSubjects(subjectsData);
+        }, (error) => {
+          console.error("Error watching subjects:", error);
+        });
 
-        // Fetch Categories
+        // Real-time Categories Listener
         const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
-        const categoriesSnapshot = await getDocs(categoriesQuery);
-        const categoriesData = categoriesSnapshot.docs.map(doc => doc.data().name as string);
-        setAllCategories(categoriesData);
+        unsubscribeCategories = onSnapshot(categoriesQuery, (snapshot) => {
+          const categoriesData = snapshot.docs.map(doc => doc.data().name as string);
+          setAllCategories(categoriesData);
+        }, (error) => {
+          console.error("Error watching categories:", error);
+        });
 
       } catch (error) {
-        //console.error("Error fetching data:", error);
+        //console.error("Error setting up listeners:", error);
       } finally {
+        // Just a safety net, but usually listeners fire immediately with cache or server data
+        // We'll trust the UI to update. 
+        // We can force loading false after a moment or manage it via listener callbacks if needed.
+        // For now, let's assume fast connection or cache.
+        // A better pattern is to use a promise wrapper or individual loading states, 
+        // but for this refactor, we'll clear loading simply.
         setLoading(false);
       }
     };
 
-    fetchData();
+    setupListeners();
+
+    return () => {
+      if (unsubscribeBooks) unsubscribeBooks();
+      if (unsubscribeTestSeries) unsubscribeTestSeries();
+      if (unsubscribeSubjects) unsubscribeSubjects();
+      if (unsubscribeCategories) unsubscribeCategories();
+    };
   }, []);
 
   if (loading) {

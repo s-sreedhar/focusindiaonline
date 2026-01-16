@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ShopGrid } from '@/components/shop-grid';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import type { Book } from '@/lib/types';
 
@@ -16,26 +16,38 @@ export function CategoryContent({ categoryName }: CategoryContentProps) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let unsubscribe: () => void;
+
         const fetchBooks = async () => {
             try {
                 const q = query(
                     collection(db, 'books'),
                     where('category', '==', categoryName)
                 );
-                const querySnapshot = await getDocs(q);
-                const booksData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Book[];
-                setBooks(booksData);
+
+                unsubscribe = onSnapshot(q, (snapshot) => {
+                    const booksData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as Book[];
+                    setBooks(booksData);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Error watching category books:", error);
+                    setLoading(false);
+                });
+
             } catch (error) {
-                //console.error("Error fetching books:", error);
-            } finally {
+                //console.error("Error setting up listener:", error);
                 setLoading(false);
             }
         };
 
         fetchBooks();
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, [categoryName]);
 
     if (loading) {

@@ -8,7 +8,7 @@ import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCompareStore } from '@/lib/compare-store';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DropdownMenu,
@@ -25,19 +25,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PRIMARY_CATEGORIES } from '@/lib/constants';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import Image from 'next/image';
 
 export function Header() {
+  return (
+    <Suspense fallback={<div className="h-16 bg-white border-b" />}>
+      <HeaderContent />
+    </Suspense>
+  );
+}
+
+function HeaderContent() {
   const { getItemCount: getCartCount } = useCartStore();
   const { getItemCount: getWishlistCount } = useWishlistStore();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { comparedBooks, removeFromCompare } = useCompareStore();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCategory, setSearchCategory] = useState('All');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [searchCategory, setSearchCategory] = useState(searchParams.get('category') || 'All');
   const [isScrolled, setIsScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
@@ -51,6 +60,22 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Sync state with URL params
+  useEffect(() => {
+    if (searchParams.get('search')) {
+      setSearchQuery(searchParams.get('search') || '');
+    } else {
+      setSearchQuery('');
+    }
+
+    const cat = searchParams.get('category');
+    if (cat && cat !== 'All') {
+      setSearchCategory(cat);
+    } else {
+      setSearchCategory('All');
+    }
+  }, [searchParams]);
+
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
   const compareCount = comparedBooks.length;
@@ -58,8 +83,18 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/shop?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(searchCategory)}`);
-      setSearchQuery('');
+      if (searchCategory === 'All') {
+        router.push(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      } else {
+        router.push(`/shop?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(searchCategory)}`);
+      }
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    if (window.location.pathname === '/shop') {
+      router.push('/shop');
     }
   };
 
@@ -133,13 +168,24 @@ export function Header() {
                   </div>
                 )}
                 <div className="w-px h-6 bg-gray-300 mx-2" />
-                <Input
-                  type="text"
-                  placeholder="Search books..."
-                  className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-r-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <div className="flex-1 relative">
+                  <Input
+                    type="text"
+                    placeholder="Search books..."
+                    className="w-full border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-r-full pr-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
                 <Button type="submit" size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary mr-1">
                   <Search className="w-4 h-4" />
                 </Button>
@@ -160,7 +206,7 @@ export function Header() {
                 </Link>
               </Button>
 
-              {/* Compare Button - Hide on very small screens */}
+              {/* Compare Button */}
               {mounted && (
                 <Dialog open={isCompareOpen} onOpenChange={setIsCompareOpen}>
                   <DialogTrigger asChild>
@@ -180,7 +226,6 @@ export function Header() {
                     <div className="mt-6">
                       {compareCount > 0 ? (
                         <div className="grid grid-cols-[150px_repeat(4,1fr)] gap-4 min-w-[800px]">
-                          {/* Header Row - Images */}
                           <div className="font-bold text-muted-foreground pt-10">Product</div>
                           {comparedBooks.map((book) => (
                             <div key={book.id} className="flex flex-col items-center text-center">
@@ -191,42 +236,36 @@ export function Header() {
                               <Button variant="outline" size="sm" className="mt-2" onClick={() => removeFromCompare(book.id)}>Remove</Button>
                             </div>
                           ))}
-                          {/* Fill empty columns if less than 4 */}
                           {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => (
                             <div key={`empty-${i}`} className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg bg-gray-50/50">
                               <div className="text-muted-foreground text-sm">Empty Slot</div>
                             </div>
                           ))}
 
-                          {/* Price */}
                           <div className="font-semibold text-muted-foreground border-t pt-4">Price</div>
                           {comparedBooks.map(book => (
                             <div key={book.id} className="border-t pt-4 text-center font-bold text-primary">₹{book.price}</div>
                           ))}
                           {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                          {/* Category */}
                           <div className="font-semibold text-muted-foreground border-t pt-4">Category</div>
                           {comparedBooks.map(book => (
                             <div key={book.id} className="border-t pt-4 text-center text-sm">{book.category}</div>
                           ))}
                           {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                          {/* Subject */}
                           <div className="font-semibold text-muted-foreground border-t pt-4">Subject</div>
                           {comparedBooks.map(book => (
                             <div key={book.id} className="border-t pt-4 text-center text-sm">{book.subjects?.join(', ') || '-'}</div>
                           ))}
                           {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                          {/* Author */}
                           <div className="font-semibold text-muted-foreground border-t pt-4">Author</div>
                           {comparedBooks.map(book => (
                             <div key={book.id} className="border-t pt-4 text-center text-sm">{book.author}</div>
                           ))}
                           {Array.from({ length: 4 - comparedBooks.length }).map((_, i) => <div key={i} className="border-t pt-4" />)}
 
-                          {/* Pages */}
                           <div className="font-semibold text-muted-foreground border-t pt-4">Action</div>
                           {comparedBooks.map(book => (
                             <div key={book.id} className="border-t pt-4 text-center">
@@ -319,20 +358,29 @@ export function Header() {
       {/* Mobile Search Bar - Fixed below header */}
       <div className={`fixed top-[68px] md:hidden left-0 right-0 z-40 bg-white px-4 py-2 border-b transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
         <form onSubmit={handleSearch} className="flex w-full items-center rounded-full bg-muted/50 border border-transparent focus-within:bg-white focus-within:border-primary/20 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-          <Input
-            type="text"
-            placeholder="Search books..."
-            className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-l-full pl-4"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="flex-1 relative">
+            <Input
+              type="text"
+              placeholder="Search books..."
+              className="w-full border-none bg-transparent shadow-none focus-visible:ring-0 h-10 rounded-l-full pl-4 pr-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <Button type="submit" size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-primary/10 hover:text-primary mr-1">
             <Search className="w-4 h-4" />
           </Button>
         </form>
       </div>
-
-      {/* Mobile Menu Overlay Removed via User Request */}
     </>
   );
 }
