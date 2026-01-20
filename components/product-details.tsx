@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ImageGallery } from '@/components/image-gallery';
 import { ReviewsSection } from '@/components/reviews-section';
 import { RelatedProducts } from '@/components/related-products';
+import { ProductCard } from '@/components/product-card';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, BookOpen, TrendingUp, ShieldCheck, Loader2, Star } from 'lucide-react';
 import { ShareButton } from '@/components/share-button';
@@ -349,19 +350,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <h2 className="text-2xl font-bold mb-6">This Bundle Includes ({comboBooks.length} Books)</h2>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {comboBooks.map((book) => (
-                                    <Link href={`/product/${book.slug}`} key={book.id} className="group block bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                                        <div className="aspect-[3/4] relative bg-gray-100">
-                                            <img
-                                                src={book.image}
-                                                alt={book.title}
-                                                className="object-cover w-full h-full"
-                                            />
-                                        </div>
-                                        <div className="p-3">
-                                            <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">{book.title}</h3>
-                                            <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{book.author}</p>
-                                        </div>
-                                    </Link>
+                                    <ProductCard
+                                        key={book.id}
+                                        {...book}
+                                        discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
+                                    />
                                 ))}
                             </div>
                         </div>

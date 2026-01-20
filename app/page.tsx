@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
 import { TestimonialsSection } from '@/components/testimonials-section';
 import { EnquirySection } from '@/components/enquiry-section';
 
@@ -50,12 +50,12 @@ export default function Home() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [testSeries, setTestSeries] = useState<any[]>([]);
+  const [combos, setCombos] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch latest books
         const booksQuery = query(collection(db, 'books'), orderBy('createdAt', 'desc'), limit(50));
         const booksSnapshot = await getDocs(booksQuery);
         const booksData = booksSnapshot.docs.map(doc => ({
@@ -63,6 +63,15 @@ export default function Home() {
           ...doc.data()
         })).filter((item: any) => item.show !== false) as Book[];
         setBooks(booksData);
+
+        // Fetch Combos explicitly to ensure they appear
+        const combosQuery = query(collection(db, 'books'), where('isCombo', '==', true), limit(10));
+        const combosSnapshot = await getDocs(combosQuery);
+        const combosData = combosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })).filter((item: any) => item.show !== false) as Book[];
+        setCombos(combosData);
 
         // Fetch banners
         const bannersQuery = query(collection(db, 'banners'));
@@ -410,7 +419,7 @@ export default function Home() {
             </section>
 
             {/* Combos / Bundles Section */}
-            {books.filter(b => (b as any).isCombo || b.category === 'Value Bundles').length > 0 && (
+            {combos.length > 0 && (
               <section className="py-16 bg-white">
                 <div className="container mx-auto px-4 max-w-[1600px]">
                   <div className="flex justify-between items-center mb-8">
@@ -427,7 +436,7 @@ export default function Home() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {books.filter(b => (b as any).isCombo || b.category === 'Value Bundles').slice(0, 3).map((combo, i) => (
+                    {combos.slice(0, 3).map((combo, i) => (
                       <motion.div
                         key={combo.id}
                         initial={{ opacity: 0, scale: 0.95 }}
