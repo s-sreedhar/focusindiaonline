@@ -46,6 +46,13 @@ export function ProductCard({
   isCombo,
   weight
 }: ProductCardProps) {
+  const priceNum = Number(price);
+  const originalPriceNum = originalPrice ? Number(originalPrice) : 0;
+
+  const displayDiscount = discount || (originalPriceNum && originalPriceNum > priceNum
+    ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
+    : 0);
+
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
   const { addToCompare, isInCompare, removeFromCompare } = useCompareStore();
@@ -164,9 +171,9 @@ export function ProductCard({
               fill
               className="object-contain group-hover:scale-110 transition-transform duration-500"
             />
-            {discount && (
-              <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md">
-                {discount}% OFF
+            {displayDiscount > 0 && (
+              <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md z-10">
+                {displayDiscount}% OFF
               </div>
             )}
 
