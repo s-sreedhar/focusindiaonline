@@ -465,21 +465,35 @@ export default function OrdersPage() {
                     <Card className="p-4 shadow-sm border-l-4 border-l-primary">
                       <div className="flex items-start gap-4">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/10 text-primary">{selectedOrder.shippingAddress?.fullName?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {(selectedOrder.shippingAddress?.fullName ||
+                              (selectedOrder.shippingAddress?.firstName && selectedOrder.shippingAddress?.lastName
+                                ? `${selectedOrder.shippingAddress.firstName} ${selectedOrder.shippingAddress.lastName}`
+                                : 'GU'))?.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="space-y-1">
-                          <p className="font-semibold text-sm">{selectedOrder.shippingAddress?.fullName}</p>
+                          <p className="font-semibold text-sm">
+                            {selectedOrder.shippingAddress?.fullName ||
+                              (selectedOrder.shippingAddress?.firstName && selectedOrder.shippingAddress?.lastName
+                                ? `${selectedOrder.shippingAddress.firstName} ${selectedOrder.shippingAddress.lastName}`
+                                : 'Guest Customer')}
+                          </p>
                           <div className="text-xs text-muted-foreground space-y-0.5">
                             <p>{selectedOrder.shippingAddress?.phoneNumber}</p>
                             <p>{selectedOrder.shippingAddress?.email}</p>
-                            <p className="mt-1 text-foreground/80">
-                              {selectedOrder.shippingAddress?.doorNo ? `${selectedOrder.shippingAddress.doorNo}, ` : ''}
-                              {selectedOrder.shippingAddress?.street},
-                              {selectedOrder.shippingAddress?.villageTown ? `${selectedOrder.shippingAddress.villageTown}, ` : ''}
-                              {selectedOrder.shippingAddress?.mandal ? `${selectedOrder.shippingAddress.mandal}, ` : ''}
-                              {selectedOrder.shippingAddress?.district ? `${selectedOrder.shippingAddress.district}, ` : ''}
-                              {selectedOrder.shippingAddress?.city},
-                              {selectedOrder.shippingAddress?.state} - {selectedOrder.shippingAddress?.pinCode || (selectedOrder.shippingAddress as any).zipCode}
+                            <p className="mt-1 text-foreground/80 leading-relaxed">
+                              {[
+                                selectedOrder.shippingAddress?.doorNo,
+                                selectedOrder.shippingAddress?.street,
+                                selectedOrder.shippingAddress?.villageTown,
+                                selectedOrder.shippingAddress?.mandal,
+                                selectedOrder.shippingAddress?.district,
+                                selectedOrder.shippingAddress?.city,
+                                selectedOrder.shippingAddress?.state
+                              ].filter(Boolean).join(', ')}
+                              {selectedOrder.shippingAddress?.pinCode ? ` - ${selectedOrder.shippingAddress.pinCode}` :
+                                (selectedOrder.shippingAddress as any).zipCode ? ` - ${(selectedOrder.shippingAddress as any).zipCode}` : ''}
                             </p>
                           </div>
                         </div>

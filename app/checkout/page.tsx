@@ -55,6 +55,8 @@ export default function CheckoutPage() {
     pinCode: '',
   });
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   // Phone Auth State
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
@@ -146,6 +148,14 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user types
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleApplyCoupon = async () => {
@@ -217,26 +227,42 @@ export default function CheckoutPage() {
 
   const validateAddress = () => {
     const { firstName, lastName, doorNo, street, villageTown, mandal, district, city, state, pinCode, phone, email } = formData;
+    const errors: Record<string, string> = {};
 
-    if (!firstName.trim() || !lastName.trim() || !doorNo.trim() || !street.trim() || !villageTown.trim() || !mandal.trim() || !district.trim() || !city.trim() || !state.trim() || !pinCode.trim() || !phone.trim() || !email.trim()) {
-      toast.error("Please fill in all address details");
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address");
-      return false;
+    if (!firstName.trim()) errors.firstName = "First name is required";
+    if (!lastName.trim()) errors.lastName = "Last name is required";
+    if (!email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Invalid email format";
     }
 
     const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10 || cleanPhone.length > 12) {
-      toast.error("Please enter a valid phone number (10-12 digits)");
-      return false;
+    if (!phone.trim()) {
+      errors.phone = "Phone number is required";
+    } else if (cleanPhone.length !== 10) {
+      errors.phone = "Please enter a valid 10-digit phone number";
     }
 
-    if (pinCode.length < 6 || !/^\d{6}$/.test(pinCode)) {
-      toast.error("Please enter a valid 6-digit PIN code");
+    if (!doorNo.trim()) errors.doorNo = "Door No is required";
+    if (!street.trim()) errors.street = "Street/Area is required";
+    if (!villageTown.trim()) errors.villageTown = "Village/Town is required";
+    if (!mandal.trim()) errors.mandal = "Mandal is required";
+    if (!district.trim()) errors.district = "District is required";
+    if (!city.trim()) errors.city = "City is required";
+    if (!state.trim()) errors.state = "State is required";
+
+    if (!pinCode.trim()) {
+      errors.pinCode = "PIN code is required";
+    } else if (!/^\d{6}$/.test(pinCode)) {
+      errors.pinCode = "Please enter a valid 6-digit PIN code";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError);
       return false;
     }
 
@@ -476,6 +502,7 @@ export default function CheckoutPage() {
           userId,
           items: items, // structured clone happens in JSON.stringify
           shippingAddress: {
+            fullName: `${formData.firstName} ${formData.lastName}`,
             firstName: formData.firstName,
             lastName: formData.lastName,
             email: formData.email,
@@ -668,12 +695,14 @@ export default function CheckoutPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.firstName}
                     />
                     <Input
                       placeholder="Last Name"
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.lastName}
                     />
                   </div>
                   <Input
@@ -682,12 +711,14 @@ export default function CheckoutPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    aria-invalid={!!fieldErrors.email}
                   />
                   <Input
                     placeholder="Phone Number"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
+                    aria-invalid={!!fieldErrors.phone}
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <Input
@@ -695,12 +726,14 @@ export default function CheckoutPage() {
                       name="doorNo"
                       value={formData.doorNo}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.doorNo}
                     />
                     <Input
                       placeholder="Street"
                       name="street"
                       value={formData.street}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.street}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -709,12 +742,14 @@ export default function CheckoutPage() {
                       name="villageTown"
                       value={formData.villageTown}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.villageTown}
                     />
                     <Input
                       placeholder="Mandal"
                       name="mandal"
                       value={formData.mandal}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.mandal}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -723,22 +758,24 @@ export default function CheckoutPage() {
                       name="district"
                       value={formData.district}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.district}
                     />
                     <Input
                       placeholder="City"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.city}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Popover open={openState} onOpenChange={setOpenState}>
                       <PopoverTrigger asChild>
                         <Button
-                          variant="outline"
+                          variant={fieldErrors.state ? "destructive" : "outline"}
                           role="combobox"
                           aria-expanded={openState}
-                          className="justify-between"
+                          className={cn("justify-between", fieldErrors.state && "border-destructive text-destructive")}
                         >
                           {formData.state
                             ? formData.state
@@ -780,6 +817,7 @@ export default function CheckoutPage() {
                       name="pinCode"
                       value={formData.pinCode}
                       onChange={handleInputChange}
+                      aria-invalid={!!fieldErrors.pinCode}
                     />
                   </div>
                   <Button className="w-full" onClick={() => handleStepChange('payment')}>
