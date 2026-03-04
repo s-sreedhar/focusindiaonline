@@ -13,10 +13,14 @@ export interface User {
   role?: string;
   createdAt: string;
   address?: {
+    doorNo?: string;
     street: string;
+    villageTown?: string;
+    mandal?: string;
+    district?: string;
     city: string;
     state: string;
-    zipCode: string;
+    pinCode: string;
     country: string;
   };
   authMethod?: 'firebase' | 'custom';

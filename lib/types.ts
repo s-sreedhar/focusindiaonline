@@ -49,10 +49,14 @@ export interface User {
 export interface Address {
   firstName?: string;
   lastName?: string;
+  doorNo?: string;
   street: string;
+  villageTown?: string;
+  mandal?: string;
+  district?: string;
   city: string;
   state: string;
-  zipCode: string;
+  pinCode: string;
   country: string;
 }
 

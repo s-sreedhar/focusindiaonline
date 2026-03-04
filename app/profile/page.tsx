@@ -27,11 +27,15 @@ export default function ProfilePage() {
         email: '',
         phone: '',
         address: {
+            doorNo: '',
             street: '',
+            villageTown: '',
+            mandal: '',
+            district: '',
             city: '',
             state: '',
-            zipCode: '',
-            country: ''
+            pinCode: '',
+            country: 'India'
         }
     });
     const [saving, setSaving] = useState(false);
@@ -44,12 +48,26 @@ export default function ProfilePage() {
                 displayName: user.displayName || '',
                 email: user.email || '',
                 phone: user.phone || '',
-                address: user.address || {
+                address: user.address ? {
+                    doorNo: user.address.doorNo || '',
+                    street: user.address.street || '',
+                    villageTown: user.address.villageTown || '',
+                    mandal: user.address.mandal || '',
+                    district: user.address.district || '',
+                    city: user.address.city || '',
+                    state: user.address.state || '',
+                    pinCode: user.address.pinCode || (user.address as any).zipCode || '',
+                    country: user.address.country || 'India'
+                } : {
+                    doorNo: '',
                     street: '',
+                    villageTown: '',
+                    mandal: '',
+                    district: '',
                     city: '',
                     state: '',
-                    zipCode: '',
-                    country: ''
+                    pinCode: '',
+                    country: 'India'
                 }
             });
         }
@@ -76,7 +94,7 @@ export default function ProfilePage() {
             toast.error("Valid 10-digit phone number is required");
             return;
         }
-        if (profileData.address.zipCode && !/^\d{6}$/.test(profileData.address.zipCode)) {
+        if (profileData.address.pinCode && !/^\d{6}$/.test(profileData.address.pinCode)) {
             toast.error("Valid 6-digit PIN code is required");
             return;
         }
@@ -207,14 +225,64 @@ export default function ProfilePage() {
                                 <div className="space-y-4">
                                     <h3 className="font-semibold text-lg">Shipping Address</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="street">Street Address</Label>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="doorNo">Door No / Flat No</Label>
+                                            <Input
+                                                id="doorNo"
+                                                value={profileData.address.doorNo}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    address: { ...profileData.address, doorNo: e.target.value }
+                                                })}
+                                                disabled={!isEditing}
+                                                placeholder="e.g. 1-23/A"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="street">Street / Locality</Label>
                                             <Input
                                                 id="street"
                                                 value={profileData.address.street}
                                                 onChange={(e) => setProfileData({
                                                     ...profileData,
                                                     address: { ...profileData.address, street: e.target.value }
+                                                })}
+                                                disabled={!isEditing}
+                                                placeholder="e.g. Gandhi Bazar"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="villageTown">Village / Town</Label>
+                                            <Input
+                                                id="villageTown"
+                                                value={profileData.address.villageTown}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    address: { ...profileData.address, villageTown: e.target.value }
+                                                })}
+                                                disabled={!isEditing}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mandal">Mandal</Label>
+                                            <Input
+                                                id="mandal"
+                                                value={profileData.address.mandal}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    address: { ...profileData.address, mandal: e.target.value }
+                                                })}
+                                                disabled={!isEditing}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="district">District</Label>
+                                            <Input
+                                                id="district"
+                                                value={profileData.address.district}
+                                                onChange={(e) => setProfileData({
+                                                    ...profileData,
+                                                    address: { ...profileData.address, district: e.target.value }
                                                 })}
                                                 disabled={!isEditing}
                                             />
@@ -244,18 +312,18 @@ export default function ProfilePage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="zipCode">ZIP Code</Label>
+                                            <Label htmlFor="pinCode">PIN Code</Label>
                                             <Input
-                                                id="zipCode"
-                                                value={profileData.address.zipCode}
+                                                id="pinCode"
+                                                value={profileData.address.pinCode}
                                                 onChange={(e) => setProfileData({
                                                     ...profileData,
-                                                    address: { ...profileData.address, zipCode: e.target.value }
+                                                    address: { ...profileData.address, pinCode: e.target.value }
                                                 })}
                                                 disabled={!isEditing}
                                             />
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 md:col-span-2">
                                             <Label htmlFor="country">Country</Label>
                                             <Input
                                                 id="country"

@@ -472,7 +472,15 @@ export default function OrdersPage() {
                           <div className="text-xs text-muted-foreground space-y-0.5">
                             <p>{selectedOrder.shippingAddress?.phoneNumber}</p>
                             <p>{selectedOrder.shippingAddress?.email}</p>
-                            <p className="mt-1 text-foreground/80">{selectedOrder.shippingAddress?.street}, {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} - {selectedOrder.shippingAddress?.zipCode}</p>
+                            <p className="mt-1 text-foreground/80">
+                              {selectedOrder.shippingAddress?.doorNo ? `${selectedOrder.shippingAddress.doorNo}, ` : ''}
+                              {selectedOrder.shippingAddress?.street},
+                              {selectedOrder.shippingAddress?.villageTown ? `${selectedOrder.shippingAddress.villageTown}, ` : ''}
+                              {selectedOrder.shippingAddress?.mandal ? `${selectedOrder.shippingAddress.mandal}, ` : ''}
+                              {selectedOrder.shippingAddress?.district ? `${selectedOrder.shippingAddress.district}, ` : ''}
+                              {selectedOrder.shippingAddress?.city},
+                              {selectedOrder.shippingAddress?.state} - {selectedOrder.shippingAddress?.pinCode || (selectedOrder.shippingAddress as any).zipCode}
+                            </p>
                           </div>
                         </div>
                       </div>

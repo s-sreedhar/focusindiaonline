@@ -162,9 +162,13 @@ export default function OrderDetailsPage() {
                                     <div className="flex items-start gap-3">
                                         <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground" />
                                         <div>
-                                            <p>{order.shippingAddress.street}</p>
+                                            {order.shippingAddress.doorNo && <p>{order.shippingAddress.doorNo},</p>}
+                                            <p>{order.shippingAddress.street},</p>
+                                            {order.shippingAddress.villageTown && <p>{order.shippingAddress.villageTown},</p>}
+                                            {order.shippingAddress.mandal && <p>{order.shippingAddress.mandal},</p>}
+                                            {order.shippingAddress.district && <p>{order.shippingAddress.district},</p>}
                                             <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
-                                            <p>{order.shippingAddress.zipCode}</p>
+                                            <p>{order.shippingAddress.pinCode || (order.shippingAddress as any).zipCode}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">

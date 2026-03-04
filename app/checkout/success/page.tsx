@@ -13,8 +13,10 @@ import { motion } from 'framer-motion';
 function SuccessContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
+    const status = searchParams.get('status');
     const { clearCart } = useCartStore();
     const [loading, setLoading] = useState(true);
+    const isPending = status === 'pending';
 
     useEffect(() => {
         if (orderId) {
@@ -36,9 +38,13 @@ function SuccessContent() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
-                    className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                    className={`w-24 h-24 ${isPending ? 'bg-amber-100' : 'bg-green-100'} rounded-full flex items-center justify-center mx-auto mb-6`}
                 >
-                    <CheckCircle2 className="w-12 h-12 text-green-600" />
+                    {isPending ? (
+                        <Loader2 className="w-12 h-12 text-amber-600 animate-spin" />
+                    ) : (
+                        <CheckCircle2 className="w-12 h-12 text-green-600" />
+                    )}
                 </motion.div>
 
                 <motion.h1
@@ -47,7 +53,7 @@ function SuccessContent() {
                     transition={{ delay: 0.3 }}
                     className="text-3xl font-bold mb-3 tracking-tight"
                 >
-                    Payment Successful!
+                    {isPending ? 'Payment Pending Verification' : 'Payment Successful!'}
                 </motion.h1>
 
                 <motion.p
@@ -56,7 +62,9 @@ function SuccessContent() {
                     transition={{ delay: 0.4 }}
                     className="text-muted-foreground text-lg mb-8"
                 >
-                    Thank you for your purchase. Your order has been confirmed.
+                    {isPending
+                        ? "We're verifying your payment with the bank. This usually takes a few minutes. We'll notify you once it's confirmed."
+                        : "Thank you for your purchase. Your order has been confirmed."}
                 </motion.p>
 
                 {orderId && (

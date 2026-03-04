@@ -60,7 +60,7 @@ export default function AddressesPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <Input placeholder="City" />
                   <Input placeholder="State" />
-                  <Input placeholder="ZIP Code" />
+                  <Input placeholder="PIN Code" />
                 </div>
                 <div className="flex gap-3">
                   <Button className="flex-1">Save Address</Button>
@@ -88,7 +88,7 @@ export default function AddressesPage() {
 
                 <p className="text-sm text-muted-foreground mb-2">{user.address.street}</p>
                 <p className="text-sm text-muted-foreground">
-                  {user.address.city}, {user.address.state} {user.address.zipCode}
+                  {user.address.city}, {user.address.state} {user.address.pinCode || (user.address as any).zipCode}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">{user.phone}</p>
               </Card>

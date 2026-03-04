@@ -135,6 +135,9 @@ export async function POST(request: Request) {
                 //console.error("Failed to send confirmation email:", emailError);
                 // We don't fail the request if email fails, just log it
             }
+        } else if (code === 'PAYMENT_PENDING') {
+            // For pending, we don't update to failed. We just wait for another callback or status check.
+            console.log(`⏳ Callback: Payment ${merchantTransactionId} is PENDING.`);
         } else {
             // Update order as failed
             const orderRef = doc(db, 'orders', merchantTransactionId);

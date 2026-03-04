@@ -45,10 +45,14 @@ export default function CheckoutPage() {
     lastName: '',
     email: '',
     phone: '',
-    address: '',
+    doorNo: '',
+    street: '',
+    villageTown: '',
+    mandal: '',
+    district: '',
     city: '',
     state: '',
-    zipCode: '',
+    pinCode: '',
   });
 
   // Phone Auth State
@@ -212,9 +216,9 @@ export default function CheckoutPage() {
 
 
   const validateAddress = () => {
-    const { firstName, lastName, address, city, state, zipCode, phone, email } = formData;
+    const { firstName, lastName, doorNo, street, villageTown, mandal, district, city, state, pinCode, phone, email } = formData;
 
-    if (!firstName.trim() || !lastName.trim() || !address.trim() || !city.trim() || !state.trim() || !zipCode.trim() || !phone.trim() || !email.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !doorNo.trim() || !street.trim() || !villageTown.trim() || !mandal.trim() || !district.trim() || !city.trim() || !state.trim() || !pinCode.trim() || !phone.trim() || !email.trim()) {
       toast.error("Please fill in all address details");
       return false;
     }
@@ -231,7 +235,7 @@ export default function CheckoutPage() {
       return false;
     }
 
-    if (zipCode.length < 6 || !/^\d{6}$/.test(zipCode)) {
+    if (pinCode.length < 6 || !/^\d{6}$/.test(pinCode)) {
       toast.error("Please enter a valid 6-digit PIN code");
       return false;
     }
@@ -372,10 +376,14 @@ export default function CheckoutPage() {
           role: 'guest',
           createdAt: serverTimestamp(),
           address: {
-            street: formData.address,
+            doorNo: formData.doorNo,
+            street: formData.street,
+            villageTown: formData.villageTown,
+            mandal: formData.mandal,
+            district: formData.district,
             city: formData.city,
             state: formData.state,
-            zipCode: formData.zipCode,
+            pinCode: formData.pinCode,
           }
         });
 
@@ -472,10 +480,14 @@ export default function CheckoutPage() {
             lastName: formData.lastName,
             email: formData.email,
             phoneNumber: formData.phone.replace(/\D/g, '').slice(-10),
-            address: formData.address,
+            doorNo: formData.doorNo,
+            street: formData.street,
+            villageTown: formData.villageTown,
+            mandal: formData.mandal,
+            district: formData.district,
             city: formData.city,
             state: formData.state,
-            zipCode: formData.zipCode,
+            pinCode: formData.pinCode,
           },
           subtotal,
           shippingCharges,
@@ -487,10 +499,14 @@ export default function CheckoutPage() {
             phone: formData.phone.replace(/\D/g, '').slice(-10),
             displayName: `${formData.firstName} ${formData.lastName}`,
             address: {
-              street: formData.address,
+              doorNo: formData.doorNo,
+              street: formData.street,
+              villageTown: formData.villageTown,
+              mandal: formData.mandal,
+              district: formData.district,
               city: formData.city,
               state: formData.state,
-              zipCode: formData.zipCode,
+              pinCode: formData.pinCode,
               country: 'India'
             }
           },
@@ -673,20 +689,49 @@ export default function CheckoutPage() {
                     value={formData.phone}
                     onChange={handleInputChange}
                   />
-                  <Input
-                    placeholder="Address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                  />
                   <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Door No"
+                      name="doorNo"
+                      value={formData.doorNo}
+                      onChange={handleInputChange}
+                    />
+                    <Input
+                      placeholder="Street"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Village/Town"
+                      name="villageTown"
+                      value={formData.villageTown}
+                      onChange={handleInputChange}
+                    />
+                    <Input
+                      placeholder="Mandal"
+                      name="mandal"
+                      value={formData.mandal}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      placeholder="District"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleInputChange}
+                    />
                     <Input
                       placeholder="City"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
                     />
-
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <Popover open={openState} onOpenChange={setOpenState}>
                       <PopoverTrigger asChild>
                         <Button
@@ -730,13 +775,13 @@ export default function CheckoutPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    <Input
+                      placeholder="PIN Code"
+                      name="pinCode"
+                      value={formData.pinCode}
+                      onChange={handleInputChange}
+                    />
                   </div>
-                  <Input
-                    placeholder="ZIP Code"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                  />
                   <Button className="w-full" onClick={() => handleStepChange('payment')}>
                     Continue to Payment
                   </Button>
@@ -783,8 +828,9 @@ export default function CheckoutPage() {
                     <h3 className="font-semibold mb-2">Shipping Address</h3>
                     <p className="text-muted-foreground text-sm">
                       {formData.firstName} {formData.lastName}<br />
-                      {formData.address}<br />
-                      {formData.city}, {formData.state} {formData.zipCode}
+                      {formData.doorNo}, {formData.street}<br />
+                      {formData.villageTown}, {formData.mandal}<br />
+                      {formData.district}, {formData.city}, {formData.state} {formData.pinCode}
                     </p>
                   </div>
 

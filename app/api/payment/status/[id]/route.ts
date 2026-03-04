@@ -66,6 +66,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
             return NextResponse.redirect(`${baseUrl}/checkout/success?orderId=${transactionId}`, 303);
 
+        } else if (statusResponse && statusResponse.code === 'PAYMENT_PENDING') {
+            // 3. Handle Pending Status
+            console.log(`⏳ Payment ${transactionId} is PENDING at PhonePe.`);
+
+            // Update order status to explicitly mention pending if needed, 
+            // but it's already created with 'payment_pending' status.
+
+            return NextResponse.redirect(`${baseUrl}/checkout/success?orderId=${transactionId}&status=pending`, 303);
+
         } else {
             // Payment Failed, Pending, or Cancelled from PhonePe side
             const failureReason = statusResponse?.code || 'PAYMENT_FAILED';

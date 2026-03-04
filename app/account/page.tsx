@@ -151,8 +151,9 @@ export default function AccountPage() {
                   <p className="font-semibold text-sm">
                     {user.address ? (
                       <>
+                        {user.address.doorNo && <span>{user.address.doorNo}, </span>}
                         {user.address.street}, {user.address.city}<br />
-                        {user.address.state} - {user.address.zipCode}
+                        {user.address.state} - {user.address.pinCode || (user.address as any).zipCode}
                       </>
                     ) : (
                       <span className="text-muted-foreground italic">No address saved</span>
