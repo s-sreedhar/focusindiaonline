@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Loader2, Upload, Trash2, Image as ImageIcon, ExternalLink, ArrowUp, ArrowDown } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
-import { deleteFromCloudinary, uploadToCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -26,7 +26,7 @@ export default function BannersPage() {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imageUrl, setImageUrl] = useState('');
     const [formData, setFormData] = useState({
         title: '',
         link: ''
@@ -66,23 +66,18 @@ export default function BannersPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-        }
-    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!imageFile) {
-            toast.error("Please select an image");
+        if (!imageUrl) {
+            toast.error("Please select an image from the library");
             return;
         }
 
         setUploading(true);
 
         try {
-            const imageUrl = await uploadToCloudinary(imageFile);
 
             // Get the highest order number
             const newOrder = banners.length > 0 ? Math.max(...banners.map(b => b.order || 0)) + 1 : 0;
@@ -97,10 +92,7 @@ export default function BannersPage() {
 
             toast.success("Banner added successfully");
             setFormData({ title: '', link: '' });
-            setImageFile(null);
-            // Reset file input
-            const fileInput = document.getElementById('image') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
+            setImageUrl('');
 
             fetchBanners();
         } catch (error) {
@@ -124,13 +116,7 @@ export default function BannersPage() {
         try {
             await deleteDoc(doc(db, 'banners', deleteId));
 
-            try {
-                if (bannerToDelete?.imageUrl) {
-                    await deleteFromCloudinary(bannerToDelete.imageUrl);
-                }
-            } catch (err) {
-                console.error("Cloudinary delete failed:", err);
-            }
+
 
             setBanners(prev => prev.filter(banner => banner.id !== deleteId));
             toast.success("Banner deleted successfully");
@@ -233,15 +219,19 @@ export default function BannersPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="image">Banner Image</Label>
-                                <div className="flex items-center gap-4">
-                                    <Input
-                                        id="image"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="cursor-pointer"
+                                <Label>Banner Image</Label>
+                                <div className="flex flex-col gap-4">
+                                    <MediaSelector
+                                        type="image"
+                                        onSelect={(url) => setImageUrl(url)}
+                                        selectedUrl={imageUrl}
+                                        triggerText={imageUrl ? "Change Banner Image" : "Select from Media Library"}
                                     />
+                                    {imageUrl && (
+                                        <div className="relative w-full aspect-[3/1] border rounded bg-muted overflow-hidden">
+                                            <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
                                 </div>
                                 <p className="text-xs text-muted-foreground">Recommended size: 1920x600px</p>
                             </div>

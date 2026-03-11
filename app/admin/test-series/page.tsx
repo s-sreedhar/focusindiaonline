@@ -17,18 +17,17 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Edit, Trash2, Plus, Search, FileText, Loader2, Download, EyeOff } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, FileText, Loader2, EyeOff } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { uploadToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 
 interface TestSeries {
     id: string;
@@ -36,7 +35,7 @@ interface TestSeries {
     description: string;
     price: number;
     fileUrl: string;
-    imageUrl?: string;
+    imageUrl: string;
     createdAt?: any;
 }
 
@@ -55,8 +54,8 @@ export default function TestSeriesPage() {
         title: '',
         description: '',
         price: '',
-        file: null as File | null,
-        image: null as File | null,
+        fileUrl: '',
+        imageUrl: '',
         show: true
     });
 
@@ -74,16 +73,9 @@ export default function TestSeriesPage() {
             })) as TestSeries[];
             setSeries(data);
         } catch (error) {
-            //console.error("Error fetching test series:", error);
             toast.error("Failed to fetch test series");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFormData({ ...formData, file: e.target.files[0] });
         }
     };
 
@@ -93,94 +85,29 @@ export default function TestSeriesPage() {
             return;
         }
 
-        if (!editingSeries && !formData.file) {
-            toast.error("Please upload a PDF file");
+        if (!formData.fileUrl) {
+            toast.error("Please select a PDF file from the Media Library");
             return;
         }
 
-        if (!editingSeries && !formData.image) {
-            toast.error("Please upload a Thumbnail Image");
+        if (!formData.imageUrl) {
+            toast.error("Please select a Thumbnail Image from the Media Library");
             return;
         }
 
         setUploading(true);
         try {
-            let fileUrl = editingSeries?.fileUrl || '';
-            let imageUrl = editingSeries?.imageUrl || '';
-
-            if (formData.file) {
-                // R2 Upload Logic
-                // console.log("[R2 Debug] Requesting upload URL...");
-                const response = await fetch('/api/upload/r2', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        filename: formData.file.name,
-                        contentType: formData.file.type
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to get upload URL');
-
-                const { uploadUrl, fileUrl: r2FileUrl } = await response.json();
-                // console.log("[R2 Debug] Got upload URL:", uploadUrl);
-
-                // Upload to R2
-                // console.log("[R2 Debug] Starting PUT upload...");
-                try {
-                    const uploadRes = await fetch(uploadUrl, {
-                        method: 'PUT',
-                        body: formData.file,
-                        headers: { 'Content-Type': formData.file.type }
-                    });
-
-                    if (!uploadRes.ok) {
-                        //console.error("[R2 Debug] Upload failed with status:", uploadRes.status);
-                        throw new Error(`R2 Upload failed: ${uploadRes.statusText}`);
-                    }
-                    // console.log("[R2 Debug] Upload successful");
-                } catch (r2Error) {
-                    //console.error("[R2 Debug] Fetch error during PUT:", r2Error);
-                    throw new Error("Failed to upload file to R2 (Likely CORS or Network issue)");
-                }
-
-                // If updating and new file uploaded, delete old file from R2
-                if (editingSeries?.fileUrl) {
-                    try {
-                        await fetch('/api/upload/r2/delete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ fileUrl: editingSeries.fileUrl }),
-                        });
-                        // console.log("Old file deleted from R2");
-                    } catch (err) {
-                        //console.error("Failed to delete old R2 file:", err);
-                    }
-                }
-
-                fileUrl = r2FileUrl;
-            }
-
-            if (formData.image) {
-                imageUrl = await uploadToCloudinary(formData.image);
-            }
-
             const seriesData = {
                 title: formData.title,
                 description: formData.description,
                 price: parseFloat(formData.price),
-                fileUrl,
-                imageUrl,
+                fileUrl: formData.fileUrl,
+                imageUrl: formData.imageUrl,
                 show: formData.show,
                 updatedAt: serverTimestamp()
             };
 
             if (editingSeries) {
-                // Delete old image if new one is uploaded
-                if (formData.image && editingSeries.imageUrl) {
-                    await deleteFromCloudinary(editingSeries.imageUrl);
-                }
-
                 await updateDoc(doc(db, 'test_series', editingSeries.id), seriesData);
                 toast.success("Test Series updated successfully");
             } else {
@@ -195,7 +122,6 @@ export default function TestSeriesPage() {
             resetForm();
             fetchSeries();
         } catch (error) {
-            //console.error("Error saving test series:", error);
             toast.error("Failed to save test series");
         } finally {
             setUploading(false);
@@ -203,52 +129,21 @@ export default function TestSeriesPage() {
     };
 
     const resetForm = () => {
-        setFormData({ title: '', description: '', price: '', file: null, image: null, show: true });
+        setFormData({ title: '', description: '', price: '', fileUrl: '', imageUrl: '', show: true });
         setEditingSeries(null);
     };
 
     // Confirm Dialog
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const handleDeleteClick = (id: string) => {
-        setDeleteId(id);
-    };
-
     const handleConfirmDelete = async () => {
         if (!deleteId) return;
 
         try {
             await deleteDoc(doc(db, 'test_series', deleteId));
-
-            // Delete associated files from Cloudinary and R2
-            const seriesToDelete = series.find(s => s.id === deleteId);
-
-            // Delete PDF from R2
-            if (seriesToDelete?.fileUrl) {
-                try {
-                    await fetch('/api/upload/r2/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fileUrl: seriesToDelete.fileUrl }),
-                    });
-                } catch (err) {
-                    //console.error("Failed to delete R2 file:", err);
-                }
-            }
-
-            // Delete Image from Cloudinary
-            if (seriesToDelete?.imageUrl) {
-                try {
-                    await deleteFromCloudinary(seriesToDelete.imageUrl, 'image');
-                } catch (imgError) {
-                    console.error("Failed to delete image from Cloudinary:", imgError);
-                }
-            }
-
             toast.success("Test Series deleted");
             fetchSeries();
         } catch (error) {
-            //console.error("Error deleting series:", error);
             toast.error("Failed to delete test series");
         } finally {
             setDeleteId(null);
@@ -261,9 +156,8 @@ export default function TestSeriesPage() {
             title: item.title,
             description: item.description,
             price: item.price.toString(),
-            file: null,
-
-            image: null,
+            fileUrl: item.fileUrl || '',
+            imageUrl: item.imageUrl || '',
             show: (item as any).show ?? true
         });
         setIsDialogOpen(true);
@@ -273,8 +167,6 @@ export default function TestSeriesPage() {
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-
-
     return (
         <div className="space-y-6">
             <ConfirmDialog
@@ -282,7 +174,7 @@ export default function TestSeriesPage() {
                 onClose={() => setDeleteId(null)}
                 onConfirm={handleConfirmDelete}
                 title="Delete Test Series"
-                description="Are you sure you want to delete this test series? This action cannot be undone."
+                description="Are you sure you want to delete this test series? The media files will remain in your Media Library."
                 variant="destructive"
             />
             <div className="flex justify-between items-center">
@@ -348,7 +240,7 @@ export default function TestSeriesPage() {
                                             <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
                                                 <Edit className="w-4 h-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => handleDeleteClick(item.id)}>
+                                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600" onClick={() => setDeleteId(item.id)}>
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
@@ -399,30 +291,34 @@ export default function TestSeriesPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>PDF File {editingSeries && '(Leave empty to keep current)'}</Label>
-                            <Input
-                                type="file"
-                                accept="application/pdf"
-                                onChange={handleFileChange}
-                            />
-                            {editingSeries?.fileUrl && !formData.file && (
-                                <p className="text-xs text-muted-foreground">Current file: <a href={editingSeries.fileUrl} target="_blank" className="underline">View PDF</a></p>
-                            )}
+                            <Label>PDF File Document</Label>
+                            <div className="flex flex-col gap-2">
+                                <MediaSelector
+                                    type="document"
+                                    onSelect={(url) => setFormData({ ...formData, fileUrl: url })}
+                                    selectedUrl={formData.fileUrl}
+                                    triggerText={formData.fileUrl ? "Change PDF" : "Select PDF from Media Library"}
+                                />
+                                {formData.fileUrl && (
+                                    <a href={formData.fileUrl} target="_blank" className="text-sm text-blue-500 hover:underline flex items-center mt-1">
+                                        <FileText className="w-4 h-4 mr-1" /> View Selected PDF
+                                    </a>
+                                )}
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label>Thumbnail Image</Label>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files[0]) {
-                                        setFormData({ ...formData, image: e.target.files[0] });
-                                    }
-                                }}
-                            />
-                            {editingSeries?.imageUrl && !formData.image && (
-                                <img src={editingSeries.imageUrl} alt="Thumbnail" className="h-16 w-16 object-cover rounded mt-2 border" />
-                            )}
+                            <div className="flex flex-col gap-2">
+                                <MediaSelector
+                                    type="image"
+                                    onSelect={(url) => setFormData({ ...formData, imageUrl: url })}
+                                    selectedUrl={formData.imageUrl}
+                                    triggerText={formData.imageUrl ? "Change Thumbnail" : "Select Image from Media Library"}
+                                />
+                                {formData.imageUrl && (
+                                    <img src={formData.imageUrl} alt="Thumbnail preview" className="h-16 w-16 object-contain rounded mt-2 border" />
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2 border p-4 rounded-lg bg-muted/20">

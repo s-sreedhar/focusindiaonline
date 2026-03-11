@@ -25,7 +25,7 @@ export function CartItemComponent({ item, onUpdateQuantity, onRemove }: CartItem
           alt={item.title}
           width={96}
           height={128}
-          className="object-cover w-full h-full"
+          className="object-contain w-full h-full"
         />
       </div>
 

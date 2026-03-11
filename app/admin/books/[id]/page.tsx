@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -35,7 +35,6 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [imageFile, setImageFile] = useState<File | null>(null);
     const [currentImageUrl, setCurrentImageUrl] = useState('');
     const [subjectsList, setSubjectsList] = useState<Item[]>([]);
     const [categoriesList, setCategoriesList] = useState<Item[]>([]);
@@ -113,11 +112,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-        }
-    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -125,9 +120,6 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
 
         try {
             let imageUrl = currentImageUrl;
-            if (imageFile) {
-                imageUrl = await uploadToCloudinary(imageFile);
-            }
 
             await updateDoc(doc(db, 'books', id), {
                 title: formData.title,
@@ -320,22 +312,22 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="image">Book Cover Image</Label>
-                        <div className="flex items-center gap-4">
+                        <Label>Book Cover Image</Label>
+                        <div className="flex flex-col gap-4">
+                            <div className="w-full">
+                                <MediaSelector 
+                                    onSelect={(url) => setCurrentImageUrl(url)} 
+                                    type="image" 
+                                    selectedUrl={currentImageUrl}
+                                    triggerText={currentImageUrl ? "Change Image" : "Select from Media Library"}
+                                />
+                            </div>
                             {currentImageUrl && (
-                                <div className="relative w-20 h-28 border rounded overflow-hidden">
-                                    <img src={currentImageUrl} alt="Current cover" className="object-cover w-full h-full" />
+                                <div className="relative w-32 h-32 border rounded-md overflow-hidden bg-muted">
+                                    <img src={currentImageUrl} alt="Cover preview" className="object-contain w-full h-full" />
                                 </div>
                             )}
-                            <Input
-                                id="image"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="cursor-pointer flex-1"
-                            />
                         </div>
-                        <p className="text-xs text-muted-foreground">Supported formats: JPG, PNG, WEBP</p>
                     </div>
 
                     <Button type="submit" className="w-full" disabled={saving}>

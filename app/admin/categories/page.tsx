@@ -11,7 +11,7 @@ import { Plus, Trash2, RefreshCw, Loader2, Edit2, ImageIcon } from 'lucide-react
 import { toast } from 'sonner';
 import { PRIMARY_CATEGORIES, SUBJECTS } from '@/lib/constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { uploadToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -33,7 +33,7 @@ export default function CategoriesPage() {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCategory, setNewCategory] = useState('');
-    const [newCategoryFile, setNewCategoryFile] = useState<File | null>(null);
+    const [newCategoryUrl, setNewCategoryUrl] = useState('');
     const [uploading, setUploading] = useState(false);
     const [newSubject, setNewSubject] = useState('');
     const [adding, setAdding] = useState(false);
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
     // Edit State
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [editName, setEditName] = useState('');
-    const [editFile, setEditFile] = useState<File | null>(null);
+    const [editImageUrl, setEditImageUrl] = useState('');
 
     // Dialog States
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -99,10 +99,7 @@ export default function CategoriesPage() {
         setAdding(true);
         setUploading(true);
         try {
-            let imageUrl = '';
-            if (newCategoryFile) {
-                imageUrl = await uploadToCloudinary(newCategoryFile);
-            }
+            let imageUrl = newCategoryUrl;
 
             await addDoc(collection(db, 'categories'), {
                 name: newCategory.trim(),
@@ -111,10 +108,7 @@ export default function CategoriesPage() {
             });
             toast.success('Category added');
             setNewCategory('');
-            setNewCategoryFile(null);
-            // Reset file input manually if needed, or rely on state
-            const fileInput = document.getElementById('category-image-input') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
+            setNewCategoryUrl('');
 
         } catch (error) {
             toast.error('Failed to add category');
@@ -148,9 +142,7 @@ export default function CategoriesPage() {
             `Are you sure you want to delete "${name}"? This cannot be undone.`,
             async () => {
                 const catToDelete = categories.find(c => c.id === id);
-                if (catToDelete?.image) {
-                    await deleteFromCloudinary(catToDelete.image);
-                }
+
                 await deleteDoc(doc(db, 'categories', id));
                 toast.success('Category deleted');
             },
@@ -173,7 +165,7 @@ export default function CategoriesPage() {
     const openEditCategory = (cat: Category) => {
         setEditingCategory(cat);
         setEditName(cat.name);
-        setEditFile(null);
+        setEditImageUrl(cat.image || '');
     };
 
     const handleUpdateCategory = async () => {
@@ -181,11 +173,7 @@ export default function CategoriesPage() {
 
         setUploading(true);
         try {
-            let imageUrl = editingCategory.image;
-
-            if (editFile) {
-                imageUrl = await uploadToCloudinary(editFile);
-            }
+            let imageUrl = editImageUrl;
 
             await updateDoc(doc(db, 'categories', editingCategory.id), {
                 name: editName.trim(),
@@ -271,20 +259,20 @@ export default function CategoriesPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Categor Image</Label>
-                            <div className="flex items-center gap-4">
-                                {editingCategory?.image && !editFile && (
+                            <Label>Category Image</Label>
+                            <div className="flex flex-col gap-4">
+                                <MediaSelector
+                                    type="image"
+                                    onSelect={(url) => setEditImageUrl(url)}
+                                    selectedUrl={editImageUrl}
+                                    triggerText={editImageUrl ? "Change Image" : "Select from Media Library"}
+                                />
+                                {editImageUrl && (
                                     <div className="w-32 h-32 rounded overflow-hidden border">
-                                        <img src={editingCategory.image} alt="Current" className="w-full h-full object-cover" />
+                                        <img src={editImageUrl} alt="Current" className="w-full h-full object-cover" />
                                     </div>
                                 )}
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setEditFile(e.target.files ? e.target.files[0] : null)}
-                                />
                             </div>
-                            <p className="text-xs text-muted-foreground">Upload a new image to replace the existing one.</p>
                         </div>
                     </div>
                     <DialogFooter>
@@ -317,12 +305,12 @@ export default function CategoriesPage() {
                                         onChange={(e) => setNewCategory(e.target.value)}
                                         className="flex-1"
                                     />
-                                    <div className="flex-1">
-                                        <Input
-                                            id="category-image-input"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => setNewCategoryFile(e.target.files ? e.target.files[0] : null)}
+                                    <div className="flex-1 flex flex-col justify-center">
+                                        <MediaSelector
+                                            type="image"
+                                            onSelect={(url) => setNewCategoryUrl(url)}
+                                            selectedUrl={newCategoryUrl}
+                                            triggerText={newCategoryUrl ? "Change Image" : "Select from Media Library"}
                                         />
                                     </div>
                                     <Button onClick={handleAddCategory} disabled={adding || !newCategory.trim() || uploading}>

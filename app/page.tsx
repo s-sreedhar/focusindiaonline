@@ -314,7 +314,7 @@ export default function Home() {
                       >
                         <div className="aspect-video bg-muted relative flex items-center justify-center overflow-hidden">
                           {series.imageUrl ? (
-                            <img src={series.imageUrl} alt={series.title} className="w-full h-full object-cover" />
+                            <img src={series.imageUrl} alt={series.title} className="w-full h-full object-contain" />
                           ) : (
                             <div className="text-3xl text-muted-foreground/30 font-bold">PDF</div>
                           )}
@@ -451,7 +451,7 @@ export default function Home() {
                               src={combo.image || '/placeholder-book.jpg'}
                               alt={combo.title}
                               fill
-                              className="object-cover"
+                              className="object-contain"
                             />
                           </div>
                           <div className="p-6 flex flex-col justify-between flex-1">

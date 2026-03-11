@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, Trash2, ArrowUp, ArrowDown, User, Star } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ export default function TestimonialsPage() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
-    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         role: '',
@@ -71,26 +71,19 @@ export default function TestimonialsPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Avatar is optional, use placeholder if missing
-        let avatarUrl = '';
+        let finalAvatarUrl = avatarUrl;
 
         setUploading(true);
 
         try {
-            if (imageFile) {
-                avatarUrl = await uploadToCloudinary(imageFile);
-            } else {
+            if (!finalAvatarUrl) {
                 // Generate UI Avatars URL
-                avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`;
+                finalAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`;
             }
 
             // Get the highest order number
@@ -99,16 +92,14 @@ export default function TestimonialsPage() {
             await addDoc(collection(db, 'reviews'), {
                 ...formData,
                 rating: Number(formData.rating),
-                avatarUrl,
+                avatarUrl: finalAvatarUrl,
                 order: newOrder,
                 createdAt: serverTimestamp()
             });
 
             toast.success("Review added successfully");
             setFormData({ name: '', role: '', content: '', rating: 5 });
-            setImageFile(null);
-            const fileInput = document.getElementById('image') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
+            setAvatarUrl('');
 
             fetchTestimonials();
         } catch (error) {
@@ -134,10 +125,8 @@ export default function TestimonialsPage() {
 
             // Delete associated image if exists
             const review = testimonials.find(t => t.id === deleteId);
-            if (review?.avatarUrl && review.avatarUrl.includes('cloudinary')) {
-                // We can import deleteFromCloudinary if we want strict cleanup, but staying focused on Dialog for now.
-                // Actually the user just asked for "Custom pop up". 
-                // But cleaning up is good. I'll stick to just the Dialog as requested to minimize scope creep unless I already imported it.
+            if (review?.avatarUrl && !review.avatarUrl.includes('ui-avatars.com')) {
+                // Keep the record cleanup focused and standard here. R2 cleanup is mostly managed via Media Library.
             }
 
             toast.success("Review deleted successfully");
@@ -263,14 +252,20 @@ export default function TestimonialsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="image">Avatar (Optional)</Label>
-                                <Input
-                                    id="image"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="cursor-pointer"
-                                />
+                                <Label>Avatar (Optional)</Label>
+                                <div className="flex flex-col gap-4">
+                                    <MediaSelector
+                                        type="image"
+                                        onSelect={(url) => setAvatarUrl(url)}
+                                        selectedUrl={avatarUrl}
+                                        triggerText={avatarUrl ? "Change Avatar" : "Select from Media Library"}
+                                    />
+                                    {avatarUrl && (
+                                        <div className="relative w-16 h-16 rounded-full bg-muted overflow-hidden shrink-0 border">
+                                            <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <Button type="submit" className="w-full" disabled={uploading}>

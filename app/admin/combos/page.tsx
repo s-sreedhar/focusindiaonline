@@ -13,7 +13,7 @@ import { Plus, Trash2, Edit2, Loader2, Package, Upload, X, Check, EyeOff } from 
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,6 @@ export default function CombosPage() {
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [imageFile, setImageFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -129,11 +128,7 @@ export default function CombosPage() {
         fetchData();
     }, []);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-        }
-    };
+
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.price || formData.comboBookIds.length === 0) {
@@ -144,9 +139,6 @@ export default function CombosPage() {
         setUploading(true);
         try {
             let imageUrl = formData.image;
-            if (imageFile) {
-                imageUrl = await uploadToCloudinary(imageFile);
-            }
 
             const comboData = {
                 title: formData.title,
@@ -191,7 +183,6 @@ export default function CombosPage() {
                 subjects: [],
                 show: true
             });
-            setImageFile(null);
             setEditingId(null);
             setIsDialogOpen(false);
             fetchData();
@@ -285,7 +276,6 @@ export default function CombosPage() {
                             subjects: [],
                             show: true
                         });
-                        setImageFile(null);
                     }
                 }}>
                     <DialogTrigger asChild>
@@ -412,22 +402,21 @@ export default function CombosPage() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="image">Combo Image</Label>
-                                <div className="flex items-center gap-4">
-                                    <Input
-                                        id="image"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="cursor-pointer"
+                                <Label>Combo Image</Label>
+                                <div className="flex flex-col gap-4">
+                                    <MediaSelector
+                                        type="image"
+                                        onSelect={(url) => setFormData(prev => ({ ...prev, image: url }))}
+                                        selectedUrl={formData.image}
+                                        triggerText={formData.image ? "Change Image" : "Select from Media Library"}
                                     />
-                                    {(formData.image || imageFile) && (
-                                        <div className="relative w-16 h-16 border rounded overflow-hidden shrink-0">
+                                    {formData.image && (
+                                        <div className="relative w-32 h-32 border rounded bg-muted overflow-hidden shrink-0">
                                             <Image
-                                                src={imageFile ? URL.createObjectURL(imageFile) : formData.image}
+                                                src={formData.image}
                                                 alt="Preview"
                                                 fill
-                                                className="object-cover"
+                                                className="object-contain"
                                             />
                                         </div>
                                     )}
@@ -471,7 +460,7 @@ export default function CombosPage() {
                                             src={combo.image}
                                             alt={combo.title}
                                             fill
-                                            className={cn("object-cover", (combo as any).show === false && "grayscale opacity-75")}
+                                            className={cn("object-contain", (combo as any).show === false && "grayscale opacity-75")}
                                         />
                                     ) : (
                                         <div className="flex items-center justify-center h-full text-muted-foreground">

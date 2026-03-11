@@ -31,7 +31,7 @@ export function CompareBar() {
                                         src={book.image}
                                         alt={book.title}
                                         fill
-                                        className="object-cover"
+                                        className="object-contain"
                                     />
                                 </div>
                                 <button
@@ -76,7 +76,7 @@ export function CompareBar() {
                                         {comparedBooks.map((book) => (
                                             <div key={book.id} className="flex flex-col items-center text-center">
                                                 <div className="relative w-32 h-44 mb-4 rounded-lg overflow-hidden shadow-md">
-                                                    <Image src={book.image} alt={book.title} fill className="object-cover" />
+                                                    <Image src={book.image} alt={book.title} fill className="object-contain" />
                                                 </div>
                                                 <h3 className="font-bold text-sm line-clamp-2 min-h-[40px]">{book.title}</h3>
                                                 <Button variant="outline" size="sm" className="mt-2" onClick={() => removeFromCompare(book.id)}>Remove</Button>

@@ -137,7 +137,7 @@ export default function TestSeriesPublicPage() {
                                     <div className="p-6 flex-1">
                                         <div className="aspect-video bg-muted rounded-lg w-full mb-4 overflow-hidden relative flex items-center justify-center">
                                             {item.imageUrl ? (
-                                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
                                             ) : (
                                                 <FileText className="w-12 h-12 text-muted-foreground/30" />
                                             )}

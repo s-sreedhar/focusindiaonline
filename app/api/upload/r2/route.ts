@@ -9,7 +9,12 @@ export async function POST(req: NextRequest) {
         const { filename, contentType } = await req.json();
 
         const uniqueFilename = `${uuidv4()}-${filename}`;
-        const key = `pdfs/${uniqueFilename}`;
+
+        // Determine folder based on content type
+        const isImage = contentType.startsWith('image/');
+        const folder = isImage ? 'images' : 'documents';
+
+        const key = `${folder}/${uniqueFilename}`;
 
         const command = new PutObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME,
@@ -25,7 +30,7 @@ export async function POST(req: NextRequest) {
 
         // Ideally we want to fail if public URL is not set because fallback might not be publicly accessible
         if (!process.env.R2_PUBLIC_URL) {
-            console.warn("R2_PUBLIC_URL is misting, using fallback which might not work for public access.");
+            console.warn("R2_PUBLIC_URL is missing, using fallback which might not work for public access.");
         }
 
         return NextResponse.json({

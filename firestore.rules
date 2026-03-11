@@ -47,6 +47,7 @@ service cloud.firestore {
       allow create: if request.auth != null; 
     }
     match /test_series/{document=**} { allow read: if true; allow write: if isAdmin(); }
+    match /media/{document=**} { allow read: if true; allow write: if isAdmin(); }
 
     // Enquiries: Public create, Admin manage 
     match /enquiries/{document=**} { 

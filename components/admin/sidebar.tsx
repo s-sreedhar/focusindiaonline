@@ -13,6 +13,11 @@ export const adminMenuItems = [
     icon: BarChart3,
   },
   {
+    label: 'Media',
+    href: '/admin/media',
+    icon: Image,
+  },
+  {
     label: 'Categories',
     href: '/admin/categories',
     icon: FolderIcon,
@@ -86,7 +91,7 @@ export function AdminSidebar() {
   const filteredItems = adminMenuItems.filter((item) => {
     // If user role is 'admin', show only specific items
     if (user?.role === 'admin') {
-      const allowedItems = ['Dashboard', 'Categories', 'Books', 'Combos', 'Orders', 'Users', 'Enquiries', 'Banners', 'Reviews', 'Test Series'];
+      const allowedItems = ['Dashboard', 'Media', 'Categories', 'Books', 'Combos', 'Orders', 'Users', 'Enquiries', 'Banners', 'Reviews', 'Test Series'];
       return allowedItems.includes(item.label);
     }
     // For 'super-admin' or other roles, show all

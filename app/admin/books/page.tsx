@@ -19,7 +19,7 @@ import Image from 'next/image';
 import { SubjectManager } from '@/components/admin/subject-manager';
 import { CategoryManager } from '@/components/admin/category-manager';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { deleteFromCloudinary } from '@/lib/cloudinary';
+import { deleteFromR2 } from '@/lib/r2-upload';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -115,9 +115,9 @@ export default function BooksPage() {
             const bookToDelete = books.find(b => b.id === itemToDelete);
             if (bookToDelete?.image) {
                 try {
-                    await deleteFromCloudinary(bookToDelete.image);
+                    await deleteFromR2(bookToDelete.image);
                 } catch (imgError) {
-                    console.error("Failed to delete image from Cloudinary:", imgError);
+                    console.error("Failed to delete image from R2:", imgError);
                     toast.error('Could not delete image, but removing book entry...');
                 }
             }
@@ -251,7 +251,7 @@ export default function BooksPage() {
                                             src={book.image || '/placeholder-book.jpg'}
                                             alt={book.title}
                                             fill
-                                            className={cn("object-cover transition-transform group-hover:scale-105", book.show === false && "grayscale opacity-75")}
+                                            className={cn("object-contain transition-transform group-hover:scale-105", book.show === false && "grayscale opacity-75")}
                                         />
                                         {book.show === false && (
                                             <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center gap-1 z-10">

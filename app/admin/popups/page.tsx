@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 import { DateTimePicker } from '@/components/datetime-picker';
 import { Timestamp } from 'firebase/firestore';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { MediaSelector } from '@/components/admin/media-selector';
 
 interface PopupSettings {
     imageUrl: string;
@@ -29,7 +29,6 @@ interface PopupSettings {
 export default function PopupSettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [imageUploading, setImageUploading] = useState(false);
     const [settings, setSettings] = useState<PopupSettings>({
         imageUrl: '',
         linkUrl: '',
@@ -84,22 +83,7 @@ export default function PopupSettingsPage() {
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        setImageUploading(true);
-        try {
-            const uploadedUrl = await uploadToCloudinary(file, 'popups');
-            setSettings({ ...settings, imageUrl: uploadedUrl });
-            toast.success('Image uploaded successfully');
-        } catch (error) {
-            //console.error('Error uploading image:', error);
-            toast.error('Failed to upload image');
-        } finally {
-            setImageUploading(false);
-        }
-    };
 
     if (loading) {
         return (
@@ -151,41 +135,20 @@ export default function PopupSettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">Image URL</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="imageUrl"
-                                    placeholder="https://example.com/image.jpg"
-                                    value={settings.imageUrl}
-                                    onChange={(e) => setSettings({ ...settings, imageUrl: e.target.value })}
+                            <Label>Popup Image</Label>
+                            <div className="flex flex-col gap-4">
+                                <MediaSelector
+                                    type="image"
+                                    onSelect={(url) => setSettings({ ...settings, imageUrl: url })}
+                                    selectedUrl={settings.imageUrl}
+                                    triggerText={settings.imageUrl ? "Change Popup Image" : "Select from Media Library"}
                                 />
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        id="image-upload"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        disabled={imageUploading}
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="shrink-0"
-                                        onClick={() => document.getElementById('image-upload')?.click()}
-                                        disabled={imageUploading}
-                                    >
-                                        {imageUploading ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Upload className="h-4 w-4" />
-                                        )}
-                                    </Button>
-                                </div>
+                                {settings.imageUrl && (
+                                    <div className="relative w-32 h-32 border rounded bg-muted overflow-hidden shrink-0">
+                                        <img src={settings.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                Enter URL manually or upload an image.
-                            </p>
                         </div>
 
                         <div className="space-y-2">
