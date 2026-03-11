@@ -1,62 +1,86 @@
 import { NextResponse } from 'next/server';
-import { adminDb } from '@/lib/admin';
+import { getAdminDb, getAdminAuth } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
     try {
-        const { phone } = await req.json();
+        const adminAuth = getAdminAuth();
+        const adminDb = getAdminDb();
+        const { identifier } = await req.json();
 
-        if (!phone) {
-            return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+        if (!identifier) {
+            return NextResponse.json({ error: 'Identifier (Email or Phone) is required' }, { status: 400 });
         }
 
-        // Normalize phone input
-        const digits = phone.replace(/\D/g, '');
-        const last10 = digits.slice(-10);
+        let userRecord = null;
+        let isEmail = identifier.includes('@');
 
-        // Prepare formats to check
-        const formattedCandidates = [
-            `+91${last10}`,
-            last10,
-            digits,
-            phone
-        ];
+        try {
+            if (isEmail) {
+                userRecord = await adminAuth.getUserByEmail(identifier);
+            } else {
+                // Formatting for phone checks
+                const digits = identifier.replace(/\D/g, '');
+                const last10 = digits.slice(-10);
+                const formattedOptions = [`+91${last10}`, last10, digits];
+                
+                // Try Firebase Auth lookup
+                for (const phone of formattedOptions) {
+                    try {
+                        userRecord = await adminAuth.getUserByPhoneNumber(phone);
+                        if (userRecord) break;
+                    } catch (e) { /* ignore single not-found errors */ }
+                }
 
-        // Remove duplicates
-        const uniqueCandidates = Array.from(new Set(formattedCandidates));
-
-        // Security note: We use 'adminDb' which bypasses security rules.
-        // This is safe here because we only return specific public info required for login flow
-        // and verify possession of the phone number via OTP later.
-        // BUT since we are returning the password hash for client-side verification (as per current design),
-        // we must be careful. Ideally, password verification should happen on server too.
-        // For now, we follow the existing pattern of returning the user object.
-
-        if (!adminDb) {
-            console.error('Firebase Admin DB not initialized');
-            return NextResponse.json({ error: 'Server configuration error. Check server logs.' }, { status: 500 });
+                // If not found in Auth by phone, do a deep check in Firestore
+                if (!userRecord) {
+                    const snapshot = await adminDb.collection('users').where('phone', 'in', formattedOptions).get();
+                    if (!snapshot.empty) {
+                         const userDoc = snapshot.docs[0];
+                         return NextResponse.json({
+                             exists: true,
+                             user: {
+                                 ...userDoc.data(),
+                                 uid: userDoc.id,
+                             }
+                         });
+                    }
+                }
+            }
+        } catch (authErr: any) {
+            // Handled missing records cleanly below 
         }
 
-        // Using 'in' query
-        const usersRef = adminDb.collection('users');
-        const snapshot = await usersRef.where('phone', 'in', uniqueCandidates).get();
-
-        if (snapshot.empty) {
-            return NextResponse.json({ exists: false }, { status: 404 });
+        if (!userRecord) {
+             // Fallback to checking firestore directly if auth API fails
+             if (isEmail) {
+                 const snapshot = await adminDb.collection('users').where('email', '==', identifier).limit(1).get();
+                 if (!snapshot.empty) {
+                     const userDoc = snapshot.docs[0];
+                     return NextResponse.json({ exists: true, user: { ...userDoc.data(), uid: userDoc.id } });
+                 }
+             }
+             return NextResponse.json({ exists: false }, { status: 404 });
         }
 
-        // Return the first match
-        const userDoc = snapshot.docs[0];
-        const userData = userDoc.data();
+        // Fetch remaining attributes from Firestore and return
+        const userDoc = await adminDb.collection('users').doc(userRecord.uid).get();
+        if (userDoc.exists) {
+            return NextResponse.json({
+                exists: true,
+                user: {
+                    ...userDoc.data(),
+                    uid: userRecord.uid,
+                }
+            });
+        }
 
+        // Edge case: user exists in auth but not firestore.
         return NextResponse.json({
             exists: true,
             user: {
-                ...userData,
-                // Ensure crucial fields are present
-                uid: userDoc.id,
-                // We need to pass the password hash to the client because 'verifyPassword' 
-                // runs on the client in the current implementation.
-                password: userData.password
+                uid: userRecord.uid,
+                email: userRecord.email,
+                phone: userRecord.phoneNumber,
             }
         });
 

@@ -1,100 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collection, where, getDocs, query } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
-import { Phone, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Phone, Lock, User, Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { handleFirebaseError } from '@/lib/error-utils';
+import { auth } from '@/lib/firebase';
+import { signInWithCustomToken } from 'firebase/auth';
 import { hashPassword } from '@/lib/crypto';
-import { createNotification } from '@/lib/services/notifications';
 
 export function PhoneRegister() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [step, setStep] = useState<'details' | 'otp' | 'password'>('details');
+    
     const [loading, setLoading] = useState(false);
-    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
-    const [timeLeft, setTimeLeft] = useState(15);
-    const [canResend, setCanResend] = useState(false);
+    
     const router = useRouter();
     const { setUser } = useAuthStore();
 
-    const setupRecaptcha = () => {
-        const container = document.getElementById('recaptcha-container');
-
-        if (!container) return;
-
-        // If we already have a verifier, clear it first to be safe
-        if (window.recaptchaVerifier) {
-            try {
-                window.recaptchaVerifier.clear();
-            } catch (e) {
-                //console.error(e);
-            }
-            window.recaptchaVerifier = undefined;
-        }
-
-        container.innerHTML = '';
-
-        try {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                size: 'invisible',
-                callback: () => {
-                    // console.log('[PhoneRegister] reCAPTCHA solved');
-                },
-                'expired-callback': () => {
-                    // console.log('[PhoneRegister] reCAPTCHA expired');
-                    setError('reCAPTCHA expired. Please try again.');
-                }
-            });
-        } catch (err) {
-            //console.error('[PhoneRegister] Error initializing reCAPTCHA:', err);
-        }
-    };
-
-    useEffect(() => {
-        // Small delay to ensure DOM is ready
-        const timer = setTimeout(setupRecaptcha, 100);
-
-        return () => {
-            clearTimeout(timer);
-            if (window.recaptchaVerifier) {
-                try {
-                    window.recaptchaVerifier.clear();
-                } catch (e) {
-                    //console.error('Error clearing recaptcha:', e);
-                }
-                window.recaptchaVerifier = undefined;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (step === 'otp' && timeLeft > 0 && !canResend) {
-            timer = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
-            }, 1000);
-        } else if (timeLeft === 0) {
-            setCanResend(true);
-        }
-        return () => clearInterval(timer);
-    }, [step, timeLeft, canResend]);
-
-    const handleSendOtp = async () => {
+    const handleCreateAccount = async () => {
         // Validation
         if (!name || name.trim().length < 2) {
             setError('Please enter your full name (at least 2 characters)');
@@ -113,106 +45,6 @@ export function PhoneRegister() {
             return;
         }
 
-        setLoading(true);
-        setError('');
-
-        try {
-            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-            // console.log('[PhoneRegister] Sending OTP to:', formattedPhone);
-
-            // Call API to check if user exists (server-side check to avoid permission issues)
-            const response = await fetch('/api/auth/check-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: formattedPhone }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.exists) {
-                    setError('This phone number is already registered.');
-                    setLoading(false);
-                    return;
-                }
-            } else if (response.status !== 404) {
-                // 404 means user doesn't exist, which is what we want.
-                // Any other error (500 etc) is a problem.
-                console.error('Error checking user existence:', await response.text());
-                // Proceed cautiously or block? 
-                // If the check fails, we might allow OTP sending but registration might fail later if checks are repeated.
-                // Ideally we should block to prevent issues, but let's assume if it's not 404/200 it's a temp error.
-                // For safety: if API fails, we might technically allow proceeding if we are sure, 
-                // but getting a 500 implies DB issue.
-                // Let's assume if not 200/404, we proceed but log it. 
-                // Actually, if status is 404, data.exists is false (or body is just {exists:false}).
-            }
-
-            const appVerifier = window.recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-
-            // console.log('[PhoneRegister] OTP sent successfully');
-            setConfirmationResult(confirmation);
-            setStep('otp');
-            setTimeLeft(15);
-            setCanResend(false);
-        } catch (err: any) {
-            //console.error('[PhoneRegister] Error sending OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
-
-            // If it's an invalid-app-credential error, try to reset reCAPTCHA
-            if (err.code === 'auth/invalid-app-credential') {
-                // console.log('[PhoneRegister] Resetting reCAPTCHA due to invalid-app-credential');
-                setupRecaptcha();
-            } else {
-                // Reset reCAPTCHA on other errors too, just in case
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = undefined;
-                    // Re-init after a short delay
-                    setTimeout(setupRecaptcha, 500);
-                }
-            }
-        } finally {
-            if (!error) { // Only unset loading if we didn't set an error (though error setting is async, this logic is a bit slightly flawed but safe enough here as we return early on error above)
-                setLoading(false);
-            }
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        if (!otp || otp.length !== 6) {
-            setError('Please enter a valid 6-digit OTP');
-            return;
-        }
-
-        setLoading(true);
-        setError('');
-
-        try {
-            if (!confirmationResult) {
-                setError('Session expired. Please try again.');
-                setStep('details');
-                return;
-            }
-
-            // console.log('[PhoneRegister] Verifying OTP...');
-            const result = await confirmationResult.confirm(otp);
-            // OTP Verified successfully
-            // console.log('[PhoneRegister] OTP verified');
-
-            // Move to password step
-            setStep('password');
-        } catch (err: any) {
-            //console.error('[PhoneRegister] Error verifying OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreateAccount = async () => {
         if (!password || password.length < 6) {
             setError('Password must be at least 6 characters long');
             return;
@@ -227,148 +59,74 @@ export function PhoneRegister() {
         setError('');
 
         try {
-            const user = auth.currentUser;
-            if (!user) {
-                setError('Authentication session expired. Please try again.');
-                setStep('details');
+            const hashedPassword = await hashPassword(password);
+
+            // 1. Ask backend to create the user account (which validates duplicates)
+            const createRes = await fetch('/api/auth/create-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    name: name.trim(), 
+                    email: email.trim(), 
+                    phone: cleanedPhone, 
+                    password,
+                    hashedPassword
+                }),
+            });
+
+            const createData = await createRes.json();
+
+            if (!createRes.ok) {
+                setError(createData.error || 'Failed to create account. Please try again.');
+                setLoading(false);
                 return;
             }
 
-
-
-            // Hash password
-            // console.log('[PhoneRegister] Starting password hashing...');
-            const hashedPassword = await hashPassword(password);
-            // console.log('[PhoneRegister] Password hashing complete.');
-
-            // Create user document in Firestore
-            const userDocRef = doc(db, 'users', user.uid);
-
-            // console.log('[PhoneRegister] Checking if user exists...');
-            // Check if user already exists (edge case)
-            const userDoc = await getDoc(userDocRef);
-            // console.log('[PhoneRegister] User existence check complete. Exists:', userDoc.exists());
-
-            // Server-side check for duplicate account already done via API check logic if we wanted.
-            // But we can double check here or just rely on the fact that if a user with this phone exists in 'users' collection with a different UID, 
-            // it's a conflict.
-            // However, since we are authenticated as 'user' (UID X), we can't query the collection for "phone == Y" generally 
-            // without hitting permission issues if Y belongs to UID Z.
-            // So we skip the client-side duplicate check here and rely on the initial check we did + security rules (which don't enforce unique phone, but app logic does)
-            // OR we call the check-user API again if we really want to be paranoid.
-
-            // Let's call the API again to be safe against race conditions or direct registration attempts (less likely here).
-            const response = await fetch('/api/auth/check-user', {
+            // 2. Fetch a custom token to instantly log the user in
+            const tokenResponse = await fetch('/api/auth/custom-token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phoneNumber }),
+                body: JSON.stringify({ uid: createData.uid })
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                // If user exists AND the UID is different from ours, it's a conflict.
-                if (data.exists && data.user.uid !== user.uid) {
-                    setError('An account with this phone number already exists. Please contact support.');
-                    setLoading(false);
-                    return;
-                }
+            if (!tokenResponse.ok) {
+                throw new Error('Failed to create authentication token');
             }
 
-            if (userDoc.exists()) {
-                // console.log('[PhoneRegister] User already exists, updating...');
-            }
+            const { customToken } = await tokenResponse.json();
 
-            const newUserData = {
-                uid: user.uid,
-                displayName: name.trim(),
-                email: email.trim(),
-                phone: user.phoneNumber ? user.phoneNumber.replace(/\D/g, '').slice(-10) : '',
-                role: 'customer',
-                password: hashedPassword, // Store hashed password
-                createdAt: serverTimestamp(),
-            };
-
-            // console.log('[PhoneRegister] Writing user document to Firestore...');
-            await setDoc(userDocRef, newUserData, { merge: true });
-            // console.log('[PhoneRegister] User document created successfully');
-
-            // Notify Admin of New Customer
-            await createNotification(
-                'new_customer',
-                'New Customer Joined',
-                `${name.trim()} registered with ${email.trim()}.`,
-                user.uid
-            );
+            // 3. Authenticate with Firebase on the client so the session is established securely
+            const userCredential = await signInWithCustomToken(auth, customToken);
+            const firebaseUser = userCredential.user;
 
             setUser({
-                id: user.uid,
-                username: user.phoneNumber || '',
+                id: firebaseUser.uid,
+                username: email.trim(),
                 displayName: name.trim(),
                 email: email.trim(),
-                phone: user.phoneNumber || '',
+                phone: `+91${cleanedPhone}`,
                 createdAt: new Date().toISOString(),
                 role: 'customer',
                 authMethod: 'firebase'
             });
 
-            // console.log('[PhoneRegister] Registration complete, redirecting...');
+            // Redirect to home upon success
             router.push('/');
 
         } catch (err: any) {
-            //console.error('[PhoneRegister] Error creating account:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
+            console.error('Error creating account:', err);
+            setError(err.message || 'An unexpected error occurred. Please try again.');
         } finally {
             setLoading(false);
         }
     };
-
-    const handleResendOtp = async () => {
-        if (!canResend) return;
-
-        setLoading(true);
-        setError('');
-
-        try {
-            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-            const appVerifier = window.recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-            setConfirmationResult(confirmation);
-            setTimeLeft(15);
-            setCanResend(false);
-        } catch (err: any) {
-            //console.error('Error resending OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleChangePhoneNumber = async () => {
-        setOtp('');
-        setStep('details');
-        setConfirmationResult(null);
-
-        // Reset reCAPTCHA
-        if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
-            window.recaptchaVerifier = undefined;
-        }
-    };
-
-
 
     return (
         <Card className="p-8 w-full max-w-md mx-auto">
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">Create Account</h1>
                 <p className="text-muted-foreground">
-                    {step === 'details'
-                        ? 'Enter your details to get started'
-                        : step === 'otp'
-                            ? 'Enter the OTP sent to your mobile'
-                            : 'Set a password for your account'}
+                    Enter your details to register
                 </p>
             </div>
 
@@ -379,165 +137,94 @@ export function PhoneRegister() {
             )}
 
             <div className="space-y-4">
-                {step === 'details' ? (
-                    <>
-                        <div className="relative">
-                            <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Full Name"
-                                className="pl-10"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div className="relative">
-                            <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type="email"
-                                placeholder="Email Address"
-                                className="pl-10"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type="tel"
-                                placeholder="Mobile Number (10 digits)"
-                                className="pl-10"
-                                value={phoneNumber}
-                                maxLength={10}
-                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                                disabled={loading}
-                            />
-                        </div>
-                        <div id="recaptcha-container"></div>
-                        <Button
-                            className="w-full"
-                            onClick={handleSendOtp}
-                            disabled={loading}
-                        >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Send OTP
-                        </Button>
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <Link href="/login" className="text-primary hover:underline">
-                                Login
-                            </Link>
-                        </div>
-                    </>
-                ) : step === 'otp' ? (
-                    <>
-                        <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm mb-4">
-                            OTP sent to +91{phoneNumber}
-                        </div>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Enter 6-digit OTP"
-                                className="pl-10 text-center text-lg tracking-widest"
-                                value={otp}
-                                maxLength={6}
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                disabled={loading}
-                                autoFocus
-                            />
-                        </div>
-                        <Button
-                            className="w-full"
-                            onClick={handleVerifyOtp}
-                            disabled={loading || otp.length !== 6}
-                        >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Verify OTP
-                        </Button>
+                <div className="relative">
+                    <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Full Name"
+                        className="pl-10"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+                <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type="email"
+                        placeholder="Email Address"
+                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+                <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type="tel"
+                        placeholder="Mobile Number (10 digits)"
+                        className="pl-10"
+                        value={phoneNumber}
+                        maxLength={10}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        disabled={loading}
+                    />
+                </div>
+                
+                <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create Password"
+                        className="pl-10 pr-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                    </Button>
+                </div>
 
-                        <div className="text-center">
-                            {canResend ? (
-                                <Button
-                                    variant="link"
-                                    className="p-0 h-auto font-normal text-primary"
-                                    onClick={handleResendOtp}
-                                    disabled={loading}
-                                >
-                                    Resend OTP
-                                </Button>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    Resend OTP in {timeLeft}s
-                                </p>
-                            )}
-                        </div>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm Password"
+                        className="pl-10"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
 
-                        <Button
-                            variant="ghost"
-                            className="w-full"
-                            onClick={handleChangePhoneNumber}
-                            disabled={loading}
-                        >
-                            Change Phone Number
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Create Password"
-                                className="pl-10 pr-10"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                disabled={loading}
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? (
-                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                ) : (
-                                    <Eye className="h-4 w-4 text-muted-foreground" />
-                                )}
-                            </Button>
-                        </div>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Confirm Password"
-                                className="pl-10"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                disabled={loading}
-                            />
-                        </div>
-                        <Button
-                            className="w-full"
-                            onClick={handleCreateAccount}
-                            disabled={loading}
-                        >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Create Account
-                        </Button>
-                    </>
-                )}
+                <Button
+                    className="w-full"
+                    onClick={handleCreateAccount}
+                    disabled={loading}
+                >
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Create Account
+                </Button>
+
+                <div className="text-center text-sm text-muted-foreground">
+                    Already have an account?{' '}
+                    <Link href="/login" className="text-primary hover:underline">
+                        Login
+                    </Link>
+                </div>
             </div>
         </Card>
     );
-}
-
-declare global {
-    interface Window {
-        recaptchaVerifier: any;
-    }
 }

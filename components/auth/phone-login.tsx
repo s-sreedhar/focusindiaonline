@@ -4,29 +4,34 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
 import { useAuthStore } from '@/lib/auth-store';
 import { useRouter } from 'next/navigation';
-import { Phone, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { handleFirebaseError } from '@/lib/error-utils';
 import Link from 'next/link';
-import { verifyPassword } from '@/lib/crypto';
+import { verifyPassword, hashPassword } from '@/lib/crypto';
+import { auth } from '@/lib/firebase';
+import { signInWithCustomToken, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 export function PhoneLogin() {
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [otp, setOtp] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
-    const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
+
+    // Forgot password states
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+    const [step, setStep] = useState<'identifier' | 'password' | 'forgot-otp' | 'forgot-new-password'>('identifier');
     const [loading, setLoading] = useState(false);
-    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [userData, setUserData] = useState<any>(null);
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [timeLeft, setTimeLeft] = useState(15);
     const [canResend, setCanResend] = useState(false);
-    const [userData, setUserData] = useState<any>(null);
+
     const router = useRouter();
     const { setUser } = useAuthStore();
 
@@ -38,9 +43,7 @@ export function PhoneLogin() {
         if (window.recaptchaVerifier) {
             try {
                 window.recaptchaVerifier.clear();
-            } catch (e) {
-                //console.error(e);
-            }
+            } catch (e) { }
             window.recaptchaVerifier = undefined;
         }
 
@@ -49,37 +52,17 @@ export function PhoneLogin() {
         try {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 size: 'invisible',
-                callback: () => {
-                    // reCAPTCHA solved
-                },
+                callback: () => { },
                 'expired-callback': () => {
                     setError('reCAPTCHA expired. Please try again.');
                 }
             });
-        } catch (err) {
-            //console.error('Error initializing reCAPTCHA:', err);
-        }
+        } catch (err) { }
     };
 
     useEffect(() => {
-        const timer = setTimeout(setupRecaptcha, 100);
-
-        return () => {
-            clearTimeout(timer);
-            if (window.recaptchaVerifier) {
-                try {
-                    window.recaptchaVerifier.clear();
-                } catch (e) {
-                    //console.error(e);
-                }
-                window.recaptchaVerifier = undefined;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
         let timer: NodeJS.Timeout;
-        if (step === 'otp' && timeLeft > 0 && !canResend) {
+        if (step === 'forgot-otp' && timeLeft > 0 && !canResend) {
             timer = setInterval(() => {
                 setTimeLeft((prev) => prev - 1);
             }, 1000);
@@ -89,14 +72,14 @@ export function PhoneLogin() {
         return () => clearInterval(timer);
     }, [step, timeLeft, canResend]);
 
-    const checkUserExists = async (phone: string) => {
+    const checkUserExists = async (ident: string) => {
         try {
             const response = await fetch('/api/auth/check-user', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ phone }),
+                body: JSON.stringify({ identifier: ident }),
             });
 
             if (!response.ok) {
@@ -116,9 +99,8 @@ export function PhoneLogin() {
     };
 
     const handleContinue = async () => {
-        const cleanedPhone = phoneNumber.replace(/\D/g, '');
-        if (!cleanedPhone || cleanedPhone.length !== 10) {
-            setError('Please enter a valid 10-digit phone number');
+        if (!identifier.trim()) {
+            setError('Please enter your Mobile Number or Email');
             return;
         }
 
@@ -126,7 +108,7 @@ export function PhoneLogin() {
         setError('');
 
         try {
-            const user = await checkUserExists(phoneNumber);
+            const user = await checkUserExists(identifier.trim());
 
             if (!user) {
                 setError('User not registered. Please create an account.');
@@ -135,55 +117,9 @@ export function PhoneLogin() {
             }
 
             setUserData(user);
-
-            // If user has a password, ask how they want to login
-            if (user.password) {
-                // Default to password mode if available, or let user choose
-                // For now, let's show a mode selection or just default to password?
-                // The prompt said "user can give password or go with otp login"
-                // Let's switch to a mode selection state or just show password input with "Use OTP" option
-                setStep('password');
-                setLoginMode('password');
-            } else {
-                // No password set, force OTP
-                setLoginMode('otp');
-                await sendOtp();
-            }
-
+            setStep('password');
         } catch (err: any) {
-            //console.error('Error checking user:', err);
             setError('Failed to verify user. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const sendOtp = async () => {
-        setLoading(true);
-        try {
-            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-            const appVerifier = window.recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-            setConfirmationResult(confirmation);
-            setStep('otp');
-            setLoginMode('otp');
-            setTimeLeft(15);
-            setCanResend(false);
-        } catch (err: any) {
-            //console.error('Error sending OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
-
-            if (err.code === 'auth/invalid-app-credential') {
-                // console.log('[PhoneLogin] Resetting reCAPTCHA due to invalid-app-credential');
-                setupRecaptcha();
-            } else {
-                if (window.recaptchaVerifier) {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = undefined;
-                    setTimeout(setupRecaptcha, 500);
-                }
-            }
         } finally {
             setLoading(false);
         }
@@ -199,28 +135,14 @@ export function PhoneLogin() {
         setError('');
 
         try {
-            // console.log('=== Password Login Debug ===');
-            // console.log('User Data:', {
-            //     uid: userData.uid,
-            //     phone: userData.phone,
-            //     role: userData.role,
-            //     hasPassword: !!userData.password,
-            //     passwordLength: userData.password?.length
-            // });
-            // console.log('Entered password length:', password.length);
-
-            // Verify password
+            // Verify password locally
             const isValid = await verifyPassword(password, userData.password);
-            // console.log('Password verification result:', isValid);
 
             if (!isValid) {
-                console.error('Password verification failed');
                 setError('Invalid password');
                 setLoading(false);
                 return;
             }
-
-            // console.log('Password verified successfully, creating custom token...');
 
             // Get custom token from backend
             const tokenResponse = await fetch('/api/auth/custom-token', {
@@ -236,18 +158,24 @@ export function PhoneLogin() {
             const { customToken } = await tokenResponse.json();
 
             // Sign in with custom token to establish Firebase Auth session
-            const { signInWithCustomToken } = await import('firebase/auth');
             const userCredential = await signInWithCustomToken(auth, customToken);
 
-            // console.log('Firebase Auth session established:', userCredential.user.uid);
+            setUser({
+                id: userCredential.user.uid,
+                username: identifier.trim(),
+                displayName: userData?.displayName || 'User',
+                email: userData?.email || '',
+                phone: userData?.phone || '',
+                createdAt: userCredential.user.metadata.creationTime || new Date().toISOString(),
+                role: userData?.role || 'customer',
+                authMethod: 'firebase'
+            });
 
-            // The auth state listener in auth-store will handle setting the user
-            // Just redirect based on role
+            // Redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
-                // console.log('Redirecting admin user to /admin dashboard');
                 window.location.href = '/admin';
             } else {
-                window.location.href = '/';
+                router.push('/');
             }
 
         } catch (err: any) {
@@ -258,7 +186,44 @@ export function PhoneLogin() {
         }
     };
 
-    const handleVerifyOtp = async () => {
+    const handleTriggerForgotPasswordOTP = async () => {
+        setLoading(true);
+        setError('');
+        setSuccessMessage('');
+
+        try {
+            // Setup recaptcha if not present
+            setupRecaptcha();
+
+            // Format phone number
+            const phoneStr = userData.phone;
+            if (!phoneStr) {
+                throw new Error("No mobile number registered to this account.");
+            }
+            const digits = phoneStr.replace(/\D/g, '');
+            const finalPhone = digits.length === 10 ? `+91${digits}` : (!phoneStr.startsWith('+') ? `+${digits}` : phoneStr);
+
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
+
+            setConfirmationResult(confirmation);
+            setStep('forgot-otp');
+            setTimeLeft(15);
+            setCanResend(false);
+            setSuccessMessage(`OTP sent to your registered mobile number ending in ${finalPhone.slice(-4)}`);
+
+        } catch (err: any) {
+            setError(handleFirebaseError(err) || 'Failed to send OTP.');
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = undefined;
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async () => {
         if (!otp || otp.length !== 6) {
             setError('Please enter a valid 6-digit OTP');
             return;
@@ -268,43 +233,63 @@ export function PhoneLogin() {
         setError('');
 
         try {
-            if (confirmationResult) {
-                const result = await confirmationResult.confirm(otp);
-                const firebaseUser = result.user;
-
-                // We already fetched user data in the first step
-                // But let's refresh it or use what we have
-
-                setUser({
-                    id: firebaseUser.uid,
-                    username: firebaseUser.phoneNumber || '',
-                    displayName: userData?.displayName || 'User',
-                    phone: firebaseUser.phoneNumber || '',
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    role: userData?.role || 'customer',
-                    authMethod: 'firebase'
-                });
-
-                // Use window.location.href for admin redirects to ensure full page reload
-                if (userData?.role === 'superadmin' || userData?.role === 'admin') {
-                    // console.log('Redirecting admin user to /admin dashboard');
-                    window.location.href = '/admin';
-                } else {
-                    window.location.href = '/';
-                }
+            if (!confirmationResult) {
+                setError('Session expired. Please request OTP again.');
+                return;
             }
+            await confirmationResult.confirm(otp);
+            setSuccessMessage('OTP verified. Please set your new password.');
+            setStep('forgot-new-password');
         } catch (err: any) {
-            //console.error('Error verifying OTP:', err);
-            const message = handleFirebaseError(err);
-            setError(message);
+            setError(handleFirebaseError(err) || 'Invalid OTP');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleResendOtp = async () => {
-        if (!canResend) return;
-        await sendOtp();
+    const handleResetPassword = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+
+        if (newPassword !== confirmNewPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const hashedPassword = await hashPassword(newPassword);
+
+            const res = await fetch('/api/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uid: userData.uid,
+                    password: newPassword, // raw for firebase auth
+                    hashedPassword // for firestore verify check
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to update password');
+            }
+
+            setSuccessMessage('Password updated successfully! Please login.');
+            setStep('password');
+            setPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+            setOtp('');
+        } catch (err: any) {
+            setError(err.message || 'An unexpected error occurred.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -312,11 +297,13 @@ export function PhoneLogin() {
             <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
                 <p className="text-muted-foreground">
-                    {step === 'phone'
-                        ? 'Enter your mobile number to continue'
+                    {step === 'identifier'
+                        ? 'Enter your Email or Mobile Number'
                         : step === 'password'
                             ? 'Enter your password'
-                            : 'Enter the OTP sent to your mobile'}
+                            : step === 'forgot-otp'
+                                ? 'Enter the OTP sent to your mobile'
+                                : 'Create a new password'}
                 </p>
             </div>
 
@@ -326,19 +313,28 @@ export function PhoneLogin() {
                 </div>
             )}
 
+            {successMessage && (
+                <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 text-sm">
+                    {successMessage}
+                </div>
+            )}
+
+            {/* Hidden recaptcha element for Firebase auth */}
             <div id="recaptcha-container"></div>
+
             <div className="space-y-4">
-                {step === 'phone' ? (
+                {step === 'identifier' ? (
                     <>
                         <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                type="tel"
-                                placeholder="Mobile Number"
+                                type="text"
+                                placeholder="Email or Mobile Number"
                                 className="pl-10"
-                                value={phoneNumber}
-                                maxLength={10}
-                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
+                                disabled={loading}
+                                onKeyDown={(e) => e.key === 'Enter' && handleContinue()}
                             />
                         </div>
 
@@ -368,6 +364,7 @@ export function PhoneLogin() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={loading}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordLogin()}
                             />
                             <Button
                                 type="button"
@@ -389,42 +386,34 @@ export function PhoneLogin() {
                             disabled={loading}
                         >
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Login with Password
-                        </Button>
-
-                        <div className="relative my-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground">
-                                    Or
-                                </span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={sendOtp}
-                            disabled={loading}
-                        >
-                            Login with OTP
+                            Login
                         </Button>
 
                         <Button
                             variant="ghost"
+                            className="w-full"
+                            onClick={handleTriggerForgotPasswordOTP}
+                            disabled={loading}
+                        >
+                            Forgot Password?
+                        </Button>
+
+                        <Button
+                            variant="link"
                             className="w-full mt-2"
                             onClick={() => {
-                                setStep('phone');
+                                setStep('identifier');
                                 setPassword('');
+                                setUserData(null);
+                                setSuccessMessage('');
+                                setError('');
                             }}
                             disabled={loading}
                         >
-                            Change Phone Number
+                            Change Email / Mobile
                         </Button>
                     </>
-                ) : (
+                ) : step === 'forgot-otp' ? (
                     <>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -435,11 +424,13 @@ export function PhoneLogin() {
                                 value={otp}
                                 maxLength={6}
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                disabled={loading}
+                                onKeyDown={(e) => e.key === 'Enter' && handleVerifyOTP()}
                             />
                         </div>
                         <Button
                             className="w-full"
-                            onClick={handleVerifyOtp}
+                            onClick={handleVerifyOTP}
                             disabled={loading}
                         >
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -451,7 +442,7 @@ export function PhoneLogin() {
                                 <Button
                                     variant="link"
                                     className="p-0 h-auto font-normal text-primary"
-                                    onClick={handleResendOtp}
+                                    onClick={handleTriggerForgotPasswordOTP}
                                     disabled={loading}
                                 >
                                     Resend OTP
@@ -466,20 +457,69 @@ export function PhoneLogin() {
                         <Button
                             variant="ghost"
                             className="w-full"
-                            onClick={() => setStep('phone')}
+                            onClick={() => {
+                                setStep('password');
+                                setError('');
+                                setSuccessMessage('');
+                                setOtp('');
+                            }}
                             disabled={loading}
                         >
-                            Change Phone Number
+                            Back to Login
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        {/* New Password Step */}
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="New Password"
+                                className="pl-10 pr-10"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                disabled={loading}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </Button>
+                        </div>
+
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Confirm New Password"
+                                className="pl-10"
+                                value={confirmNewPassword}
+                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                disabled={loading}
+                                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+                            />
+                        </div>
+
+                        <Button
+                            className="w-full"
+                            onClick={handleResetPassword}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Reset Password
                         </Button>
                     </>
                 )}
             </div>
         </Card>
     );
-}
-
-declare global {
-    interface Window {
-        recaptchaVerifier: any;
-    }
 }

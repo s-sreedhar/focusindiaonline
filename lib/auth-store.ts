@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useCartStore } from './cart-store';
+import { useWishlistStore } from './wishlist-store';
+import { useCompareStore } from './compare-store';
 
 export interface User {
   id: string;
@@ -48,6 +51,12 @@ export const useAuthStore = create<AuthStore>()(
       logout: async () => {
         // console.log('[AuthStore] Logging out...');
         await signOut(auth);
+        
+        // Clear locally persisted stores to prevent bleed-over onto new accounts
+        try { useCartStore.getState().clearCart(); } catch (e) {}
+        try { useWishlistStore.getState().clearWishlist(); } catch (e) {}
+        try { useCompareStore.getState().clearCompare(); } catch (e) {}
+
         set({ user: null, isAuthenticated: false, lastActivity: undefined });
         // console.log('[AuthStore] Logged out successfully');
       },

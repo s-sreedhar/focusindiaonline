@@ -40,7 +40,7 @@ export const useCartStore = create<CartStore>()(
             return {
               items: state.items.map(i =>
                 i.bookId === item.bookId
-                  ? { ...i, quantity: i.quantity + item.quantity }
+                  ? { ...i, quantity: Number(i.quantity) + Number(item.quantity) }
                   : i
               ),
             };
@@ -57,17 +57,17 @@ export const useCartStore = create<CartStore>()(
         set((state) => ({
           items: state.items.map(i =>
             i.bookId === bookId
-              ? { ...i, quantity: Math.max(1, quantity) }
+              ? { ...i, quantity: Math.max(1, Number(quantity)) }
               : i
           ),
         }));
       },
       clearCart: () => set({ items: [] }),
       getTotalPrice: () => {
-        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+        return get().items.reduce((total, item) => total + (Number(item.price) * Number(item.quantity)), 0);
       },
       getItemCount: () => {
-        return get().items.reduce((count, item) => count + item.quantity, 0);
+        return get().items.reduce((count, item) => count + Number(item.quantity), 0);
       },
       appliedCoupon: null,
       applyCoupon: (coupon) => set({ appliedCoupon: coupon }),

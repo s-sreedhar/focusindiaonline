@@ -19,26 +19,26 @@ function getFirebaseAdmin(): admin.app.App {
         // Get credentials from environment or construct from individual env vars
         let credential;
 
+        let fullKeyParsed = false;
         if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-            // Use full service account JSON from env
-            // console.log('🔥 Admin Init: Using FIREBASE_SERVICE_ACCOUNT_KEY');
             try {
                 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
                 credential = admin.credential.cert(serviceAccount);
+                fullKeyParsed = true;
             } catch (parseError: any) {
-                console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', parseError.message);
-                throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT_KEY format');
+                console.warn(' Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Falling back to individual variables.');
             }
-        } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+        }
+
+        if (!fullKeyParsed && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
             // Use individual env vars
-            // console.log('🔥 Admin Init: Using individual Firebase env vars');
             credential = admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
                 privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
             });
-        } else {
-            console.warn('⚠️ Admin Init: No credentials found in env. Returning unauthenticated app or relying on ADC.');
+        } else if (!fullKeyParsed) {
+            console.warn(' Admin Init: No credentials found in env. Returning unauthenticated app or relying on ADC.');
         }
 
         firebaseAdmin = admin.initializeApp({
@@ -49,7 +49,7 @@ function getFirebaseAdmin(): admin.app.App {
         // console.log('✅ Firebase Admin initialized successfully');
         return firebaseAdmin;
     } catch (error: any) {
-        console.error('❌ Firebase Admin initialization failed:', error);
+        console.error(' Firebase Admin initialization failed:', error);
         throw new Error(`Firebase Admin initialization failed: ${error.message}`);
     }
 }
