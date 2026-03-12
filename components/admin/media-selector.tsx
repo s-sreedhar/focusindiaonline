@@ -48,26 +48,11 @@ export function MediaSelector({
     const [uploadTitle, setUploadTitle] = useState('');
     const [uploading, setUploading] = useState(false);
 
-    // State to track if we need to auto-select an item after upload
-    const [pendingSelect, setPendingSelect] = useState<string | null>(null);
-
     useEffect(() => {
         if (open && mediaItems.length === 0) {
             fetchMedia();
         }
     }, [open]);
-
-    // Handle auto-selection after upload is complete and component has re-rendered
-    useEffect(() => {
-        if (pendingSelect && !uploading && !loading) {
-            // Give a tiny moment for everything to settle
-            const timer = setTimeout(() => {
-                handleSelect(pendingSelect);
-                setPendingSelect(null);
-            }, 50);
-            return () => clearTimeout(timer);
-        }
-    }, [pendingSelect, uploading, loading]);
 
     const fetchMedia = async () => {
         setLoading(true);
@@ -89,13 +74,13 @@ export function MediaSelector({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            
+
             // Apply filtering logic based on picker type constraints
             if (type === 'image' && !file.type.startsWith('image/')) {
                 toast.error("Please select an image file.");
                 return;
             } else if (type === 'document' && file.type.startsWith('image/')) {
-                 toast.error("Please select a document file.");
+                toast.error("Please select a document file.");
                 return;
             }
 
@@ -106,8 +91,9 @@ export function MediaSelector({
         }
     };
 
-    const handleUploadSubmit = async (e: React.FormEvent) => {
+    const handleUploadSubmit = async (e: React.FormEvent | React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation(); // CRITICAL: Prevent bubbling to parent forms
 
         if (!uploadFile || !uploadTitle) {
             toast.error("Please provide a title and select a file");
@@ -132,35 +118,32 @@ export function MediaSelector({
             const docRef = await addDoc(collection(db, 'media'), mediaData);
 
             toast.success("Media uploaded successfully");
-            
+
             // Manually update the media items list to include the new item immediately
             const newItem: MediaItem = {
                 id: docRef.id,
                 ...mediaData,
                 createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } // Mock timestamp for immediate UI use
             };
-            
+
             setMediaItems(prev => [newItem, ...prev]);
 
             // Clear upload states
             setUploadTitle('');
             setUploadFile(null);
-            
-            // Switch to library tab so the user can see it briefly before it closes
-            setActiveTab('library');
-            
-            // Set pending selection - the useEffect will handle the rest
-            setPendingSelect(url.trim());
             setUploading(false);
-            
+
+            // Auto Select and close - DO IT DIRECTLY
+            onSelect(url.trim());
+            setOpen(false);
+
             // Background refresh to get the real server data
             fetchMedia();
-            
+
         } catch (error) {
             console.error("Error uploading inline media:", error);
             toast.error("Failed to upload media");
             setUploading(false);
-            setPendingSelect(null);
         }
     };
 
@@ -271,29 +254,29 @@ export function MediaSelector({
                                                             <span className="text-white text-xs font-semibold">Select</span>
                                                         </div>
                                                     )}
-                                        </div>
-                                        <div className="p-2 border-t bg-background">
-                                            <h3 className="text-[13px] font-medium truncate" title={item.title}>
-                                                {item.title}
-                                            </h3>
-                                            <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={decodeURIComponent(filename)}>
-                                                {decodeURIComponent(filename)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                                </div>
+                                                <div className="p-2 border-t bg-background">
+                                                    <h3 className="text-[13px] font-medium truncate" title={item.title}>
+                                                        {item.title}
+                                                    </h3>
+                                                    <p className="text-[10px] text-muted-foreground truncate mt-0.5" title={decodeURIComponent(filename)}>
+                                                        {decodeURIComponent(filename)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
                     </TabsContent>
 
                     {/* UPLOAD TAB */}
                     <TabsContent value="upload" className="flex-1 overflow-y-auto m-0 data-[state=inactive]:hidden">
-                         <div className="h-full flex flex-col justify-center items-center py-4">
+                        <div className="h-full flex flex-col justify-center items-center py-4">
                             <Card className="p-6 w-full max-w-md shadow-none border-dashed border-2">
                                 <h2 className="text-xl font-bold mb-4 text-center">Upload New File</h2>
-                                <form onSubmit={handleUploadSubmit} className="space-y-4">
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="upload-title">File Title</Label>
                                         <Input
@@ -320,7 +303,12 @@ export function MediaSelector({
                                         </p>
                                     </div>
 
-                                    <Button type="submit" className="w-full mt-6" disabled={uploading}>
+                                    <Button
+                                        type="button"
+                                        onClick={handleUploadSubmit}
+                                        className="w-full mt-6"
+                                        disabled={uploading}
+                                    >
                                         {uploading ? (
                                             <>
                                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -333,9 +321,9 @@ export function MediaSelector({
                                             </>
                                         )}
                                     </Button>
-                                </form>
+                                </div>
                             </Card>
-                         </div>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </DialogContent>

@@ -256,7 +256,7 @@ export default function TestimonialsPage() {
                                 <div className="flex flex-col gap-4">
                                     <MediaSelector
                                         type="image"
-                                        onSelect={(url) => setAvatarUrl(url)}
+                                        onSelect={(url) => setAvatarUrl(_ => url)}
                                         selectedUrl={avatarUrl}
                                         triggerText={avatarUrl ? "Change Avatar" : "Select from Media Library"}
                                     />

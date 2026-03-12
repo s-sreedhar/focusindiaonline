@@ -263,7 +263,7 @@ export default function CategoriesPage() {
                             <div className="flex flex-col gap-4">
                                 <MediaSelector
                                     type="image"
-                                    onSelect={(url) => setEditImageUrl(url)}
+                                    onSelect={(url) => setEditImageUrl(_ => url)}
                                     selectedUrl={editImageUrl}
                                     triggerText={editImageUrl ? "Change Image" : "Select from Media Library"}
                                 />
@@ -308,7 +308,7 @@ export default function CategoriesPage() {
                                     <div className="flex-1 flex flex-col justify-center">
                                         <MediaSelector
                                             type="image"
-                                            onSelect={(url) => setNewCategoryUrl(url)}
+                                            onSelect={(url) => setNewCategoryUrl(_ => url)}
                                             selectedUrl={newCategoryUrl}
                                             triggerText={newCategoryUrl ? "Change Image" : "Select from Media Library"}
                                         />

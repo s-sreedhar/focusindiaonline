@@ -295,7 +295,7 @@ export default function TestSeriesPage() {
                             <div className="flex flex-col gap-2">
                                 <MediaSelector
                                     type="document"
-                                    onSelect={(url) => setFormData({ ...formData, fileUrl: url })}
+                                    onSelect={(url) => setFormData(prev => ({ ...prev, fileUrl: url }))}
                                     selectedUrl={formData.fileUrl}
                                     triggerText={formData.fileUrl ? "Change PDF" : "Select PDF from Media Library"}
                                 />
@@ -311,7 +311,7 @@ export default function TestSeriesPage() {
                             <div className="flex flex-col gap-2">
                                 <MediaSelector
                                     type="image"
-                                    onSelect={(url) => setFormData({ ...formData, imageUrl: url })}
+                                    onSelect={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
                                     selectedUrl={formData.imageUrl}
                                     triggerText={formData.imageUrl ? "Change Thumbnail" : "Select Image from Media Library"}
                                 />

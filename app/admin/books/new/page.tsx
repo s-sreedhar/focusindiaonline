@@ -281,7 +281,7 @@ export default function NewBookPage() {
                         <div className="flex flex-col gap-4">
                             <div className="w-full">
                                 <MediaSelector 
-                                    onSelect={(url) => setImageUrl(url)} 
+                                    onSelect={(url) => setImageUrl(_ => url)} 
                                     type="image" 
                                     selectedUrl={imageUrl}
                                     triggerText={imageUrl ? "Change Image" : "Select from Media Library"}

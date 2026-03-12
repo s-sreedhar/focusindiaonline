@@ -223,7 +223,7 @@ export default function BannersPage() {
                                 <div className="flex flex-col gap-4">
                                     <MediaSelector
                                         type="image"
-                                        onSelect={(url) => setImageUrl(url)}
+                                        onSelect={(url) => setImageUrl(_ => url)}
                                         selectedUrl={imageUrl}
                                         triggerText={imageUrl ? "Change Banner Image" : "Select from Media Library"}
                                     />

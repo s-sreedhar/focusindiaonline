@@ -316,7 +316,7 @@ export default function EditBookPage({ params }: { params: Promise<{ id: string 
                         <div className="flex flex-col gap-4">
                             <div className="w-full">
                                 <MediaSelector 
-                                    onSelect={(url) => setCurrentImageUrl(url)} 
+                                    onSelect={(url) => setCurrentImageUrl(_ => url)} 
                                     type="image" 
                                     selectedUrl={currentImageUrl}
                                     triggerText={currentImageUrl ? "Change Image" : "Select from Media Library"}

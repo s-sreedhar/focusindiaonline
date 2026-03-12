@@ -139,7 +139,7 @@ export default function PopupSettingsPage() {
                             <div className="flex flex-col gap-4">
                                 <MediaSelector
                                     type="image"
-                                    onSelect={(url) => setSettings({ ...settings, imageUrl: url })}
+                                    onSelect={(url) => setSettings(prev => ({ ...prev, imageUrl: url }))}
                                     selectedUrl={settings.imageUrl}
                                     triggerText={settings.imageUrl ? "Change Popup Image" : "Select from Media Library"}
                                 />
