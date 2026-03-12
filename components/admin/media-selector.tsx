@@ -48,11 +48,26 @@ export function MediaSelector({
     const [uploadTitle, setUploadTitle] = useState('');
     const [uploading, setUploading] = useState(false);
 
+    // State to track if we need to auto-select an item after upload
+    const [pendingSelect, setPendingSelect] = useState<string | null>(null);
+
     useEffect(() => {
         if (open && mediaItems.length === 0) {
             fetchMedia();
         }
     }, [open]);
+
+    // Handle auto-selection after upload is complete and component has re-rendered
+    useEffect(() => {
+        if (pendingSelect && !uploading && !loading) {
+            // Give a tiny moment for everything to settle
+            const timer = setTimeout(() => {
+                handleSelect(pendingSelect);
+                setPendingSelect(null);
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [pendingSelect, uploading, loading]);
 
     const fetchMedia = async () => {
         setLoading(true);
@@ -107,7 +122,7 @@ export function MediaSelector({
 
             const mediaData = {
                 title: uploadTitle,
-                url,
+                url: url.trim(),
                 type: isImage ? ('image' as const) : ('document' as const),
                 format: uploadFile.type,
                 size: uploadFile.size,
@@ -127,23 +142,25 @@ export function MediaSelector({
             
             setMediaItems(prev => [newItem, ...prev]);
 
-            // Clear upload states first
+            // Clear upload states
             setUploadTitle('');
             setUploadFile(null);
-            setUploading(false);
-
-            // Auto Select and close - with a small delay to ensure states are settled
-            setTimeout(() => {
-                handleSelect(url);
-            }, 100);
             
-            // Background refresh to get the real server timestamped data
+            // Switch to library tab so the user can see it briefly before it closes
+            setActiveTab('library');
+            
+            // Set pending selection - the useEffect will handle the rest
+            setPendingSelect(url.trim());
+            setUploading(false);
+            
+            // Background refresh to get the real server data
             fetchMedia();
             
         } catch (error) {
             console.error("Error uploading inline media:", error);
             toast.error("Failed to upload media");
             setUploading(false);
+            setPendingSelect(null);
         }
     };
 
