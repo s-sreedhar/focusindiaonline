@@ -17,11 +17,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             return NextResponse.redirect(new URL('/checkout/failure?reason=missing_transaction_id', request.url), 303);
         }
 
-        console.log('🔍 Checking payment status for:', transactionId);
+        console.log(' Checking payment status for:', transactionId);
 
         // 1. Verify Payment Status with PhonePe API
         const statusResponse = await checkPaymentStatus(transactionId);
-        console.log('📋 PhonePe Status Response:', JSON.stringify(statusResponse, null, 2));
+        console.log(' PhonePe Status Response:', JSON.stringify(statusResponse, null, 2));
 
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
         const db = getAdminDb();
@@ -68,7 +68,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
         } else if (statusResponse && statusResponse.code === 'PAYMENT_PENDING') {
             // 3. Handle Pending Status
-            console.log(`⏳ Payment ${transactionId} is PENDING at PhonePe.`);
+            console.log(` Payment ${transactionId} is PENDING at PhonePe.`);
 
             // Update order status to explicitly mention pending if needed, 
             // but it's already created with 'payment_pending' status.

@@ -5,19 +5,19 @@ export const runtime = 'nodejs';
 
 export async function GET() {
     try {
-        console.log('🧪 Testing Firebase Admin initialization...');
+        console.log('Testing Firebase Admin initialization...');
         
         // Test Admin Auth
         const adminAuth = getAdminAuth();
-        console.log('✅ Admin Auth initialized');
+        console.log(' Admin Auth initialized');
         
         // Test Admin DB
         const adminDb = getAdminDb();
-        console.log('✅ Admin DB initialized');
+        console.log(' Admin DB initialized');
         
         // Try to list some users (just to verify it works)
         const listResult = await adminAuth.listUsers(1);
-        console.log('✅ Successfully listed users');
+        console.log('Successfully listed users');
         
         return NextResponse.json({
             success: true,
@@ -25,7 +25,7 @@ export async function GET() {
             userCount: listResult.users.length
         });
     } catch (error: any) {
-        console.error('❌ Firebase Admin test failed:');
+        console.error('Firebase Admin test failed:');
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);
         console.error('Error code:', error.code);

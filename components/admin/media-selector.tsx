@@ -105,29 +105,44 @@ export function MediaSelector({
             const url = await uploadToR2(uploadFile);
             const isImage = uploadFile.type.startsWith('image/');
 
-            await addDoc(collection(db, 'media'), {
+            const mediaData = {
                 title: uploadTitle,
                 url,
-                type: isImage ? 'image' : 'document',
+                type: isImage ? ('image' as const) : ('document' as const),
                 format: uploadFile.type,
                 size: uploadFile.size,
                 createdAt: serverTimestamp()
-            });
+            };
+
+            const docRef = await addDoc(collection(db, 'media'), mediaData);
 
             toast.success("Media uploaded successfully");
             
-            // Auto Select and close
-            handleSelect(url);
+            // Manually update the media items list to include the new item immediately
+            const newItem: MediaItem = {
+                id: docRef.id,
+                ...mediaData,
+                createdAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } // Mock timestamp for immediate UI use
+            };
             
-            // Background reset list
+            setMediaItems(prev => [newItem, ...prev]);
+
+            // Clear upload states first
             setUploadTitle('');
             setUploadFile(null);
+            setUploading(false);
+
+            // Auto Select and close - with a small delay to ensure states are settled
+            setTimeout(() => {
+                handleSelect(url);
+            }, 100);
+            
+            // Background refresh to get the real server timestamped data
             fetchMedia();
             
         } catch (error) {
             console.error("Error uploading inline media:", error);
             toast.error("Failed to upload media");
-        } finally {
             setUploading(false);
         }
     };
