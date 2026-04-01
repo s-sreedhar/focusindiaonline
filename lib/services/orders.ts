@@ -110,7 +110,52 @@ export const updateOrderStatus = async (
 import { createNotification } from './notifications';
 
 /**
- * Update payment status
+ * Update both payment status AND order status in a single write
+ */
+export const updateOrderPaymentAndStatus = async (
+    orderId: string,
+    paymentStatus: Order['paymentStatus'],
+    orderStatus: Order['status'],
+    paymentId?: string
+): Promise<void> => {
+    try {
+        const orderRef = doc(db, ORDERS_COLLECTION, orderId);
+        const updateData: any = {
+            status: orderStatus,
+            paymentStatus,
+            updatedAt: serverTimestamp(),
+        };
+
+        if (paymentId) {
+            updateData.paymentId = paymentId;
+        }
+
+        await updateDoc(orderRef, updateData);
+
+        // Notify Admin on success
+        if (paymentStatus === 'completed') {
+            const snap = await getDoc(orderRef);
+            if (snap.exists()) {
+                const order = snap.data();
+                const amount = order?.totalAmount || 0;
+                const userName = order?.shippingAddress?.fullName || order?.shippingAddress?.firstName || 'Unknown User';
+
+                await createNotification(
+                    'new_order',
+                    'New Order Placed',
+                    `Order #${orderId} confirmed for ₹${amount} by ${userName}.`,
+                    orderId
+                );
+            }
+        }
+    } catch (error) {
+        //console.error('Error updating order/payment status:', error);
+        throw new Error('Failed to update order status');
+    }
+};
+
+/**
+ * Update payment status (singular)
  */
 export const updatePaymentStatus = async (
     orderId: string,
@@ -133,16 +178,18 @@ export const updatePaymentStatus = async (
         // Notify Admin on success
         if (paymentStatus === 'completed') {
             const snap = await getDoc(orderRef);
-            const order = snap.data();
-            const amount = order?.totalAmount || 0;
-            const userName = order?.shippingAddress?.firstName || 'Unknown User';
+            if (snap.exists()) {
+                const order = snap.data();
+                const amount = order?.totalAmount || 0;
+                const userName = order?.shippingAddress?.fullName || order?.shippingAddress?.firstName || 'Unknown User';
 
-            await createNotification(
-                'new_order',
-                'New Order Placed',
-                `Order #${orderId} confirmed for ₹${amount} by ${userName}.`,
-                orderId
-            );
+                await createNotification(
+                    'new_order',
+                    'New Order Placed',
+                    `Order #${orderId} confirmed for ₹${amount} by ${userName}.`,
+                    orderId
+                );
+            }
         }
 
     } catch (error) {

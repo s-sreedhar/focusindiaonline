@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
+import { collection, orderBy, query, doc, updateDoc, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { Loader2, Package, Eye, Filter, Mail } from 'lucide-react';
 import { Order } from '@/lib/types';
 import { sendEmail } from '@/lib/brevo';
@@ -61,25 +61,25 @@ export default function OrdersPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const ordersData = querySnapshot.docs.map(doc => ({
+    // Real-time listener for orders
+    setLoading(true);
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+      const ordersData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
       })) as Order[];
       setOrders(ordersData);
-    } catch (error) {
-      //console.error("Error fetching orders:", error);
-      toast.error("Failed to fetch orders");
-    } finally {
       setLoading(false);
-    }
-  };
+    }, (error: Error) => {
+      //console.error("Error watching orders:", error);
+      toast.error("Failed to sync orders in real-time");
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {

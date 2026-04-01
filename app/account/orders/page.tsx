@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Order } from '@/lib/types';
 import { toast } from 'sonner';
@@ -38,30 +38,29 @@ export default function OrdersPage() {
       return;
     }
 
-    const fetchOrders = async () => {
-      if (!user?.id) return;
+    if (!user?.id) return;
+    setLoading(true);
 
-      try {
-        const q = query(
-          collection(db, 'orders'),
-          where('userId', '==', user.id),
-          orderBy('createdAt', 'desc')
-        );
-        const querySnapshot = await getDocs(q);
-        const ordersData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Order[];
-        setOrders(ordersData);
-      } catch (error) {
-        //console.error("Error fetching orders:", error);
-        toast.error("Failed to load orders");
-      } finally {
-        setLoading(false);
-      }
-    };
+    const q = query(
+      collection(db, 'orders'),
+      where('userId', '==', user.id),
+      orderBy('createdAt', 'desc')
+    );
 
-    fetchOrders();
+    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+      const ordersData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Order[];
+      setOrders(ordersData);
+      setLoading(false);
+    }, (error) => {
+      //console.error("Error watching orders:", error);
+      toast.error("Failed to sync orders in real-time");
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [isAuthenticated, user, router]);
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);

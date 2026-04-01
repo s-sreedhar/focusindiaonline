@@ -18,8 +18,12 @@ service cloud.firestore {
     // Users: Users can read/write their own data; Admins can read/write all
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      // Prevent privilege escalation: Users can only write if the resulting role is 'customer'
-      allow write: if (isOwner(userId) && request.resource.data.role == 'customer') || isAdmin();
+      // Allow creation if the user is the owner and doesn't grant themselves admin privileges
+      allow create: if isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == 'customer');
+      // Allow updates if the user is the owner and doesn't change their role to something unauthorized
+      allow update: if (isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role || request.resource.data.role == 'customer')) || isAdmin();
+      // Admins can do anything
+      allow write: if isAdmin();
     }
     
     // Customers: Users can read/write their own data; Admins can read/write all

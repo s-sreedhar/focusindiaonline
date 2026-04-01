@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { updatePaymentStatus, updateOrderStatus } from '@/lib/services/orders';
+import { updateOrderPaymentAndStatus } from '@/lib/services/orders';
 
 export async function POST(req: Request) {
     try {
@@ -34,9 +34,8 @@ export async function POST(req: Request) {
             const razorpayPaymentId = payment.id;
 
             if (orderId) {
-                // Update statuses in Firestore
-                await updatePaymentStatus(orderId, 'completed', razorpayPaymentId);
-                await updateOrderStatus(orderId, 'processing');
+                // Update both statuses in a single write operation for efficiency and real-time sync
+                await updateOrderPaymentAndStatus(orderId, 'completed', 'processing', razorpayPaymentId);
                 // console.log(`Order ${orderId} updated to processing/completed via webhook`);
             } else {
                 console.warn('Webhook: Order ID not found in payload', JSON.stringify(event.payload, null, 2));
