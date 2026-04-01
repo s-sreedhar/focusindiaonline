@@ -12,6 +12,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
 import { ChevronDown, Loader2, Phone, Lock, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc, getDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
@@ -38,6 +39,7 @@ type Step = 'address' | 'payment' | 'review' | 'verification';
 export default function CheckoutPage() {
   const { items, getTotalPrice, clearCart, appliedCoupon: storeCoupon, applyCoupon: setStoreCoupon, removeCoupon: removeStoreCoupon } = useCartStore();
   const { user, isAuthenticated, setUser } = useAuthStore();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('address');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -85,21 +87,39 @@ export default function CheckoutPage() {
   }, 0);
 
   const [shippingDetails, setShippingDetails] = useState<{ charges: number, zone: string, weightUsed: number } | null>(null);
+  const [costPerKg, setCostPerKg] = useState<number>(40);
+
+  useEffect(() => {
+    async function fetchShippingSettings() {
+      try {
+        const docRef = doc(db, 'settings', 'general');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setCostPerKg(docSnap.data().shippingCostPerKg || 40);
+        }
+      } catch (error) {
+        console.error('Error fetching shipping settings:', error);
+      }
+    }
+    fetchShippingSettings();
+  }, []);
 
   const shippingCharges = shippingDetails ? shippingDetails.charges : 0;
 
   const hasDigitalItems = items.some(item => item.type === 'test_series');
 
   useEffect(() => {
-    // If cart has only digital items, shipping is 0.
-    // If mixed, calculate based on physical weight.
+    // Calculate and show weight immediately, even if state is missing
+    const weightKg = totalWeight / 1000;
+
     if (totalWeight > 0 && formData.state) {
-      const details = calculateShippingCharges(totalWeight, formData.state);
+      const details = calculateShippingCharges(totalWeight, formData.state, costPerKg);
       setShippingDetails(details);
     } else {
-      setShippingDetails({ charges: 0, zone: 'A', weightUsed: 0 });
+      // Still show the actual weight used, but charges set to 0 (TBD in UI)
+      setShippingDetails({ charges: 0, zone: 'A', weightUsed: weightKg });
     }
-  }, [formData.state, totalWeight]);
+  }, [formData.state, totalWeight, costPerKg]);
 
   const [openState, setOpenState] = useState(false);
 
@@ -490,17 +510,27 @@ export default function CheckoutPage() {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const initiatePayment = async (userId: string) => {
     setLoading(true);
     try {
-
       // 1. Create Order via Secure Backend API
       const createOrderResponse = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          items: items, // structured clone happens in JSON.stringify
+          items: items,
           shippingAddress: {
             fullName: `${formData.firstName} ${formData.lastName}`,
             firstName: formData.firstName,
@@ -549,7 +579,7 @@ export default function CheckoutPage() {
 
       const { orderId } = orderData;
 
-      // NOTIFY: Potential Lead (Payment Pending) - Client side notification can still happen or move to backend
+      // NOTIFY: Potential Lead
       await createNotification(
         'potential_lead',
         'Potential Lead (Payment Pending)',
@@ -557,27 +587,62 @@ export default function CheckoutPage() {
         orderId
       );
 
-      // 2. Call Payment API
+      // 2. Load Razorpay Script
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        throw new Error('Razorpay SDK failed to load. Are you online?');
+      }
+
+      // 3. Call Payment API to create Razorpay Order
       const response = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: total,
           orderId: orderId,
-          mobileNumber: formData.phone.replace(/\D/g, '') // Send clean digits to backend
         })
       });
 
       const data = await response.json();
 
-      if (data.success && data.url) {
-        // Redirect to PhonePe
-        if (typeof window !== 'undefined') {
-          window.location.href = data.url;
-        }
-      } else {
+      if (!data.success) {
         throw new Error(data.error || 'Payment initiation failed');
       }
+
+      // 4. Open Razorpay Checkout
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'Focus India Online',
+        description: `Order #${orderId}`,
+        order_id: data.razorpayOrderId,
+        handler: async function (response: any) {
+          // Success callback
+          toast.success('Payment successful!');
+          clearCart();
+          router.push(`/checkout/success?orderId=${orderId}`);
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        notes: {
+          orderId: orderId,
+        },
+        theme: {
+          color: '#3b82f6', // primary color
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
 
     } catch (error: any) {
       console.error("Error initiating payment:", error);
@@ -835,7 +900,7 @@ export default function CheckoutPage() {
                       <div className="flex items-center gap-3">
                         <ShieldCheck className="w-6 h-6 text-primary" />
                         <div>
-                          <p className="font-semibold">PhonePe Secure Payment</p>
+                          <p className="font-semibold">Razorpay Secure Payment</p>
                           <p className="text-sm text-muted-foreground">UPI, Cards, NetBanking, Wallets</p>
                         </div>
                       </div>
@@ -896,7 +961,7 @@ export default function CheckoutPage() {
                     </Button>
                     <Button onClick={handlePlaceOrder} size="lg" disabled={loading} className="bg-[#5f259f] hover:bg-[#4a1d7c]">
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Pay ₹{total.toLocaleString()} with PhonePe
+                      Pay ₹{total.toLocaleString()} with Razorpay
                     </Button>
                   </div>
                 </Card>
@@ -956,8 +1021,8 @@ export default function CheckoutPage() {
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Shipping {shippingDetails && `(${shippingDetails.weightUsed}kg - Zone ${shippingDetails.zone})`}</span>
-                    <span>₹{shippingCharges}</span>
+                    <span>Shipping {shippingDetails && `(${shippingDetails.weightUsed.toFixed(2)}kg${formData.state ? ` - Zone ${shippingDetails.zone}` : ''})`}</span>
+                    <span>{shippingCharges > 0 ? `₹${shippingCharges}` : <span className="text-muted-foreground italic text-xs">Enter State to Calculate</span>}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Delivery charges are dynamic based on your delivery location.

@@ -94,7 +94,7 @@ export interface Order {
   createdAt: any; // Timestamp
   updatedAt?: any; // Timestamp
   paymentId?: string;
-  paymentMethod: 'cod' | 'online' | 'PHONEPE';
+  paymentMethod: 'cod' | 'online';
   paymentStatus?: 'pending' | 'completed' | 'failed' | 'refunded';
   adminNotes?: string;
   notesHistory?: {

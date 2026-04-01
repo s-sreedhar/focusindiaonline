@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Could not extract key from URL' }, { status: 400 });
         }
 
-        console.log(`[R2 Delete] Deleting key: ${key}`);
+        // console.log(`[R2 Delete] Deleting key: ${key}`);
 
         const command = new DeleteObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME,

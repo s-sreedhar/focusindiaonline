@@ -68,7 +68,7 @@ export async function POST(request: Request) {
                 userId,
                 items,
                 shippingAddress,
-                paymentMethod: 'PHONEPE',
+                paymentMethod: 'online',
                 subtotal,
                 shippingCharges,
                 discount,

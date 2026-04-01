@@ -173,7 +173,9 @@ export function PhoneLogin() {
 
             // Redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
-                window.location.href = '/admin';
+                if (typeof window !== 'undefined') {
+                    window.location.href = '/admin';
+                }
             } else {
                 router.push('/');
             }

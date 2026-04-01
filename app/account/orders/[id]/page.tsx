@@ -134,15 +134,21 @@ export default function OrderDetailsPage() {
                                 <div className="mt-4 pt-4 border-t space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Subtotal</span>
-                                        <span>₹{order.totalAmount}</span>
+                                        <span>₹{(order.subtotal || (order.totalAmount - (order.shippingCharges || 0) + (order.discount || 0))).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Shipping</span>
-                                        <span>Free</span>
+                                        <span>{order.shippingCharges && order.shippingCharges > 0 ? `₹${order.shippingCharges.toLocaleString()}` : 'Free'}</span>
                                     </div>
+                                    {order.discount && order.discount > 0 && (
+                                        <div className="flex justify-between text-sm text-green-600">
+                                            <span>Discount {order.appliedCoupon && `(${order.appliedCoupon})`}</span>
+                                            <span>-₹{order.discount.toLocaleString()}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between font-bold text-lg pt-2 border-t mt-2">
                                         <span>Total</span>
-                                        <span className="text-primary">₹{order.totalAmount}</span>
+                                        <span className="text-primary">₹{order.totalAmount.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </Card>

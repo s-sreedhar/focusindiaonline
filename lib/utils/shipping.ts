@@ -92,35 +92,13 @@ export const getZoneForState = (state: string): Zone => {
     return DEFAULT_ZONE;
 };
 
-export const calculateShippingCharges = (weightInGrams: number, state: string): { charges: number, zone: Zone, weightUsed: number } => {
+export const calculateShippingCharges = (weightInGrams: number, state: string, costPerKg: number = 40): { charges: number, zone: Zone, weightUsed: number } => {
     const zone = getZoneForState(state);
-    const rates = SHIPPING_RATES[zone];
-
-    // Convert to KG, Round up to nearest 0.5?? 
-    // The chart has discrete steps: 0.5, 1, 2, 3, 5.
-    // "Extra / kg" implies logic for > 5kg.
-    // Logic for intermediate weights (e.g. 1.2kg)? Usually simple interpolation or ceiling. 
-    // Carrier logic is usually "next bracket". 
-    // 0-0.5 -> 0.5 rate
-    // 0.5-1 -> 1 rate
-    // 1-2 -> 2 rate
-    // 2-3 -> 3 rate
-    // 3-5 -> 5 rate
-    // >5 -> 5 rate + (extra * ceil(weight - 5))
-
     const weightInKg = Math.max(0.1, weightInGrams / 1000);
-    let charges = 0;
-
-    if (weightInKg <= 0.5) charges = rates['0.5'];
-    else if (weightInKg <= 1.0) charges = rates['1'];
-    else if (weightInKg <= 2.0) charges = rates['2'];
-    else if (weightInKg <= 3.0) charges = rates['3'];
-    else if (weightInKg <= 5.0) charges = rates['5'];
-    else {
-        // Over 5kg
-        const extraWeight = Math.ceil(weightInKg - 5);
-        charges = rates['5'] + (extraWeight * rates['extra']);
-    }
+    
+    // Simple dynamic calculation as requested: weight * costPerKg
+    // We can still return the zone just in case it's needed for UI, but the charge is dynamic.
+    const charges = Math.round(weightInKg * costPerKg);
 
     return { charges, zone, weightUsed: weightInKg };
 };

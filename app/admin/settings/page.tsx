@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
 import { updateProfile, updatePassword } from 'firebase/auth';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
@@ -13,15 +13,23 @@ import { Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { ChangePasswordDialog } from '@/components/auth/change-password-dialog';
 
+interface Settings {
+  siteName: string;
+  siteUrl: string;
+  email: string;
+  phone: string;
+  shippingCostPerKg: number;
+  currency: string;
+}
+
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<Settings>({
     siteName: 'Focus India Online',
     siteUrl: 'https://timesbookstall.com',
     email: 'support@timesbookstall.com',
     phone: '+919959594444',
-    shippingCharges: 50,
-    freeShippingThreshold: 500,
+    shippingCostPerKg: 40, // Default cost per kg
     currency: 'INR',
   });
 
@@ -64,8 +72,11 @@ export default function SettingsPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    setSettings(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseFloat(value) || 0 : value
+    }));
   };
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +117,6 @@ export default function SettingsPage() {
       }
 
       if (profileUpdated) {
-        toast.success('Profile updated successfully');
         toast.success('Profile updated successfully');
       } else {
         toast.info('No changes to update');
@@ -206,6 +216,18 @@ export default function SettingsPage() {
                   onChange={handleInputChange}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Shipping Cost per KG (₹)</label>
+              <Input
+                name="shippingCostPerKg"
+                type="number"
+                value={settings.shippingCostPerKg}
+                onChange={handleInputChange}
+                placeholder="e.g. 40"
+              />
+              <p className="text-xs text-muted-foreground mt-1">This value is used to calculate dynamic delivery fees (Total Weight in KG × Cost per KG).</p>
             </div>
           </div>
         </Card>

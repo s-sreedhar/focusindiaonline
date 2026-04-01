@@ -93,7 +93,7 @@ function HeaderContent() {
 
   const clearSearch = () => {
     setSearchQuery('');
-    if (window.location.pathname === '/shop') {
+    if (typeof window !== 'undefined' && window.location.pathname === '/shop') {
       router.push('/shop');
     }
   };

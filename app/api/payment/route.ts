@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server';
-import {
-    PHONEPE_MERCHANT_ID,
-    PHONEPE_BASE_URL,
-    base64Encode,
-    generateChecksum
-} from '@/lib/phonepe';
-
+import { razorpay } from '@/lib/razorpay';
 import { z } from 'zod';
 
 const paymentSchema = z.object({
     amount: z.number().positive('Amount must be positive'),
     orderId: z.string().min(1, 'Order ID is required'),
-    mobileNumber: z.string().regex(/^[6-9]\d{9}$/, 'Invalid mobile number format') // Basic Indian mobile validation
+    mobileNumber: z.string().optional()
 });
 
 export async function POST(request: Request) {
@@ -28,61 +22,36 @@ export async function POST(request: Request) {
             );
         }
 
-        const { amount, orderId, mobileNumber } = validationResult.data;
+        const { amount, orderId } = validationResult.data;
 
-        const origin = request.headers.get('origin');
-        const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        const callbackUrl = `${baseUrl}/api/payment/callback`;
-        const redirectUrl = `${baseUrl}/api/payment/status/${orderId}`;
-
-        const payload = {
-            merchantId: PHONEPE_MERCHANT_ID,
-            merchantTransactionId: orderId,
-            merchantUserId: 'MUID' + mobileNumber.slice(-4),
-            amount: amount * 100, // Amount in paisa
-            redirectUrl: redirectUrl,
-            redirectMode: 'POST',
-            callbackUrl: callbackUrl,
-            mobileNumber: mobileNumber,
-            paymentInstrument: {
-                type: 'PAY_PAGE'
-            }
+        // Create Razorpay Order
+        const options = {
+            amount: Math.round(amount * 100), // Amount in paise
+            currency: 'INR',
+            receipt: orderId,
+            payment_capture: 1, // Auto capture
         };
 
-        const base64Payload = base64Encode(payload);
-        const endpoint = '/pg/v1/pay';
-        const checksum = generateChecksum(base64Payload, endpoint);
+        const razorpayOrder = await razorpay.orders.create(options);
 
-        const response = await fetch(`${PHONEPE_BASE_URL}${endpoint}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-VERIFY': checksum,
-            },
-            body: JSON.stringify({
-                request: base64Payload
-            })
-        });
-
-        const data = await response.json();
-        console.log('PhonePe Init Response:', JSON.stringify(data, null, 2)); // Debug log
-
-        if (data.success) {
+        if (razorpayOrder) {
             return NextResponse.json({
                 success: true,
-                url: data.data.instrumentResponse.redirectInfo.url,
-                merchantTransactionId: data.data.merchantTransactionId
+                keyId: process.env.RAZORPAY_KEY_ID,
+                amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
+                razorpayOrderId: razorpayOrder.id,
+                orderId: orderId, // Our internal order ID
             });
         } else {
-            //console.error('PhonePe Error:', data);
             return NextResponse.json(
-                { success: false, error: data.message || 'Payment initiation failed' },
+                { success: false, error: 'Razorpay order creation failed' },
                 { status: 400 }
             );
         }
 
     } catch (error: any) {
-        //console.error('Payment API Error:', error);
+        console.error('Razorpay Payment API Error:', error);
         return NextResponse.json(
             { success: false, error: error.message || 'Internal server error' },
             { status: 500 }

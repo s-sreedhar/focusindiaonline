@@ -13,19 +13,46 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { toast } from 'sonner';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Loader2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart, appliedCoupon, applyCoupon, removeCoupon } = useCartStore();
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
+  
+  const [shippingCostPerKg, setShippingCostPerKg] = useState(40);
+  const [loadingShipping, setLoadingShipping] = useState(true);
 
   const subtotal = getTotalPrice();
-  // Shipping calculated at checkout
-  const shippingCharges = 0;
+  
+  // Calculate total weight
+  const totalWeight = items.reduce((sum, item) => {
+    if (item.type === 'test_series') return sum;
+    const weight = Number(item.weight) || 500;
+    return sum + (weight * item.quantity);
+  }, 0);
+
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const docRef = doc(db, 'settings', 'general');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setShippingCostPerKg(docSnap.data().shippingCostPerKg || 40);
+        }
+      } catch (error) {
+        console.error('Error fetching shipping settings:', error);
+      } finally {
+        setLoadingShipping(false);
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  const shippingCharges = Math.round((totalWeight / 1000) * shippingCostPerKg);
 
   // Calculate discount based on applied coupon
   let discount = 0;
@@ -174,9 +201,13 @@ export default function CartPage() {
                       <span className="text-foreground font-medium">₹{subtotal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Shipping</span>
-                      <span className={shippingCharges === 0 ? "text-green-600 font-medium" : "text-foreground font-medium"}>
-                        {shippingCharges === 0 ? "Free" : `₹${shippingCharges}`}
+                      <span>Estimated Shipping</span>
+                      <span className="text-foreground font-medium">
+                        {loadingShipping ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          `₹${shippingCharges}`
+                        )}
                       </span>
                     </div>
                     {discount > 0 && (
