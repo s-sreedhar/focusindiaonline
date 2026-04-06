@@ -21,12 +21,18 @@ function PaymentSuccessContent() {
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
     const [statusConfirmed, setStatusConfirmed] = useState(false);
+    const [waitingTooLong, setWaitingTooLong] = useState(false);
 
     useEffect(() => {
         if (!orderId) {
             router.push('/');
             return;
         }
+
+        // Set a timeout for slow webhook processing
+        const timeoutId = setTimeout(() => {
+            setWaitingTooLong(true);
+        }, 30000); // 30 seconds
 
         // Listen for real-time updates to see when webhook updates the status
         const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (docSnap) => {
@@ -38,13 +44,21 @@ function PaymentSuccessContent() {
                 // If status is no longer 'payment_pending', it means webhook hit!
                 if (data.status !== 'payment_pending') {
                     setStatusConfirmed(true);
+                    clearTimeout(timeoutId);
+                    setWaitingTooLong(false);
                 }
             } else {
                 setLoading(false);
             }
+        }, (error) => {
+            console.error('Error listening to order:', error);
+            setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            clearTimeout(timeoutId);
+        };
     }, [orderId, router]);
 
     if (loading) {
@@ -121,10 +135,22 @@ function PaymentSuccessContent() {
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 py-2 px-4 rounded-full w-fit mx-auto border border-amber-100"
+                        className="space-y-2"
                     >
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Wait a moment, we're finalizing your payment details...</span>
+                        <div className="flex items-center justify-center gap-2 text-sm text-amber-600 bg-amber-50 py-2 px-4 rounded-full w-fit mx-auto border border-amber-100">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>
+                                {waitingTooLong 
+                                    ? "Still processing... This is taking longer than usual."
+                                    : "Wait a moment, we're finalizing your payment details..."}
+                            </span>
+                        </div>
+                        {waitingTooLong && (
+                            <p className="text-xs text-muted-foreground text-center max-w-md mx-auto">
+                                Don't worry, your payment was successful. The confirmation is being processed. 
+                                You can safely leave this page - we'll send you an email confirmation.
+                            </p>
+                        )}
                     </motion.div>
                 )}
             </div>

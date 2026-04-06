@@ -12,11 +12,12 @@ import type { Book } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
+import { isRegisteredShopUser, toastRedirectToLogin } from '@/lib/shop-auth';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, documentId } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface ProductDetailsProps {
     product: Book;
@@ -25,8 +26,9 @@ interface ProductDetailsProps {
 export function ProductDetails({ product }: ProductDetailsProps) {
     const { addItem: addToCart } = useCartStore();
     const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
-    const { user } = useAuthStore();
+    const { user, isAuthenticated, loading: authLoading } = useAuthStore();
     const router = useRouter();
+    const pathname = usePathname();
 
     const [isInWish, setIsInWish] = useState(false);
     const [cartAdded, setCartAdded] = useState(false);
@@ -65,6 +67,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     }, [product, isInWishlist]);
 
     const handleAddToCart = () => {
+        if (authLoading) return;
+        if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
+            toastRedirectToLogin(router, pathname);
+            return;
+        }
         addToCart({
             bookId: product.id,
             title: product.title,
@@ -83,6 +90,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     };
 
     const handleBuyNow = () => {
+        if (authLoading) return;
+        if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
+            toastRedirectToLogin(
+                router,
+                pathname,
+                'Please sign in to continue to checkout'
+            );
+            return;
+        }
         addToCart({
             bookId: product.id,
             title: product.title,
@@ -295,7 +311,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 <Button
                                     className="flex-1 gap-2 rounded-xl h-12 text-sm sm:text-base shadow-lg shadow-primary/20 px-2 sm:px-4"
                                     size="lg"
-                                    disabled={product.stockQuantity <= 0}
+                                    disabled={authLoading || product.stockQuantity <= 0}
                                     onClick={handleAddToCart}
                                     variant={cartAdded ? "secondary" : "default"}
                                 >
@@ -306,6 +322,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 <Button
                                     className="flex-1 rounded-xl h-12 text-sm sm:text-base shadow-sm px-2 sm:px-4"
                                     variant="outline"
+                                    disabled={authLoading}
                                     onClick={handleBuyNow}
                                 >
                                     Buy Now
@@ -353,6 +370,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     <ProductCard
                                         key={book.id}
                                         {...book}
+                                        isTestSeries={Boolean((book as { isTestSeries?: boolean }).isTestSeries)}
                                         discount={book.originalPrice ? Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100) : 0}
                                     />
                                 ))}

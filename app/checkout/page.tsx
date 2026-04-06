@@ -394,76 +394,37 @@ export default function CheckoutPage() {
       setCurrentStep('verification');
       */
 
-      // BYPASS LOGIC: Create a temporary guest user and proceed
+      // Guest checkout for physical items only
 
       if (hasDigitalItems) {
         toast.error("Please login to purchase Test Series / Digital Items.");
-        // router.push('/login'); // Optional redirect
         return;
       }
 
-      setLoading(true);
-      try {
-        // Validate before creating guest
-        if (!validateAddress()) {
-          setLoading(false);
-          return;
-        }
-
-        // Generate a guest ID
-        const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-        // Clean phone number: remove non-digits, take last 10
-        const cleanPhone = formData.phone.replace(/\D/g, '').slice(-10);
-
-        // Create user document for the guest
-        const userDocRef = doc(db, 'users', guestId);
-        await setDoc(userDocRef, {
-          uid: guestId,
-          email: formData.email,
-          displayName: `${formData.firstName} ${formData.lastName}`,
-          phone: cleanPhone,
-          role: 'guest',
-          createdAt: serverTimestamp(),
-          address: {
-            doorNo: formData.doorNo,
-            street: formData.street,
-            villageTown: formData.villageTown,
-            mandal: formData.mandal,
-            district: formData.district,
-            city: formData.city,
-            state: formData.state,
-            pinCode: formData.pinCode,
-          }
-        });
-
-        // Notify Admin of Guest User
-        await createNotification(
-          'new_customer',
-          'New Guest Customer',
-          `${formData.firstName} ${formData.lastName} joined as a guest.`,
-          guestId
-        );
-
-        // Update local auth state to reflect "guest login"
-        setUser({
-          id: guestId,
-          email: formData.email,
-          username: formData.phone,
-          displayName: `${formData.firstName} ${formData.lastName}`,
-          phone: formData.phone,
-          createdAt: new Date().toISOString(),
-          role: 'guest'
-        });
-
-        // Proceed to payment
-        await initiatePayment(guestId);
-
-      } catch (error) {
-        //console.error("Guest Checkout Error:", error);
-        toast.error("Failed to process guest checkout");
-        setLoading(false);
+      // Validate before proceeding
+      if (!validateAddress()) {
+        return;
       }
+
+      // Generate a guest ID
+      const guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      // Update local auth state first (custom: avoids Firebase listener clearing session mid-checkout)
+      // The actual Firestore user doc is created server-side in /api/orders/create using Admin SDK
+      setUser({
+        id: guestId,
+        email: formData.email,
+        username: formData.phone,
+        displayName: `${formData.firstName} ${formData.lastName}`,
+        phone: formData.phone,
+        createdAt: new Date().toISOString(),
+        role: 'guest',
+        authMethod: 'custom',
+      });
+
+      // Proceed to payment - server will create guest user doc via Admin SDK
+      // initiatePayment has its own try-catch and error handling
+      await initiatePayment(guestId);
     }
   };
 
@@ -571,7 +532,7 @@ export default function CheckoutPage() {
               country: 'India'
             }
           },
-          isGuest: !isAuthenticated || !user?.id
+          isGuest: userId.startsWith('guest_'),
         })
       });
 
@@ -583,13 +544,13 @@ export default function CheckoutPage() {
 
       const { orderId } = orderData;
 
-      // NOTIFY: Potential Lead
-      await createNotification(
+      // NOTIFY: Potential Lead (non-blocking, don't await - client Firestore may fail for guests)
+      createNotification(
         'potential_lead',
         'Potential Lead (Payment Pending)',
         `Order #${orderId} initiated by ${formData.firstName} ${formData.lastName} for ₹${total}.`,
         orderId
-      );
+      ).catch(() => {});
 
       // 2. Load Razorpay Script
       const isLoaded = await loadRazorpayScript();
@@ -622,8 +583,9 @@ export default function CheckoutPage() {
         description: `Order #${orderId}`,
         order_id: data.razorpayOrderId,
         handler: async function (response: any) {
-          // Success callback
-          toast.success('Payment successful!');
+          // Success callback - Razorpay payment completed
+          // The webhook will handle updating the order status
+          toast.success('Payment successful! Redirecting...');
           clearCart();
           router.push(`/checkout/success?orderId=${orderId}`);
         },
@@ -636,16 +598,27 @@ export default function CheckoutPage() {
           orderId: orderId,
         },
         theme: {
-          color: '#3b82f6', // primary color
+          color: '#3b82f6',
         },
         modal: {
           ondismiss: function () {
+            toast.info('Payment cancelled. Your order has been saved and you can retry payment.');
             setLoading(false);
-          }
+          },
+          escape: true,
+          backdropclose: false,
         }
       };
 
       const rzp = new (window as any).Razorpay(options);
+      
+      // Handle payment failures
+      rzp.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        toast.error(`Payment failed: ${response.error.description || 'Please try again'}`);
+        setLoading(false);
+      });
+
       rzp.open();
 
     } catch (error: any) {

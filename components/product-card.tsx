@@ -10,8 +10,10 @@ import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCompareStore } from '@/lib/compare-store';
+import { isRegisteredShopUser, toastRedirectToLogin } from '@/lib/shop-auth';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface ProductCardProps {
   id: string;
@@ -28,6 +30,8 @@ interface ProductCardProps {
   subject?: string;
   isCombo?: boolean;
   weight?: number;
+  /** When true, cart line is treated as digital (test series) for shipping/stock. */
+  isTestSeries?: boolean;
 }
 
 export function ProductCard({
@@ -44,7 +48,8 @@ export function ProductCard({
   language,
   subject,
   isCombo,
-  weight
+  weight,
+  isTestSeries
 }: ProductCardProps) {
   const priceNum = Number(price);
   const originalPriceNum = originalPrice ? Number(originalPrice) : 0;
@@ -53,8 +58,11 @@ export function ProductCard({
     ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
     : 0);
 
+  const router = useRouter();
+  const pathname = usePathname();
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { user, isAuthenticated, loading: authLoading } = useAuthStore();
   const { addToCompare, isInCompare, removeFromCompare } = useCompareStore();
   const [isInWish, setIsInWish] = useState(isInWishlist(id));
 
@@ -62,6 +70,12 @@ export function ProductCard({
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (authLoading) return;
+    if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
+      toastRedirectToLogin(router, pathname);
+      return;
+    }
     addToCart({
       bookId: id,
       title,
@@ -72,6 +86,7 @@ export function ProductCard({
       quantity: 1,
       slug,
       weight: weight || 500, // Default 500g if missing
+      type: isTestSeries ? 'test_series' : 'book',
     });
   };
 
@@ -250,6 +265,7 @@ export function ProductCard({
               <Button
                 size="sm"
                 className="w-full sm:w-auto h-8 px-3 rounded-full bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 text-xs sm:text-sm"
+                disabled={authLoading}
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />

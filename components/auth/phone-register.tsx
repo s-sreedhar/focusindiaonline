@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/auth-store';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { sanitizeReturnUrl } from '@/lib/shop-auth';
 import { Phone, Lock, User, Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
@@ -24,7 +25,14 @@ export function PhoneRegister() {
     const [error, setError] = useState('');
     
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { setUser } = useAuthStore();
+
+    const returnUrlParam = searchParams.get('returnUrl');
+    const loginHref =
+        returnUrlParam != null && returnUrlParam !== ''
+            ? `/login?returnUrl=${encodeURIComponent(returnUrlParam)}`
+            : '/login';
 
     const handleCreateAccount = async () => {
         // Validation
@@ -110,8 +118,8 @@ export function PhoneRegister() {
                 authMethod: 'firebase'
             });
 
-            // Redirect to home upon success
-            router.push('/');
+            const nextPath = sanitizeReturnUrl(returnUrlParam) ?? '/';
+            router.push(nextPath);
 
         } catch (err: any) {
             console.error('Error creating account:', err);
@@ -220,7 +228,7 @@ export function PhoneRegister() {
 
                 <div className="text-center text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-primary hover:underline">
+                    <Link href={loginHref} className="text-primary hover:underline">
                         Login
                     </Link>
                 </div>

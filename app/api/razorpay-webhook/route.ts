@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { updateOrderPaymentAndStatus } from '@/lib/services/orders';
+import { updateOrderPaymentAndStatusAdmin } from '@/lib/services/orders-admin';
+
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
     try {
@@ -9,7 +11,7 @@ export async function POST(req: Request) {
         const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
         if (!signature || !webhookSecret) {
-            console.error('Missing signature or webhook secret');
+            console.error('Webhook: Missing signature or webhook secret');
             return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
         }
 
@@ -19,32 +21,63 @@ export async function POST(req: Request) {
             .digest('hex');
 
         if (signature !== expectedSignature) {
-            console.error('Invalid HMAC signature');
+            console.error('Webhook: Invalid HMAC signature');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
         const event = JSON.parse(body);
-        // console.log('Razorpay Webhook Event:', event.event);
+        console.log('Razorpay Webhook Event:', event.event);
 
-        // Handle the event
+        // Handle payment success events
         if (event.event === 'order.paid' || event.event === 'payment.captured') {
-            const payment = event.payload.payment.entity;
+            const payment = event.payload.payment?.entity;
+            
+            if (!payment) {
+                console.warn('Webhook: No payment entity in payload');
+                return NextResponse.json({ status: 'ok', message: 'No payment entity' });
+            }
+
             // The order identifier could be in notes or receipt
-            const orderId = payment.notes?.orderId || event.payload.order?.entity.receipt;
+            const orderId = payment.notes?.orderId || event.payload.order?.entity?.receipt;
             const razorpayPaymentId = payment.id;
 
             if (orderId) {
-                // Update both statuses in a single write operation for efficiency and real-time sync
-                await updateOrderPaymentAndStatus(orderId, 'completed', 'processing', razorpayPaymentId);
-                // console.log(`Order ${orderId} updated to processing/completed via webhook`);
+                console.log(`Webhook: Processing payment for order ${orderId}`);
+                
+                const result = await updateOrderPaymentAndStatusAdmin(
+                    orderId, 
+                    'completed', 
+                    'processing', 
+                    razorpayPaymentId
+                );
+
+                if (result.success) {
+                    console.log(`Webhook: Order ${orderId} updated successfully`);
+                } else {
+                    console.error(`Webhook: Failed to update order ${orderId}:`, result.error);
+                }
             } else {
-                console.warn('Webhook: Order ID not found in payload', JSON.stringify(event.payload, null, 2));
+                console.warn('Webhook: Order ID not found in payload', JSON.stringify({
+                    notes: payment.notes,
+                    receipt: event.payload.order?.entity?.receipt,
+                }, null, 2));
+            }
+        }
+
+        // Handle payment failure
+        if (event.event === 'payment.failed') {
+            const payment = event.payload.payment?.entity;
+            const orderId = payment?.notes?.orderId || event.payload.order?.entity?.receipt;
+            
+            if (orderId) {
+                console.log(`Webhook: Payment failed for order ${orderId}`);
+                await updateOrderPaymentAndStatusAdmin(orderId, 'failed', 'payment_pending');
             }
         }
 
         return NextResponse.json({ status: 'ok' });
     } catch (error: any) {
-        console.error('Razorpay Webhook Error:', error);
+        console.error('Razorpay Webhook Error:', error.message, error.stack);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '@/lib/auth-store';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { sanitizeReturnUrl } from '@/lib/shop-auth';
 import { User, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { handleFirebaseError } from '@/lib/error-utils';
 import Link from 'next/link';
@@ -33,7 +34,14 @@ export function PhoneLogin() {
     const [canResend, setCanResend] = useState(false);
 
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { setUser } = useAuthStore();
+
+    const returnUrlParam = searchParams.get('returnUrl');
+    const registerHref =
+        returnUrlParam != null && returnUrlParam !== ''
+            ? `/register?returnUrl=${encodeURIComponent(returnUrlParam)}`
+            : '/register';
 
     const setupRecaptcha = () => {
         const container = document.getElementById('recaptcha-container');
@@ -171,13 +179,15 @@ export function PhoneLogin() {
                 authMethod: 'firebase'
             });
 
+            const nextPath = sanitizeReturnUrl(returnUrlParam) ?? '/';
+
             // Redirect based on role
             if (userData.role === 'superadmin' || userData.role === 'admin') {
                 if (typeof window !== 'undefined') {
                     window.location.href = '/admin';
                 }
             } else {
-                router.push('/');
+                router.push(nextPath);
             }
 
         } catch (err: any) {
@@ -350,7 +360,7 @@ export function PhoneLogin() {
                         </Button>
                         <div className="text-center text-sm text-muted-foreground mt-4">
                             Don&apos;t have an account?{' '}
-                            <Link href="/register" className="text-primary hover:underline">
+                            <Link href={registerHref} className="text-primary hover:underline">
                                 Register
                             </Link>
                         </div>
