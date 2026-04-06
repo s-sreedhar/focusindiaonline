@@ -92,6 +92,7 @@ export default function CheckoutPage() {
 
   const [shippingDetails, setShippingDetails] = useState<{ charges: number, zone: string, weightUsed: number } | null>(null);
   const [costPerKg, setCostPerKg] = useState<number>(40);
+  const [shippingSettingsLoaded, setShippingSettingsLoaded] = useState(false);
 
   useEffect(() => {
     async function fetchShippingSettings() {
@@ -99,10 +100,14 @@ export default function CheckoutPage() {
         const docRef = doc(db, 'settings', 'general');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setCostPerKg(docSnap.data().shippingCostPerKg || 40);
+          const data = docSnap.data();
+          const fetchedCost = Number(data.shippingCostPerKg) || 40;
+          setCostPerKg(fetchedCost);
         }
       } catch (error) {
         console.error('Error fetching shipping settings:', error);
+      } finally {
+        setShippingSettingsLoaded(true);
       }
     }
     fetchShippingSettings();
@@ -113,7 +118,9 @@ export default function CheckoutPage() {
   const hasDigitalItems = items.some(item => item.type === 'test_series');
 
   useEffect(() => {
-    // Calculate and show weight immediately, even if state is missing
+    // Wait for settings to load before calculating
+    if (!shippingSettingsLoaded) return;
+    
     const weightKg = totalWeight / 1000;
 
     if (totalWeight > 0 && formData.state) {
@@ -123,7 +130,7 @@ export default function CheckoutPage() {
       // Still show the actual weight used, but charges set to 0 (TBD in UI)
       setShippingDetails({ charges: 0, zone: 'A', weightUsed: weightKg });
     }
-  }, [formData.state, totalWeight, costPerKg]);
+  }, [formData.state, totalWeight, costPerKg, shippingSettingsLoaded]);
 
   const [openState, setOpenState] = useState(false);
 

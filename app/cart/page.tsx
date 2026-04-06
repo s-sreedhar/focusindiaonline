@@ -41,7 +41,9 @@ export default function CartPage() {
         const docRef = doc(db, 'settings', 'general');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setShippingCostPerKg(docSnap.data().shippingCostPerKg || 40);
+          const data = docSnap.data();
+          const fetchedCost = Number(data.shippingCostPerKg) || 40;
+          setShippingCostPerKg(fetchedCost);
         }
       } catch (error) {
         console.error('Error fetching shipping settings:', error);
@@ -52,7 +54,8 @@ export default function CartPage() {
     fetchSettings();
   }, []);
 
-  const shippingCharges = Math.round((totalWeight / 1000) * shippingCostPerKg);
+  // Only calculate shipping after settings are loaded
+  const shippingCharges = loadingShipping ? 0 : Math.round((totalWeight / 1000) * shippingCostPerKg);
 
   // Calculate discount based on applied coupon
   let discount = 0;

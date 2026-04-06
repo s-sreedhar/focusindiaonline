@@ -289,12 +289,14 @@ export function PhoneLogin() {
                 throw new Error(data.error || 'Failed to update password');
             }
 
-            setSuccessMessage('Password updated successfully! Please login.');
-            setStep('password');
+            setSuccessMessage('Password updated successfully! Please login with your new password.');
+            // Go back to identifier step so user starts fresh
+            setStep('identifier');
             setPassword('');
             setNewPassword('');
             setConfirmNewPassword('');
             setOtp('');
+            setUserData(null);
         } catch (err: any) {
             setError(err.message || 'An unexpected error occurred.');
         } finally {
