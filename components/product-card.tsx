@@ -10,10 +10,11 @@ import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCompareStore } from '@/lib/compare-store';
-import { isRegisteredShopUser, toastRedirectToLogin } from '@/lib/shop-auth';
+import { isRegisteredShopUser, toastRedirectToLogin, setPendingCartAction } from '@/lib/shop-auth';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ProductCardProps {
   id: string;
@@ -68,26 +69,32 @@ export function ProductCard({
 
   const isCompared = isInCompare(id);
 
+  const productUrl = `/product/${slug}`;
+
+  const cartItem = {
+    bookId: id,
+    title,
+    author,
+    price,
+    originalPrice,
+    image,
+    quantity: 1,
+    slug,
+    weight: weight || 500,
+    type: isTestSeries ? 'test_series' : 'book',
+  };
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (authLoading) return;
     if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
-      toastRedirectToLogin(router, pathname);
+      setPendingCartAction({ type: 'add_to_cart', item: cartItem, timestamp: Date.now() });
+      toastRedirectToLogin(router, productUrl, 'Sign in to add this item to your cart');
       return;
     }
-    addToCart({
-      bookId: id,
-      title,
-      author,
-      price,
-      originalPrice,
-      image,
-      quantity: 1,
-      slug,
-      weight: weight || 500, // Default 500g if missing
-      type: isTestSeries ? 'test_series' : 'book',
-    });
+    addToCart(cartItem);
+    toast.success('Added to cart');
   };
 
   const handleToggleCompare = (e: React.MouseEvent) => {

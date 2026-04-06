@@ -12,7 +12,7 @@ import type { Book } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
-import { isRegisteredShopUser, toastRedirectToLogin } from '@/lib/shop-auth';
+import { isRegisteredShopUser, toastRedirectToLogin, setPendingCartAction } from '@/lib/shop-auth';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, documentId } from 'firebase/firestore';
@@ -66,24 +66,27 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         }
     }, [product, isInWishlist]);
 
+    const cartItem = {
+        bookId: product.id,
+        title: product.title,
+        author: product.author,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        image: product.image,
+        quantity: 1,
+        slug: product.slug,
+        weight: product.weight || 500,
+        type: (product as any).isTestSeries ? 'test_series' : 'book'
+    };
+
     const handleAddToCart = () => {
         if (authLoading) return;
         if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
+            setPendingCartAction({ type: 'add_to_cart', item: cartItem, timestamp: Date.now() });
             toastRedirectToLogin(router, pathname);
             return;
         }
-        addToCart({
-            bookId: product.id,
-            title: product.title,
-            author: product.author,
-            price: product.price,
-            originalPrice: product.originalPrice,
-            image: product.image,
-            quantity: 1,
-            slug: product.slug,
-            weight: product.weight || 500,
-            type: (product as any).isTestSeries ? 'test_series' : 'book'
-        });
+        addToCart(cartItem);
         setCartAdded(true);
         setTimeout(() => setCartAdded(false), 2000);
         toast.success('Added to cart');
@@ -92,6 +95,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     const handleBuyNow = () => {
         if (authLoading) return;
         if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
+            setPendingCartAction({ type: 'buy_now', item: cartItem, timestamp: Date.now() });
             toastRedirectToLogin(
                 router,
                 pathname,

@@ -119,7 +119,8 @@ export function PhoneRegister() {
             });
 
             const nextPath = sanitizeReturnUrl(returnUrlParam) ?? '/';
-            router.push(nextPath);
+            // Use window.location for full page refresh to ensure auth state propagates
+            window.location.href = nextPath;
 
         } catch (err: any) {
             console.error('Error creating account:', err);

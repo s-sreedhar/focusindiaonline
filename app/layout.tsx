@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth/auth-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { WishlistSync } from '@/components/wishlist-sync'
 import { CartSync } from '@/components/cart-sync'
+import { PendingCartHandler } from '@/components/pending-cart-handler'
 import { GlobalPopup } from '@/components/global-popup'
 import { MobileNav } from '@/components/layouts/mobile-nav'
 
@@ -124,6 +125,7 @@ export default function RootLayout({
           <Toaster />
           <WishlistSync />
           <CartSync />
+          <PendingCartHandler />
           <GlobalPopup />
         </AuthProvider>
         <Analytics />

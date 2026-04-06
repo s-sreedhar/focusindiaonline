@@ -181,13 +181,11 @@ export function PhoneLogin() {
 
             const nextPath = sanitizeReturnUrl(returnUrlParam) ?? '/';
 
-            // Redirect based on role
+            // Redirect based on role - use window.location for full page refresh to ensure auth state propagates
             if (userData.role === 'superadmin' || userData.role === 'admin') {
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/admin';
-                }
+                window.location.href = '/admin';
             } else {
-                router.push(nextPath);
+                window.location.href = nextPath;
             }
 
         } catch (err: any) {
