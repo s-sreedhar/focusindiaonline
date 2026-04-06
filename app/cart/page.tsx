@@ -42,7 +42,7 @@ export default function CartPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const fetchedCost = Number(data.shippingCostPerKg) || 40;
+          const fetchedCost = data.shippingCostPerKg != null ? Number(data.shippingCostPerKg) : 40;
           setShippingCostPerKg(fetchedCost);
         }
       } catch (error) {

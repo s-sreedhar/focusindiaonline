@@ -101,7 +101,7 @@ export default function CheckoutPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const fetchedCost = Number(data.shippingCostPerKg) || 40;
+          const fetchedCost = data.shippingCostPerKg != null ? Number(data.shippingCostPerKg) : 40;
           setCostPerKg(fetchedCost);
         }
       } catch (error) {
