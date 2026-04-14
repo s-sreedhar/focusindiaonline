@@ -309,7 +309,7 @@ export default function OrdersPage() {
                   <td className="px-6 py-4">
                     {/* Calculate total weight from items if not in order object, but here we can just sum if not persisted or show if persisted */}
                     <span className="text-sm">
-                      {(order.items.reduce((sum, item) => sum + ((item as any).weight || 500) * item.quantity, 0) / 1000).toFixed(1)} kg
+                      {(order.items.reduce((sum, item) => sum + ((item as any).weight || 500) * (item.quantity || 1), 0) / 1000).toFixed(1)} kg
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -319,7 +319,7 @@ export default function OrdersPage() {
                           <div
                             key={idx}
                             className="h-8 w-6 relative overflow-hidden rounded-sm border bg-muted flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-                            title={`${item.title} (x${item.quantity})`}
+                            title={`${item.title} (x${item.quantity || 1})`}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (item.image) setPreviewImage(item.image);
@@ -345,7 +345,7 @@ export default function OrdersPage() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {order.items?.reduce((sum, item) => sum + item.quantity, 0)} item{order.items?.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? 's' : ''} • {order.items?.length} product{order.items?.length !== 1 ? 's' : ''}
+                        {order.items?.reduce((sum, item) => sum + (item.quantity || 1), 0)} item{order.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) !== 1 ? 's' : ''} • {order.items?.length} product{order.items?.length !== 1 ? 's' : ''}
                       </div>
                     </div>
                   </td>
@@ -559,8 +559,8 @@ export default function OrdersPage() {
                                 <div className="font-medium text-sm">{item.title}</div>
                                 <div className="text-xs text-muted-foreground">ID: {item.bookId?.slice(0, 6)}...</div>
                               </TableCell>
-                              <TableCell className="text-center py-3">{item.quantity}</TableCell>
-                              <TableCell className="text-right py-3">₹{item.price * item.quantity}</TableCell>
+                              <TableCell className="text-center py-3">{item.quantity || 1}</TableCell>
+                              <TableCell className="text-right py-3">₹{item.price * (item.quantity || 1)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
