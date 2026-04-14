@@ -319,7 +319,7 @@ export default function OrdersPage() {
                           <div
                             key={idx}
                             className="h-8 w-6 relative overflow-hidden rounded-sm border bg-muted flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-                            title={item.title}
+                            title={`${item.title} (x${item.quantity})`}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (item.image) setPreviewImage(item.image);
@@ -345,7 +345,7 @@ export default function OrdersPage() {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {order.items?.slice(0, 1).map(i => i.title.slice(0, 20) + (order.items.length > 1 ? '...' : ''))}
+                        {order.items?.reduce((sum, item) => sum + item.quantity, 0)} item{order.items?.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? 's' : ''} • {order.items?.length} product{order.items?.length !== 1 ? 's' : ''}
                       </div>
                     </div>
                   </td>

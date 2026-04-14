@@ -9,9 +9,11 @@ import { updateProfile, updatePassword } from 'firebase/auth';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { ChangePasswordDialog } from '@/components/auth/change-password-dialog';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Settings {
   siteName: string;
@@ -20,6 +22,8 @@ interface Settings {
   phone: string;
   shippingCostPerKg: number;
   currency: string;
+  isBookingPaused: boolean;
+  bookingPausedMessage: string;
 }
 
 export default function SettingsPage() {
@@ -29,8 +33,10 @@ export default function SettingsPage() {
     siteUrl: 'https://timesbookstall.com',
     email: 'support@timesbookstall.com',
     phone: '+919959594444',
-    shippingCostPerKg: 40, // Default cost per kg
+    shippingCostPerKg: 40,
     currency: 'INR',
+    isBookingPaused: false,
+    bookingPausedMessage: 'We are currently not accepting orders. Please check back later.',
   });
 
   const [profileForm, setProfileForm] = useState({
@@ -229,6 +235,40 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-muted-foreground mt-1">This value is used to calculate dynamic delivery fees (Total Weight in KG × Cost per KG).</p>
             </div>
+          </div>
+        </Card>
+
+        {/* Booking Control */}
+        <Card className="p-6">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <AlertTriangle className="w-6 h-6 text-orange-500" />
+            Order Control
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Pause Orders</label>
+                <p className="text-xs text-muted-foreground">When enabled, customers cannot place new orders. A banner will be shown on the website.</p>
+              </div>
+              <Switch
+                checked={settings.isBookingPaused}
+                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, isBookingPaused: checked }))}
+              />
+            </div>
+
+            {settings.isBookingPaused && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Pause Message</label>
+                <Textarea
+                  name="bookingPausedMessage"
+                  value={settings.bookingPausedMessage}
+                  onChange={(e) => setSettings(prev => ({ ...prev, bookingPausedMessage: e.target.value }))}
+                  placeholder="Message to display when orders are paused"
+                  rows={2}
+                />
+                <p className="text-xs text-muted-foreground mt-1">This message will be shown in the banner on the home page.</p>
+              </div>
+            )}
           </div>
         </Card>
 

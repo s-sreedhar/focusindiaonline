@@ -11,10 +11,12 @@ import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { useCompareStore } from '@/lib/compare-store';
 import { isRegisteredShopUser, toastRedirectToLogin, setPendingCartAction } from '@/lib/shop-auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 interface ProductCardProps {
   id: string;
@@ -66,6 +68,21 @@ export function ProductCard({
   const { user, isAuthenticated, loading: authLoading } = useAuthStore();
   const { addToCompare, isInCompare, removeFromCompare } = useCompareStore();
   const [isInWish, setIsInWish] = useState(isInWishlist(id));
+  const [isBookingPaused, setIsBookingPaused] = useState(false);
+
+  useEffect(() => {
+    const checkBookingStatus = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        if (settingsDoc.exists()) {
+          setIsBookingPaused(settingsDoc.data().isBookingPaused || false);
+        }
+      } catch (e) {
+        // Silently fail
+      }
+    };
+    checkBookingStatus();
+  }, []);
 
   const isCompared = isInCompare(id);
 
@@ -88,6 +105,10 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     if (authLoading) return;
+    if (isBookingPaused) {
+      toast.error('Orders are currently paused. Please check back later.');
+      return;
+    }
     if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
       setPendingCartAction({ type: 'add_to_cart', item: cartItem, timestamp: Date.now() });
       toastRedirectToLogin(router, productUrl, 'Sign in to add this item to your cart');

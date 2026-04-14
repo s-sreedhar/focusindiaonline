@@ -7,14 +7,14 @@ import { ProductCard } from '@/components/product-card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2, Search } from 'lucide-react';
+import { Star, ArrowRight, BookOpen, TrendingUp, Award, Truck, Loader2, Search, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where, doc, getDoc } from 'firebase/firestore';
 import { TestimonialsSection } from '@/components/testimonials-section';
 import { EnquirySection } from '@/components/enquiry-section';
 
@@ -44,6 +44,11 @@ interface Banner {
 
 
 
+interface SiteSettings {
+  isBookingPaused: boolean;
+  bookingPausedMessage: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
@@ -52,6 +57,10 @@ export default function Home() {
   const [testSeries, setTestSeries] = useState<any[]>([]);
   const [combos, setCombos] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    isBookingPaused: false,
+    bookingPausedMessage: 'We are currently not accepting orders. Please check back later.',
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,6 +102,16 @@ export default function Home() {
         const tsData = tsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter((item: any) => (item as any).show !== false);
         setTestSeries(tsData);
 
+        // Fetch Site Settings
+        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        if (settingsDoc.exists()) {
+          const settingsData = settingsDoc.data();
+          setSiteSettings({
+            isBookingPaused: settingsData.isBookingPaused || false,
+            bookingPausedMessage: settingsData.bookingPausedMessage || 'We are currently not accepting orders. Please check back later.',
+          });
+        }
+
         // Sort banners
         bannersData.sort((a, b) => {
           const orderA = a.order ?? 999;
@@ -131,9 +150,21 @@ export default function Home() {
       <Header />
 
       <main className="flex-1">
+        {/* Delivery Paused Banner */}
+        {siteSettings.isBookingPaused && (
+          <div className="fixed top-16 lg:top-20 left-0 right-0 z-40 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 shadow-lg">
+            <div className="container mx-auto max-w-[1600px] flex items-center justify-center gap-3">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 animate-pulse" />
+              <p className="text-sm md:text-base font-medium text-center">
+                {siteSettings.bookingPausedMessage}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section */}
         {banners.length > 0 ? (
-          <section className="pt-20 lg:pt-28">
+          <section className={`pt-20 lg:pt-28 ${siteSettings.isBookingPaused ? 'mt-12' : ''}`}>
             <HeroCarousel banners={banners} />
           </section>
         ) : (

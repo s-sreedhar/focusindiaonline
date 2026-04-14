@@ -93,6 +93,8 @@ export default function CheckoutPage() {
   const [shippingDetails, setShippingDetails] = useState<{ charges: number, zone: string, weightUsed: number } | null>(null);
   const [costPerKg, setCostPerKg] = useState<number>(40);
   const [shippingSettingsLoaded, setShippingSettingsLoaded] = useState(false);
+  const [isBookingPaused, setIsBookingPaused] = useState(false);
+  const [bookingPausedMessage, setBookingPausedMessage] = useState('');
 
   useEffect(() => {
     async function fetchShippingSettings() {
@@ -103,6 +105,8 @@ export default function CheckoutPage() {
           const data = docSnap.data();
           const fetchedCost = data.shippingCostPerKg != null ? Number(data.shippingCostPerKg) : 40;
           setCostPerKg(fetchedCost);
+          setIsBookingPaused(data.isBookingPaused || false);
+          setBookingPausedMessage(data.bookingPausedMessage || 'We are currently not accepting orders. Please check back later.');
         }
       } catch (error) {
         console.error('Error fetching shipping settings:', error);
@@ -655,6 +659,35 @@ export default function CheckoutPage() {
               </div>
               <Button asChild size="lg" className="w-full h-14 text-lg rounded-2xl shadow-xl shadow-blue-200">
                 <Link href="/shop">Explore Collection</Link>
+              </Button>
+            </Card>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isBookingPaused) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50/50">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <motion.div 
+             initial={{ scale: 0.9, opacity: 0 }}
+             animate={{ scale: 1, opacity: 1 }}
+             className="max-w-md w-full"
+          >
+            <Card className="p-12 text-center space-y-8 border-none shadow-2xl shadow-orange-100/50 rounded-3xl bg-white">
+              <div className="w-24 h-24 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto">
+                <ShoppingBag className="w-12 h-12" />
+              </div>
+              <div className="space-y-4">
+                <h1 className="text-3xl font-black tracking-tight text-gray-900">Orders Paused</h1>
+                <p className="text-gray-500 text-lg">{bookingPausedMessage}</p>
+              </div>
+              <Button asChild size="lg" className="w-full h-14 text-lg rounded-2xl shadow-xl shadow-orange-200" variant="outline">
+                <Link href="/shop">Continue Browsing</Link>
               </Button>
             </Card>
           </motion.div>

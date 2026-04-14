@@ -15,7 +15,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { isRegisteredShopUser, toastRedirectToLogin, setPendingCartAction } from '@/lib/shop-auth';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, documentId } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, documentId, getDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -33,6 +33,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     const [isInWish, setIsInWish] = useState(false);
     const [cartAdded, setCartAdded] = useState(false);
     const [comboBooks, setComboBooks] = useState<any[]>([]);
+    const [isBookingPaused, setIsBookingPaused] = useState(false);
+
+    useEffect(() => {
+        const checkBookingStatus = async () => {
+            try {
+                const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+                if (settingsDoc.exists()) {
+                    setIsBookingPaused(settingsDoc.data().isBookingPaused || false);
+                }
+            } catch (e) {
+                // Silently fail, default to not paused
+            }
+        };
+        checkBookingStatus();
+    }, []);
 
     useEffect(() => {
         const fetchComboBooks = async () => {
@@ -76,11 +91,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         quantity: 1,
         slug: product.slug,
         weight: product.weight || 500,
-        type: (product as any).isTestSeries ? 'test_series' : 'book'
+        type: ((product as any).isTestSeries ? 'test_series' : 'book') as 'test_series' | 'book'
     };
 
     const handleAddToCart = () => {
         if (authLoading) return;
+        if (isBookingPaused) {
+            toast.error('Orders are currently paused. Please check back later.');
+            return;
+        }
         if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
             setPendingCartAction({ type: 'add_to_cart', item: cartItem, timestamp: Date.now() });
             toastRedirectToLogin(router, pathname);
@@ -94,6 +113,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
     const handleBuyNow = () => {
         if (authLoading) return;
+        if (isBookingPaused) {
+            toast.error('Orders are currently paused. Please check back later.');
+            return;
+        }
         if (!isRegisteredShopUser(user, isAuthenticated, authLoading)) {
             setPendingCartAction({ type: 'buy_now', item: cartItem, timestamp: Date.now() });
             toastRedirectToLogin(
@@ -113,7 +136,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             quantity: 1,
             slug: product.slug,
             weight: product.weight || 500,
-            type: (product as any).isTestSeries ? 'test_series' : 'book'
+            type: ((product as any).isTestSeries ? 'test_series' : 'book') as 'test_series' | 'book'
         });
         router.push('/checkout');
     };
